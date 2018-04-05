@@ -102,10 +102,10 @@ public class CanAdapter {
     }
 
     public void call_usb(){
-        Toast toast = Toast.makeText(mMainActivity.getApplicationContext(), "Beginning USB " + device.getDeviceName(), Toast.LENGTH_SHORT);
+        Toast toast = Toast.makeText(mMainActivity.getApplicationContext(), "Beginning USB ", Toast.LENGTH_SHORT);
         toast.show();
         if (mUsbDevice != null) {
-            Toast toast2 = Toast.makeText(mMainActivity.getApplicationContext(), "Device valid " + device.getDeviceName(), Toast.LENGTH_SHORT);
+            Toast toast2 = Toast.makeText(mMainActivity.getApplicationContext(), "Device valid ", Toast.LENGTH_SHORT);
             toast2.show();
             new CanReceiveTask().execute(mUsbDevice);
         }
