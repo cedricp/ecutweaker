@@ -3,22 +3,35 @@ package org.quark.dr.canapp;
 import android.content.Intent;
 import android.hardware.usb.UsbManager;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.TextToSpeech.OnInitListener;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.TextView;
+
+import java.util.Locale;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements OnInitListener {
     private static final String TAG = "org.quark.dr.canapp";
     private static CanAdapter mCanAdapter;
+    private TextToSpeech tts;
+
+    @Override
+    public void onInit(int initStatus) {
+        if (initStatus == TextToSpeech.SUCCESS) {
+            if (tts.isLanguageAvailable(Locale.FRANCE) == TextToSpeech.LANG_AVAILABLE)
+                tts.setLanguage(Locale.FRANCE);
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        tts = new TextToSpeech(this, this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -29,9 +42,25 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mCanAdapter.call_usb();
+                saySomething();
             }
         });
+    }
+
+    void saySomething(){
+        Log.i(TAG, "SPEAK");
+
+        tts.setLanguage(Locale.FRANCE);
+        tts.speak("Bonjour, peti test de la fonction vocale", TextToSpeech.QUEUE_ADD, null);
+        tts.speak("Nivo d'uile critik, faire nivo", TextToSpeech.QUEUE_ADD, null);
+    }
+
+    @Override
+    protected void onDestroy(){
+        mCanAdapter.shutdown();
+        tts.shutdown();
+        tts.stop();
+        super.onDestroy();
     }
 
     @Override
@@ -59,10 +88,5 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    public void changeText(String txt){
-        TextView view = findViewById(R.id.textview);
-        view.setText(txt);
     }
 }
