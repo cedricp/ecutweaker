@@ -3,6 +3,7 @@
     package="org.quark.dr.canapp">
     <uses-feature android:name="android.hardware.usb.host" />
     <uses-permission android:name="android.permission.USB_PERMISSION"/>
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
     <uses-sdk android:minSdkVersion="12" />
     <application
         android:allowBackup="true"

@@ -1,10 +1,8 @@
 package org.quark.dr.canapp;
 
-import android.content.Intent;
-import android.hardware.usb.UsbManager;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
-import android.speech.tts.TextToSpeech.OnInitListener;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -13,25 +11,39 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import java.util.HashMap;
 import java.util.Locale;
 
 
-public class MainActivity extends AppCompatActivity implements OnInitListener {
+public class MainActivity extends AppCompatActivity
+        implements TextToSpeech.OnInitListener, TextToSpeech.OnUtteranceCompletedListener {
     private static final String TAG = "org.quark.dr.canapp";
     private static CanAdapter mCanAdapter;
-    private TextToSpeech tts;
+    private TextToSpeech mTts;
+    private AudioManager mAudioManager;
+    private int mOldVolume;
 
     @Override
     public void onInit(int initStatus) {
         if (initStatus == TextToSpeech.SUCCESS) {
-            if (tts.isLanguageAvailable(Locale.FRANCE) == TextToSpeech.LANG_AVAILABLE)
-                tts.setLanguage(Locale.FRANCE);
+            if (mTts.isLanguageAvailable(Locale.FRANCE) == TextToSpeech.LANG_AVAILABLE)
+                mTts.setLanguage(Locale.FRANCE);
+        }
+    }
+
+    @Override
+    public void onUtteranceCompleted(String utteranceId)
+    {
+        if(utteranceId.equals("FINISHED PLAYING"))
+        {
+            mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, mOldVolume, 0);
         }
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        tts = new TextToSpeech(this, this);
+        mTts = new TextToSpeech(this, this);
+        mAudioManager= (AudioManager)getSystemService(this.AUDIO_SERVICE);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -49,26 +61,24 @@ public class MainActivity extends AppCompatActivity implements OnInitListener {
 
     void saySomething(){
         Log.i(TAG, "SPEAK");
+        HashMap<String, String> params = new HashMap<String, String>();
+        params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_NOTIFICATION));
+        params.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "FINISHED PLAYING");
 
-        tts.setLanguage(Locale.FRANCE);
-        tts.speak("Bonjour, peti test de la fonction vocale", TextToSpeech.QUEUE_ADD, null);
-        tts.speak("Nivo d'uile critik, faire nivo", TextToSpeech.QUEUE_ADD, null);
+        mTts.speak("Bonjour, peti test de la fonction vocale", TextToSpeech.QUEUE_ADD, null);
+
+        mOldVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, mOldVolume / 3, 0);
     }
 
     @Override
     protected void onDestroy(){
         mCanAdapter.shutdown();
-        tts.shutdown();
-        tts.stop();
+        mTts.shutdown();
+        mTts.stop();
         super.onDestroy();
     }
 
-    @Override
-    protected void onNewIntent(Intent intent) {
-        if(intent.getAction().equals(UsbManager.ACTION_USB_DEVICE_ATTACHED)){
-
-        }
-    };
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

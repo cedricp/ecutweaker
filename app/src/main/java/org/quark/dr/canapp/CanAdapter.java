@@ -26,8 +26,8 @@ public class CanAdapter {
     private PendingIntent   mPermissionIntent;
     private UsbManager      mUsbManager;
     private MainActivity    mMainActivity;
-    private UsbDevice       mUsbDevice;
     private Handler         handler = new Handler();
+    private UsbDeviceConnection    mUsbConnection;
 
     // control request direction
     final int CTRL_OUT = 0x00;
@@ -67,7 +67,6 @@ public class CanAdapter {
     CanAdapter(MainActivity activity){
         mMainActivity = activity;
         mUsbManager = (UsbManager) activity.getSystemService(Context.USB_SERVICE);
-        mUsbDevice = null;
         mPermissionIntent = PendingIntent.getBroadcast(activity, 0, new Intent(ACTION_USB_PERMISSION), 0);
 
         IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
@@ -104,13 +103,16 @@ public class CanAdapter {
     public void shutdown(){
         mMainActivity.unregisterReceiver(mUsbReceiver);
         handler.removeCallbacks(canAckHandler);
+        mUsbConnection.close();
+        mUsbConnection= null;
     }
 
     private void handleBuffer(byte[] bytes){
         int waterTemp = bytes[24] - 40;
         long odometer = bytes[18] | bytes[17] << 8 | bytes[16] << 16;
-        int oilLevel = bytes[19] >> 2 & 0b1111;
+        int oilLevel  = bytes[19] >> 2 & 0b1111;
         int fuelLevel = bytes[20] >> 1 & 0b1111111;
+
         TextView waterTempView = mMainActivity.findViewById(R.id.waterTempView);
         waterTempView.setText(String.valueOf(waterTemp) + " C");
 
@@ -128,7 +130,7 @@ public class CanAdapter {
     }
 
     private static String byteArrayToHex(byte[] a) {
-        StringBuilder sb = new StringBuilder(a.length * 2);
+        StringBuilder sb = new StringBuilder(a.length * 3);
         for(byte b: a)
             sb.append(String.format("%02x", b));
         return sb.toString();
@@ -138,7 +140,9 @@ public class CanAdapter {
         if (device == null)
             return false;
         if (device.getVendorId() == 5824 && device.getProductId() == 1503){
-            mUsbDevice = device;
+            UsbInterface usbinterface = device.getInterface(0);
+            mUsbConnection = mUsbManager.openDevice(device);
+            mUsbConnection.claimInterface(usbinterface, true);
             Toast toast = Toast.makeText(mMainActivity.getApplicationContext(),
                     "Successfully connected to " + device.getDeviceName(), Toast.LENGTH_SHORT);
             toast.show();
@@ -148,6 +152,7 @@ public class CanAdapter {
                 "VID/PID ERROR " + String.valueOf(device.getVendorId()) + "/" + String.valueOf(device.getProductId()),
                 Toast.LENGTH_SHORT);
         toast.show();
+        mUsbConnection = null;
         return false;
     }
 
@@ -155,7 +160,8 @@ public class CanAdapter {
         if (device == null)
             return false;
         if (device.getVendorId() == 5824 && device.getProductId() == 1503){
-            mUsbDevice = null;
+            mUsbConnection.close();
+            mUsbConnection = null;
             Toast toast = Toast.makeText(mMainActivity.getApplicationContext(),
                     "Successfully disconnected from " + device.getDeviceName(),
                     Toast.LENGTH_SHORT);
@@ -177,7 +183,7 @@ public class CanAdapter {
                         if (device != null) {
                             checkDevice(device);
                         } else {
-                            mUsbDevice = null;
+                            mUsbConnection = null;
                             CharSequence text = "USB permission refused for " + device;
                             Toast toast = Toast.makeText(context, text, Toast.LENGTH_SHORT);
                             toast.show();
@@ -202,20 +208,26 @@ public class CanAdapter {
         }
     };
 
-    private class CanReceiveTask extends AsyncTask<UsbDevice, Integer, Long> {
+    private class CanReceiveTask extends AsyncTask<String, Integer, Long> {
         byte[] buffer = new byte[32];
+        String error;
 
         // Do it in background, maybe overkilling, but cannot block the UI thread
-        protected Long doInBackground(UsbDevice... usbdev) {
-            UsbInterface usbinterface = usbdev[0].getInterface(0);
-            UsbDeviceConnection connection = mUsbManager.openDevice(usbdev[0]);
-            connection.claimInterface(usbinterface, true);
-            int requestType = CTRL_IN | CTRL_TYPE_CLASS | CTRL_RECIPIENT_DEVICE;
-            long num_receive = connection.controlTransfer(
-                    requestType,
-                    USBRQ_HID_GET_REPORT,
-                    0, 0, buffer,
-                    32, 500);
+        protected Long doInBackground(String... str) {
+            long num_receive = 0;
+            if (mUsbConnection == null)
+                return 0l;
+            try {
+                int requestType = CTRL_IN | CTRL_TYPE_CLASS | CTRL_RECIPIENT_DEVICE;
+                num_receive = mUsbConnection.controlTransfer(
+                        requestType,
+                        USBRQ_HID_GET_REPORT,
+                        0, 0, buffer,
+                        32, 500);
+            } catch (Exception e) {
+                error = e.getMessage();
+                return -1l;
+            }
             return num_receive;
         }
 
@@ -224,6 +236,12 @@ public class CanAdapter {
         }
 
         protected void onPostExecute(Long result) {
+            if (result == -1l){
+                CharSequence text = "USB error " + error;
+                Toast toast = Toast.makeText(mMainActivity, text, Toast.LENGTH_SHORT);
+                toast.show();
+            }
+
             if (result > 0) {
                 handleBuffer(buffer);
             }
@@ -236,10 +254,8 @@ public class CanAdapter {
     private Runnable canAckHandler = new Runnable() {
         @Override
         public void run() {
-            if (mUsbDevice != null)
-                new CanReceiveTask().execute(mUsbDevice);
-            /* and here comes the "trick" */
-            handler.postDelayed(this, 100);
+            if (mUsbConnection != null)
+                new CanReceiveTask().execute();
         }
     };
 }
