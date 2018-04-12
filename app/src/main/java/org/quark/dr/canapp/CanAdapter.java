@@ -11,12 +11,11 @@ import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
 import android.os.AsyncTask;
 import android.os.Handler;
-import android.util.Log;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.ArrayList;
+import com.github.anastr.speedviewlib.DeluxeSpeedView;
+import com.github.anastr.speedviewlib.TubeSpeedometer;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -25,9 +24,13 @@ public class CanAdapter {
     private static final String TAG = "org.quark.dr.canapp";
     private PendingIntent   mPermissionIntent;
     private UsbManager      mUsbManager;
+    private UsbDevice       mUsbDevice;
     private MainActivity    mMainActivity;
     private Handler         handler = new Handler();
     private UsbDeviceConnection    mUsbConnection;
+    private TubeSpeedometer mWaterTempView, mFuelLevelView, mOilView;
+    private TextView        mExternalTempView, mOdometerView, mFuelConsumptionView;
+    private DeluxeSpeedView mRpmView, mSpeedView;
 
     // control request direction
     final int CTRL_OUT = 0x00;
@@ -66,80 +69,94 @@ public class CanAdapter {
 
     CanAdapter(MainActivity activity){
         mMainActivity = activity;
+
+        mWaterTempView = activity.findViewById(R.id.waterTempView);
+        mFuelLevelView = activity.findViewById(R.id.fuelLevelView);
+        mOilView = activity.findViewById(R.id.oilLevelView);
+        mExternalTempView = activity.findViewById(R.id.externalTempView);
+        mOdometerView = activity.findViewById(R.id.odometerView);
+        mFuelConsumptionView = activity.findViewById(R.id.fuelView);
+        mRpmView =  activity.findViewById(R.id.rpmView);
+        mSpeedView =  activity.findViewById(R.id.speedView);
+
         mUsbManager = (UsbManager) activity.getSystemService(Context.USB_SERVICE);
         mPermissionIntent = PendingIntent.getBroadcast(activity, 0, new Intent(ACTION_USB_PERMISSION), 0);
 
-        IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
-        IntentFilter filterAttach  = new IntentFilter(UsbManager.ACTION_USB_DEVICE_ATTACHED);
-        IntentFilter filterDetach = new IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED);
+        activity.registerReceiver(mUsbReceiver, new IntentFilter(ACTION_USB_PERMISSION));
+        activity.registerReceiver(mUsbReceiver, new IntentFilter(UsbManager.ACTION_USB_DEVICE_ATTACHED));
+        activity.registerReceiver(mUsbReceiver, new IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED));
+        scanUsbDevices();
 
-        activity.registerReceiver(mUsbReceiver, filter);
-        activity.registerReceiver(mUsbReceiver, filterAttach);
-        activity.registerReceiver(mUsbReceiver, filterDetach);
-
-        UsbManager usbManager = (UsbManager) mMainActivity.getSystemService(Context.USB_SERVICE);
-        try {
-            HashMap<String, UsbDevice> deviceList = usbManager.getDeviceList();
-            Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
-            while (deviceIterator.hasNext()) {
-                UsbDevice device = deviceIterator.next();
-                if (!usbManager.hasPermission(device)) {
-                    usbManager.requestPermission(device, mPermissionIntent);
-                }
-                if (usbManager.hasPermission(device)) {
-                    if (checkDevice(device))
-                        break;
-                }
-            }
-        } catch (Exception e){
-            Toast toast = Toast.makeText(mMainActivity.getApplicationContext(),
-                    "Cannot init USB sybsystem ",
-                    Toast.LENGTH_SHORT);
-            toast.show();
-        }
+        // Launch timer
         handler.postDelayed(canAckHandler, 1000);
+    }
+
+    private void scanUsbDevices(){
+        // Check if USB is already connected
+        if (mUsbDevice == null) {
+            try {
+                HashMap<String, UsbDevice> deviceList = mUsbManager.getDeviceList();
+                Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
+                while (deviceIterator.hasNext()) {
+                    UsbDevice device = deviceIterator.next();
+                    if (device == null)
+                        continue;
+
+                    if (!mUsbManager.hasPermission(device))
+                        mUsbManager.requestPermission(device, mPermissionIntent);
+
+                    if (mUsbManager.hasPermission(device))
+                        openDevice(device);
+                }
+            } catch (Exception e) {
+                Toast toast = Toast.makeText(mMainActivity.getApplicationContext(),
+                        "Cannot init USB sybsystem : " + e.getMessage(),
+                        Toast.LENGTH_SHORT);
+                toast.show();
+            }
+        }
     }
 
     public void shutdown(){
         mMainActivity.unregisterReceiver(mUsbReceiver);
         handler.removeCallbacks(canAckHandler);
-        mUsbConnection.close();
-        mUsbConnection= null;
+        closeDevice(mUsbDevice);
     }
 
     private void handleBuffer(byte[] bytes){
-        int waterTemp = bytes[24] - 40;
-        long odometer = bytes[18] | bytes[17] << 8 | bytes[16] << 16;
-        int oilLevel  = bytes[19] >> 2 & 0b1111;
-        int fuelLevel = bytes[20] >> 1 & 0b1111111;
+        int externalTemp = (bytes[12] & 0xFF) - 40;
+        int fuelConsumption = (bytes[25] & 0xFF) * 80;
+        int oilLevel  = (bytes[19] & 0XFF >> 2) & 0b00001111;
+        int fuelLevel = (bytes[20] & 0xFF >> 1) & 0b01111111;
+        int waterTemp = (bytes[24] & 0xFF) - 40;
+        long odometer = bytes[18] & 0xFF;
+        odometer |= (bytes[17] & 0xFF) << 8;
+        odometer |= (bytes[16] &0xFF) << 16;
 
-        TextView waterTempView = mMainActivity.findViewById(R.id.waterTempView);
-        waterTempView.setText(String.valueOf(waterTemp) + " C");
+        int vehicleSpeed = bytes[33] & 0xFF;
+        vehicleSpeed |= (bytes[32] & 0xFF) << 8;
+        vehicleSpeed /= 100;
 
-        TextView odometerView = mMainActivity.findViewById(R.id.odometerView);
-        odometerView.setText(String.valueOf(odometer) + " KM");
+        int engineRpm = bytes[41] & 0xFF;
+        engineRpm |= (bytes[40] & 0xFF) << 8;
+        engineRpm /= 800;
 
-        TextView fuelLevelView = mMainActivity.findViewById(R.id.fuelLevelView);
-        fuelLevelView.setText(String.valueOf(fuelLevel) + " L");
-
-        ProgressBar oilView = mMainActivity.findViewById(R.id.oilLevelView);
-        if (oilLevel > 8 )
-            oilView.setProgress(0);
-        else
-            oilView.setProgress(oilLevel);
+        mWaterTempView.speedTo(waterTemp, 2000);
+        mFuelLevelView.speedTo(fuelLevel, 4000);
+        mExternalTempView.setText(String.valueOf(externalTemp) + " C");
+        mOdometerView.setText(String.valueOf(odometer) + " KM");
+        mFuelConsumptionView.setText(String.valueOf(fuelConsumption));
+        mOilView.speedTo(oilLevel);
+        mSpeedView.speedTo(vehicleSpeed);
+        mRpmView.speedTo(engineRpm);
     }
 
-    private static String byteArrayToHex(byte[] a) {
-        StringBuilder sb = new StringBuilder(a.length * 3);
-        for(byte b: a)
-            sb.append(String.format("%02x", b));
-        return sb.toString();
-    }
-
-    private boolean checkDevice(UsbDevice device){
+    private boolean openDevice(UsbDevice device){
         if (device == null)
             return false;
+
         if (device.getVendorId() == 5824 && device.getProductId() == 1503){
+            mUsbDevice = device;
             UsbInterface usbinterface = device.getInterface(0);
             mUsbConnection = mUsbManager.openDevice(device);
             mUsbConnection.claimInterface(usbinterface, true);
@@ -148,17 +165,15 @@ public class CanAdapter {
             toast.show();
             return true;
         }
-        Toast toast = Toast.makeText(mMainActivity.getApplicationContext(),
-                "VID/PID ERROR " + String.valueOf(device.getVendorId()) + "/" + String.valueOf(device.getProductId()),
-                Toast.LENGTH_SHORT);
-        toast.show();
+        mUsbDevice = null;
         mUsbConnection = null;
         return false;
     }
 
     private boolean closeDevice(UsbDevice device){
-        if (device == null)
+        if (device == null || mUsbDevice != device)
             return false;
+
         if (device.getVendorId() == 5824 && device.getProductId() == 1503){
             mUsbConnection.close();
             mUsbConnection = null;
@@ -181,7 +196,7 @@ public class CanAdapter {
                     UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
                     if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
                         if (device != null) {
-                            checkDevice(device);
+                            openDevice(device);
                         } else {
                             mUsbConnection = null;
                             CharSequence text = "USB permission refused for " + device;
@@ -194,9 +209,7 @@ public class CanAdapter {
 
             if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
                 UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-                if (device != null){
-                    checkDevice(device);
-                }
+                openDevice(device);
             }
 
             if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
@@ -209,21 +222,21 @@ public class CanAdapter {
     };
 
     private class CanReceiveTask extends AsyncTask<String, Integer, Long> {
-        byte[] buffer = new byte[32];
+        byte[] buffer = new byte[48];
         String error;
 
         // Do it in background, maybe overkilling, but cannot block the UI thread
         protected Long doInBackground(String... str) {
-            long num_receive = 0;
+            long num_receive = 0l;
             if (mUsbConnection == null)
-                return 0l;
+                return num_receive;
             try {
                 int requestType = CTRL_IN | CTRL_TYPE_CLASS | CTRL_RECIPIENT_DEVICE;
                 num_receive = mUsbConnection.controlTransfer(
                         requestType,
                         USBRQ_HID_GET_REPORT,
                         0, 0, buffer,
-                        32, 500);
+                        48, 500);
             } catch (Exception e) {
                 error = e.getMessage();
                 return -1l;
@@ -241,7 +254,6 @@ public class CanAdapter {
                 Toast toast = Toast.makeText(mMainActivity, text, Toast.LENGTH_SHORT);
                 toast.show();
             }
-
             if (result > 0) {
                 handleBuffer(buffer);
             }

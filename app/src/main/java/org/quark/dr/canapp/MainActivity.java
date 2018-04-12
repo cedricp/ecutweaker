@@ -11,43 +11,34 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.github.anastr.speedviewlib.Gauge;
+import com.github.anastr.speedviewlib.TubeSpeedometer;
+
 import java.util.HashMap;
 import java.util.Locale;
 
 
-public class MainActivity extends AppCompatActivity
-        implements TextToSpeech.OnInitListener, TextToSpeech.OnUtteranceCompletedListener {
+public class MainActivity extends AppCompatActivity {
     private static final String TAG = "org.quark.dr.canapp";
     private static CanAdapter mCanAdapter;
     private TextToSpeech mTts;
     private AudioManager mAudioManager;
-    private int mOldVolume;
-
-    @Override
-    public void onInit(int initStatus) {
-        if (initStatus == TextToSpeech.SUCCESS) {
-            if (mTts.isLanguageAvailable(Locale.FRANCE) == TextToSpeech.LANG_AVAILABLE)
-                mTts.setLanguage(Locale.FRANCE);
-        }
-    }
-
-    @Override
-    public void onUtteranceCompleted(String utteranceId)
-    {
-        if(utteranceId.equals("FINISHED PLAYING"))
-        {
-            mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, mOldVolume, 0);
-        }
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        mTts = new TextToSpeech(this, this);
+        mTts = new TextToSpeech(this,  new TextToSpeech.OnInitListener(){
+            @Override
+            public void onInit(int initStatus) {
+                if (initStatus == TextToSpeech.SUCCESS) {
+                    if (mTts.isLanguageAvailable(Locale.FRANCE) == TextToSpeech.LANG_AVAILABLE)
+                        mTts.setLanguage(Locale.FRANCE);
+                }
+            }
+        });
+
         mAudioManager= (AudioManager)getSystemService(this.AUDIO_SERVICE);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
         mCanAdapter = new CanAdapter(this);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -62,13 +53,12 @@ public class MainActivity extends AppCompatActivity
     void saySomething(){
         Log.i(TAG, "SPEAK");
         HashMap<String, String> params = new HashMap<String, String>();
-        params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_NOTIFICATION));
-        params.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "FINISHED PLAYING");
+        params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_SYSTEM));
 
-        mTts.speak("Bonjour, peti test de la fonction vocale", TextToSpeech.QUEUE_ADD, null);
+        mTts.speak("Bonjour, peti test de la fonction vocale", TextToSpeech.QUEUE_FLUSH, null);
 
-        mOldVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-        mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, mOldVolume / 3, 0);
+        //mOldVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        //mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, mOldVolume / 3, 0);
     }
 
     @Override
