@@ -59,6 +59,7 @@ public final class CanSocket implements Closeable {
     private static native int _openSocketRAW() throws IOException;
     private static native int _openSocketBCM() throws IOException;
     private static native void _close(final int fd) throws IOException;
+    private static native void _setNonBlocking(final int fd) throws IOException;
 
     private static native int _fetchInterfaceMtu(final int fd,
                                                  final String ifName) throws IOException;
@@ -382,6 +383,10 @@ public final class CanSocket implements Closeable {
 
     public void setLoopbackMode(final boolean on) throws IOException {
         _setsockopt(_fd, CAN_RAW_LOOPBACK, on ? 1 : 0);
+    }
+
+    public void setNonBlocking() throws IOException {
+        _setNonBlocking(_fd);
     }
 
     public boolean getLoopbackMode() throws IOException {

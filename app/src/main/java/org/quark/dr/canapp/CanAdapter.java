@@ -73,6 +73,8 @@ public class CanAdapter {
         try {
             CanSocket canSockAdapter = new CanSocket(CanSocket.Mode.RAW);
             CanSocket.CanInterface caninterface = new CanSocket.CanInterface(canSockAdapter, "can0");
+            canSockAdapter.bind(caninterface);
+            CanSocket.CanFrame frame = canSockAdapter.recv();
         } catch (Exception e){
             Log.i("CanApp", "interface error " + e.getMessage());
         }

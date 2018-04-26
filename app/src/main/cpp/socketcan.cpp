@@ -97,6 +97,14 @@ extern "C" {
         }
     }
 
+    JNIEXPORT void JNICALL Java_org_quark_dr_canapp_CanSocket__1setNonBlocking
+            (JNIEnv *env, jclass obj, jint fd) {
+        if(fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK) < 0) {
+            throwIOExceptionErrno(env, errno);
+        }
+    }
+
+
     JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1discoverInterfaceIndex
             (JNIEnv *env, jclass clazz, jint socketFd, jstring ifName) {
         struct ifreq ifreq;
