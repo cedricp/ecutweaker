@@ -13,3 +13,5 @@ app/build/
 speedviewlib/build/
 
 gradle/
+
+\.idea/

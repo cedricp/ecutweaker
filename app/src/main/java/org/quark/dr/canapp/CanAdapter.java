@@ -11,6 +11,7 @@ import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -18,6 +19,7 @@ import com.github.anastr.speedviewlib.DeluxeSpeedView;
 import com.github.anastr.speedviewlib.TubeSpeedometer;
 import java.util.HashMap;
 import java.util.Iterator;
+
 
 public class CanAdapter {
     private static final String ACTION_USB_PERMISSION = "org.quark.dr.canapp.USB_PERMISSION";
@@ -68,6 +70,13 @@ public class CanAdapter {
     final int ENDPOINT_OUT = 0x00;
 
     CanAdapter(MainActivity activity){
+        try {
+            CanSocket canSockAdapter = new CanSocket(CanSocket.Mode.RAW);
+            CanSocket.CanInterface caninterface = new CanSocket.CanInterface(canSockAdapter, "can0");
+        } catch (Exception e){
+            Log.i("CanApp", "interface error " + e.getMessage());
+        }
+
         mMainActivity = activity;
 
         mWaterTempView = activity.findViewById(R.id.waterTempView);
@@ -123,11 +132,11 @@ public class CanAdapter {
         closeDevice(mUsbDevice);
     }
 
-    private void handleBuffer(byte[] bytes){
-        int externalTemp = (bytes[12] & 0xFF) - 40;
+    private void handleBuffer(byte[] bytes, long time){
+        int externalTemp = (bytes[4] & 0xFF) - 40;
         int fuelConsumption = (bytes[25] & 0xFF) * 80;
-        int oilLevel  = (bytes[19] & 0XFF >> 2) & 0b00001111;
-        int fuelLevel = (bytes[20] & 0xFF >> 1) & 0b01111111;
+        int oilLevel  = (bytes[19] >> 2) & 0b00001111;
+        int fuelLevel = (bytes[20] >> 1) & 0b01111111;
         int waterTemp = (bytes[24] & 0xFF) - 40;
         long odometer = bytes[18] & 0xFF;
         odometer |= (bytes[17] & 0xFF) << 8;
@@ -135,11 +144,11 @@ public class CanAdapter {
 
         int vehicleSpeed = bytes[33] & 0xFF;
         vehicleSpeed |= (bytes[32] & 0xFF) << 8;
-        vehicleSpeed /= 100;
+        float vSpeedFloat = (float)vehicleSpeed / 100.0f;
 
         int engineRpm = bytes[41] & 0xFF;
         engineRpm |= (bytes[40] & 0xFF) << 8;
-        engineRpm /= 800;
+        float engineRpmFloat = (float)engineRpm / 800.0f;
 
         mWaterTempView.speedTo(waterTemp, 2000);
         mFuelLevelView.speedTo(fuelLevel, 4000);
@@ -147,8 +156,11 @@ public class CanAdapter {
         mOdometerView.setText(String.valueOf(odometer) + " KM");
         mFuelConsumptionView.setText(String.valueOf(fuelConsumption));
         mOilView.speedTo(oilLevel);
-        mSpeedView.speedTo(vehicleSpeed);
-        mRpmView.speedTo(engineRpm);
+        mSpeedView.speedTo(vSpeedFloat, 350);
+        mRpmView.speedTo(engineRpmFloat, 350);
+
+        TextView timeView = mMainActivity.findViewById(R.id.timeView);
+        timeView.setText(String.valueOf(time/1000000) + " ms");
     }
 
     private boolean openDevice(UsbDevice device){
@@ -224,6 +236,7 @@ public class CanAdapter {
     private class CanReceiveTask extends AsyncTask<String, Integer, Long> {
         byte[] buffer = new byte[48];
         String error;
+        long time;
 
         // Do it in background, maybe overkilling, but cannot block the UI thread
         protected Long doInBackground(String... str) {
@@ -231,12 +244,14 @@ public class CanAdapter {
             if (mUsbConnection == null)
                 return num_receive;
             try {
+                time = System.nanoTime();
                 int requestType = CTRL_IN | CTRL_TYPE_CLASS | CTRL_RECIPIENT_DEVICE;
                 num_receive = mUsbConnection.controlTransfer(
                         requestType,
                         USBRQ_HID_GET_REPORT,
                         0, 0, buffer,
                         48, 500);
+                time = System.nanoTime() - time;
             } catch (Exception e) {
                 error = e.getMessage();
                 return -1l;
@@ -249,13 +264,15 @@ public class CanAdapter {
         }
 
         protected void onPostExecute(Long result) {
-            if (result == -1l){
+            if (result == -1l) {
                 CharSequence text = "USB error " + error;
                 Toast toast = Toast.makeText(mMainActivity, text, Toast.LENGTH_SHORT);
                 toast.show();
-            }
-            if (result > 0) {
-                handleBuffer(buffer);
+                // Attempt to reconnect...
+                closeDevice(mUsbDevice);
+                scanUsbDevices();
+            } else if (result > 0) {
+                handleBuffer(buffer, time);
             }
 
             // Repost can handler

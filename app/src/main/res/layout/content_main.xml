@@ -88,6 +88,16 @@
                     android:textColor="@android:color/white"
                     android:textSize="30sp" />
 
+                <TextView
+                    android:id="@+id/timeView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0"
+                    android:text="----"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="25sp" />
+
             </LinearLayout>
 
             <com.github.anastr.speedviewlib.DeluxeSpeedView
