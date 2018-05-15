@@ -5,6 +5,7 @@
 #include<cstring>
 #include<cstddef>
 #include<cerrno>
+#include <linux/can.h>
 
 extern "C" {
 #include <sys/types.h>
@@ -90,6 +91,11 @@ extern "C" {
         return newCanSocket(env, SOCK_DGRAM, CAN_BCM);
     }
 
+    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1openSocketISOTP
+            (JNIEnv *env, jclass obj) {
+        return newCanSocket(env, SOCK_DGRAM, CAN_ISOTP);
+    }
+
     JNIEXPORT void JNICALL Java_org_quark_dr_canapp_CanSocket__1close
             (JNIEnv *env, jclass obj, jint fd) {
         if (close(fd) == -1) {
@@ -99,11 +105,11 @@ extern "C" {
 
     JNIEXPORT void JNICALL Java_org_quark_dr_canapp_CanSocket__1setNonBlocking
             (JNIEnv *env, jclass obj, jint fd) {
-        if(fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK) < 0) {
+        int flags = fcntl(fd, F_GETFL);
+        if(fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
             throwIOExceptionErrno(env, errno);
         }
     }
-
 
     JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1discoverInterfaceIndex
             (JNIEnv *env, jclass clazz, jint socketFd, jstring ifName) {
@@ -146,13 +152,75 @@ extern "C" {
 
 
     JNIEXPORT void JNICALL Java_org_quark_dr_canapp_CanSocket__1bindToSocket
-            (JNIEnv *env, jclass obj, jint fd, jint ifIndex) {
+            (JNIEnv *env, jclass obj, jint fd, jint ifIndex, jint rxid, jint txid) {
         struct sockaddr_can addr;
         addr.can_family = AF_CAN;
         addr.can_ifindex = ifIndex;
+        addr.can_addr.tp.rx_id = rxid;
+        addr.can_addr.tp.tx_id = txid;
         if (bind(fd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr)) != 0) {
             throwIOExceptionErrno(env, errno);
         }
+    }
+
+    JNIEXPORT void JNICALL Java_org_quark_dr_canapp_CanSocket__1sendIsoTp
+            (JNIEnv *env, jclass obj, jint fd, jbyteArray data) {
+        const int flags = 0;
+        int retval;
+        __u8* isotp_data;
+        const jsize len = env->GetArrayLength(data);
+
+        if (env->ExceptionCheck() == JNI_TRUE) {
+            return;
+        }
+
+        isotp_data = (__u8*)malloc(len);
+        env->GetByteArrayRegion(data, 0, len, reinterpret_cast<jbyte *>(isotp_data));
+        if (env->ExceptionCheck() == JNI_TRUE) {
+            return;
+        }
+
+        retval = write(fd, isotp_data, len);
+        if (retval == -1)
+            throwIOExceptionErrno(env, errno);
+    }
+
+    JNIEXPORT jobject JNICALL Java_org_quark_dr_canapp_CanSocket__1recvIsoTp
+            (JNIEnv *env, jclass obj, jint fd, jint timeoutms) {
+        ssize_t nbytes;
+        int ret;
+        fd_set rdfs;
+        struct timeval timeout;
+        unsigned char msg[4096];
+
+        timeout.tv_sec = timeoutms / 1000;
+        timeout.tv_usec = (timeoutms % 1000) * 1000;
+
+        FD_ZERO(&rdfs);
+        FD_SET(fd, &rdfs);
+
+        if ((ret = select(fd+1, &rdfs, NULL, NULL, &timeout)) <= 0) {
+            throwIOExceptionErrno(env, errno);
+        }
+
+        if ((nbytes = read(fd, msg, 4096)) <= 0){
+            throwIOExceptionErrno(env, errno);
+        }
+
+        const jbyteArray data = env->NewByteArray(nbytes);
+        if (data == NULL) {
+            if (env->ExceptionCheck() != JNI_TRUE) {
+                throwOutOfMemoryError(env, "could not allocate ByteArray");
+            }
+            return NULL;
+        }
+
+        env->SetByteArrayRegion(data, 0, nbytes, reinterpret_cast<jbyte *>(msg));
+        if (env->ExceptionCheck() == JNI_TRUE) {
+            return NULL;
+        }
+
+        return data;
     }
 
     JNIEXPORT void JNICALL Java_org_quark_dr_canapp_CanSocket__1sendFrame
@@ -186,12 +254,25 @@ extern "C" {
     }
 
     JNIEXPORT jobject JNICALL Java_org_quark_dr_canapp_CanSocket__1recvFrame
-            (JNIEnv *env, jclass obj, jint fd) {
+            (JNIEnv *env, jclass obj, jint fd, int timeoutms) {
         const int flags = 0;
+        int selret;
         ssize_t nbytes;
         struct sockaddr_can addr;
         socklen_t len = sizeof(addr);
         struct can_frame frame;
+        fd_set rdfs;
+
+        struct timeval timeout;
+        timeout.tv_sec = timeoutms / 1000;
+        timeout.tv_usec = (timeoutms % 1000) * 1000;
+
+        FD_ZERO(&rdfs);
+        FD_SET(fd, &rdfs);
+
+        if ((selret = select(fd+1, &rdfs, NULL, NULL, &timeout)) <= 0) {
+            throwIOExceptionErrno(env, errno);
+        }
 
         memset(&addr, 0, sizeof(addr));
         memset(&frame, 0, sizeof(frame));

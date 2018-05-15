@@ -58,6 +58,7 @@ public final class CanSocket implements Closeable {
 
     private static native int _openSocketRAW() throws IOException;
     private static native int _openSocketBCM() throws IOException;
+    private static native int _openSocketISOTP() throws IOException;
     private static native void _close(final int fd) throws IOException;
     private static native void _setNonBlocking(final int fd) throws IOException;
 
@@ -72,11 +73,16 @@ public final class CanSocket implements Closeable {
                                                         final int ifIndex) throws IOException;
 
     private static native void _bindToSocket(final int fd,
-                                             final int ifId) throws IOException;
+                                             final int ifId,
+                                             final int rxid,
+                                             final int txid) throws IOException;
 
-    private static native CanFrame _recvFrame(final int fd) throws IOException;
+    private static native CanFrame _recvFrame(final int fd, final int timeoutms) throws IOException;
     private static native void _sendFrame(final int fd, final int canif,
                                           final int canid, final byte[] data) throws IOException;
+
+    private static native void _sendIsoTp(final int fd, final byte[] data);
+    private static native byte[] _recvIsoTp(final int fd, final int timeoutms);
 
     public static final int CAN_MTU = _fetch_CAN_MTU();
     public static final int CAN_FD_MTU = _fetch_CAN_FD_MTU();
@@ -100,6 +106,10 @@ public final class CanSocket implements Closeable {
 
     public final static class CanId implements Cloneable {
         private int _canId = 0;
+
+        public int getAddress(){
+            return _canId;
+        }
 
         public static enum StatusBits {
             ERR, EFFSFF, RTR
@@ -338,7 +348,7 @@ public final class CanSocket implements Closeable {
     }
 
     public static enum Mode {
-        RAW, BCM
+        RAW, BCM, ISOTP
     }
 
     private final int _fd;
@@ -353,23 +363,38 @@ public final class CanSocket implements Closeable {
             case RAW:
                 _fd = _openSocketRAW();
                 break;
+            case ISOTP:
+                _fd = _openSocketISOTP();
+                break;
             default:
                 throw new IllegalStateException("unkown mode " + mode);
         }
         this._mode = mode;
     }
 
-    public void bind(CanInterface canInterface) throws IOException {
-        _bindToSocket(_fd, canInterface._ifIndex);
+    public void bind(CanInterface canInterface, int rxId, int txId) throws IOException {
+        _bindToSocket(_fd, canInterface._ifIndex, rxId, txId);
         this._boundTo = canInterface;
+    }
+
+    public void sendIsoTp(byte[] data) throws IOException {
+        _sendIsoTp(_fd, data);
+    }
+
+    public byte[] recvIsoTp(int timeout){
+        return _recvIsoTp(_fd, timeout);
     }
 
     public void send(CanFrame frame) throws IOException {
         _sendFrame(_fd, frame.canIf._ifIndex, frame.canId._canId, frame.data);
     }
 
+    public CanFrame recv(int timeoutms) throws IOException {
+        return _recvFrame(_fd, timeoutms);
+    }
+
     public CanFrame recv() throws IOException {
-        return _recvFrame(_fd);
+        return recv(1000);
     }
 
     @Override

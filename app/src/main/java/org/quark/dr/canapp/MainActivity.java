@@ -56,9 +56,6 @@ public class MainActivity extends AppCompatActivity {
         params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, String.valueOf(AudioManager.STREAM_SYSTEM));
 
         mTts.speak("Bonjour, peti test de la fonction vocale", TextToSpeech.QUEUE_FLUSH, null);
-
-        //mOldVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-        //mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, mOldVolume / 3, 0);
     }
 
     @Override
