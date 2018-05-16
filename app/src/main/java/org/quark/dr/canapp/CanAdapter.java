@@ -47,9 +47,9 @@ public class CanAdapter {
         handler = new Handler() {
             @Override
             public void handleMessage(Message msg) {
-                Log.i("CanApp", ">>>>>>>>>>> Receive " + msg.obj);
+                int speed = (int)msg.obj;
+                mSpeedView.speedTo(speed, 200);
             }
-
         };
 
         socketThread = new Thread(new Runnable() {
@@ -63,9 +63,13 @@ public class CanAdapter {
                         Log.i("CanApp", "interface bound : " + caninterface.toString());
                         while (true) {
                             CanSocket.CanFrame frame = canSockAdapter.recv();
+                            Log.i("CanApp", "recv to");
                             switch (frame.getCanId().getAddress()) {
-                                case 0x0551:
-
+                                case 0x0354:
+                                        Message message = handler.obtainMessage();
+                                        int speed = (frame.getData()[0] & 0xFF) << 8 | (frame.getData()[1] & 0xFF);
+                                        message.obj = speed;
+                                        handler.sendMessage(message);
                                     break;
                                 default:
                                     break;

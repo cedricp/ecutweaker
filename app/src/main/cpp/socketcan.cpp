@@ -272,6 +272,7 @@ extern "C" {
 
         if ((selret = select(fd+1, &rdfs, NULL, NULL, &timeout)) <= 0) {
             throwIOExceptionErrno(env, errno);
+            return NULL;
         }
 
         memset(&addr, 0, sizeof(addr));
