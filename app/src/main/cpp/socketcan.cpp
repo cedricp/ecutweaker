@@ -188,7 +188,6 @@ extern "C" {
     JNIEXPORT jobject JNICALL Java_org_quark_dr_canapp_CanSocket__1recvIsoTp
             (JNIEnv *env, jclass obj, jint fd, jint timeoutms) {
         ssize_t nbytes;
-        int ret;
         fd_set rdfs;
         struct timeval timeout;
         unsigned char msg[4096];
@@ -199,12 +198,14 @@ extern "C" {
         FD_ZERO(&rdfs);
         FD_SET(fd, &rdfs);
 
-        if ((ret = select(fd+1, &rdfs, NULL, NULL, &timeout)) <= 0) {
+        if (select(fd+1, &rdfs, NULL, NULL, &timeout) <= 0) {
             throwIOExceptionErrno(env, errno);
+            return NULL;
         }
 
         if ((nbytes = read(fd, msg, 4096)) <= 0){
             throwIOExceptionErrno(env, errno);
+            return NULL;
         }
 
         const jbyteArray data = env->NewByteArray(nbytes);
@@ -256,7 +257,6 @@ extern "C" {
     JNIEXPORT jobject JNICALL Java_org_quark_dr_canapp_CanSocket__1recvFrame
             (JNIEnv *env, jclass obj, jint fd, int timeoutms) {
         const int flags = 0;
-        int selret;
         ssize_t nbytes;
         struct sockaddr_can addr;
         socklen_t len = sizeof(addr);
@@ -270,7 +270,7 @@ extern "C" {
         FD_ZERO(&rdfs);
         FD_SET(fd, &rdfs);
 
-        if ((selret = select(fd+1, &rdfs, NULL, NULL, &timeout)) <= 0) {
+        if (select(fd+1, &rdfs, NULL, NULL, &timeout) <= 0) {
             throwIOExceptionErrno(env, errno);
             return NULL;
         }

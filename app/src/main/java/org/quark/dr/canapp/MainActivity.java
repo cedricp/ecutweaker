@@ -5,15 +5,10 @@ import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-
-import com.github.anastr.speedviewlib.Gauge;
-import com.github.anastr.speedviewlib.TubeSpeedometer;
-
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -22,7 +17,6 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "org.quark.dr.canapp";
     private static CanAdapter mCanAdapter;
     private TextToSpeech mTts;
-    private AudioManager mAudioManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,7 +30,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        mAudioManager= (AudioManager)getSystemService(this.AUDIO_SERVICE);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mCanAdapter = new CanAdapter(this);

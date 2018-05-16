@@ -303,9 +303,11 @@ public final class CanSocket implements Closeable {
         private final CanInterface canIf;
         private final CanId canId;
         private final byte[] data;
+        private final long timestamp;
 
         public CanFrame(final CanInterface canIf, final CanId canId,
                         byte[] data) {
+            this.timestamp = System.currentTimeMillis();
             this.canIf = canIf;
             this.canId = canId;
             this.data = data;
@@ -317,9 +319,14 @@ public final class CanSocket implements Closeable {
             if (data.length > 8) {
                 throw new IllegalArgumentException();
             }
+            this.timestamp = System.currentTimeMillis();
             this.canIf = new CanInterface(canIf);
             this.canId = new CanId(canid);
             this.data = data;
+        }
+
+        public long getTimeStamp(){
+            return timestamp;
         }
 
         public CanId getCanId() {
