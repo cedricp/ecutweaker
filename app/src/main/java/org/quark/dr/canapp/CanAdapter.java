@@ -16,12 +16,12 @@ public class CanAdapter {
     private MainActivity    mMainActivity;
     private Handler         handler;
     private TubeSpeedometer mWaterTempView, mFuelLevelView, mOilView;
-    private TextView        mExternalTempView, mOdometerView, mFuelConsumptionView;
+    private TextView        mExternalTempView, mOdometerView, mFuelConsumptionView, mTimeView;
     private DeluxeSpeedView mRpmView, mSpeedView;
     private Thread          socketThread;
     private long            mSpeedMemory, mRpmMemory, mOdometerMemory, mOilLevelMemory;
     private long            mWaterTempMemory, mFuelLevelMemory, mExternalTempMemory;
-    private long            mLockMemory;
+    private long            mLockMemory, mFuelAcc;
     private long[]          mTimeStamps;
     byte                    mLastFuelConsumptionMemory;
     volatile private boolean socketThreadRunning = true;
@@ -78,6 +78,10 @@ public class CanAdapter {
                 int waterTemp = data[0] & 0xFF;
                 byte fuelConsumption = data[1];
 
+                byte  diff = (byte)(fuelConsumption - adapter.mLastFuelConsumptionMemory);
+                adapter.mLastFuelConsumptionMemory = fuelConsumption;
+                adapter.mFuelAcc += diff & 0xFF;
+
                 if (waterTemp != adapter.mWaterTempMemory){
                     adapter.mWaterTempView.speedTo(waterTemp - 40, 3000);
                     adapter.mWaterTempMemory = waterTemp;
@@ -85,13 +89,11 @@ public class CanAdapter {
 
                 if (time > 400) {
                     float seconds = time * 0.001f;
-                    byte  diff = (byte)(fuelConsumption - adapter.mLastFuelConsumptionMemory);
-                    int   idiff = diff & 0xFF;
-                    float mm3 = (float)idiff * 80.f;
+                    float mm3 = (float)adapter.mFuelAcc * 80.f;
                     float mm3perheour = (mm3 / seconds) * 3600.f;
                     float dm3perhour = mm3perheour * 0.000001f;
-                    adapter.mLastFuelConsumptionMemory = fuelConsumption;
                     adapter.mTimeStamps[1] = cants;
+                    adapter.mFuelAcc = 0;
 
                     if (adapter.mSpeedMemory > 2000) {
                         float dm3per100kmh = (dm3perhour * 100.f) / (float) adapter.mSpeedMemory;
@@ -141,6 +143,7 @@ public class CanAdapter {
         mRpmView            =  activity.findViewById(R.id.rpmView);
         mSpeedView          =  activity.findViewById(R.id.speedView);
         mFuelConsumptionView = activity.findViewById(R.id.fuelView);
+        mTimeView           = activity.findViewById(R.id.timeView);
 
         handler = new SafeHandler(this);
 
