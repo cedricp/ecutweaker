@@ -7,9 +7,9 @@ import android.widget.TextView;
 import com.github.anastr.speedviewlib.DeluxeSpeedView;
 import com.github.anastr.speedviewlib.TubeSpeedometer;
 
-import java.lang.ref.WeakReference;
+import org.quark.dr.socketcan.CanSocket;
 
-import static java.lang.Math.abs;
+import java.lang.ref.WeakReference;
 
 public class CanAdapter {
     private static final String TAG = "org.quark.dr.canapp";
@@ -94,7 +94,7 @@ public class CanAdapter {
                     adapter.mTimeStamps[1] = cants;
 
                     if (adapter.mSpeedMemory > 2000) {
-                        float dm3per100kmh = (dm3perhour / ((float) adapter.mSpeedMemory));
+                        float dm3per100kmh = (dm3perhour * 100.f) / (float) adapter.mSpeedMemory;
                         String fuelstring = String.format("%.2f", dm3per100kmh) + " L/100";
                         adapter.mFuelConsumptionView.setText(fuelstring);
                     } else {
@@ -109,7 +109,7 @@ public class CanAdapter {
                 rpm |= data[1] & 0xFF;
 
                 if (rpm != adapter.mRpmMemory){
-                    adapter.mRpmView.speedTo((rpm * 0.000125f), time);
+                    adapter.mRpmView.speedTo((rpm * 0.00125f), time);
                     adapter.mRpmMemory = rpm;
                 }
             } else if (canaddr == 0x060D) {
@@ -129,6 +129,7 @@ public class CanAdapter {
             }
         }
     }
+
     CanAdapter(MainActivity activity){
         mMainActivity = activity;
         mTimeStamps         = new long[10];

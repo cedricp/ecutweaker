@@ -80,30 +80,30 @@ static jint newCanSocket(JNIEnv *env, int socket_type, int protocol)
 }
 
 extern "C" {
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1openSocketRAW
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1openSocketRAW
             (JNIEnv *env, jclass obj) {
         return newCanSocket(env, SOCK_RAW, CAN_RAW);
     }
 
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1openSocketBCM
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1openSocketBCM
             (JNIEnv *env, jclass obj) {
         return newCanSocket(env, SOCK_DGRAM, CAN_BCM);
     }
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1openSocketISOTP
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1openSocketISOTP
             (JNIEnv *env, jclass obj) {
         return newCanSocket(env, SOCK_DGRAM, CAN_ISOTP);
     }
 
-    JNIEXPORT void JNICALL Java_org_quark_dr_canapp_CanSocket__1close
+    JNIEXPORT void JNICALL Java_org_quark_dr_socketcan_CanSocket__1close
             (JNIEnv *env, jclass obj, jint fd) {
         if (close(fd) == -1) {
             throwIOExceptionErrno(env, errno);
         }
     }
 
-    JNIEXPORT void JNICALL Java_org_quark_dr_canapp_CanSocket__1setNonBlocking
+    JNIEXPORT void JNICALL Java_org_quark_dr_socketcan_CanSocket__1setNonBlocking
             (JNIEnv *env, jclass obj, jint fd) {
         int flags = fcntl(fd, F_GETFL);
         if(fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
@@ -111,7 +111,7 @@ extern "C" {
         }
     }
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1discoverInterfaceIndex
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1discoverInterfaceIndex
             (JNIEnv *env, jclass clazz, jint socketFd, jstring ifName) {
         struct ifreq ifreq;
         const jsize ifNameSize = env->GetStringUTFLength(ifName);
@@ -137,7 +137,7 @@ extern "C" {
         }
     }
 
-    JNIEXPORT jstring JNICALL Java_org_quark_dr_canapp_CanSocket__1discoverInterfaceName
+    JNIEXPORT jstring JNICALL Java_org_quark_dr_socketcan_CanSocket__1discoverInterfaceName
             (JNIEnv *env, jclass obj, jint fd, jint ifIdx) {
         struct ifreq ifreq;
         memset(&ifreq, 0x0, sizeof(ifreq));
@@ -151,7 +151,7 @@ extern "C" {
     }
 
 
-    JNIEXPORT void JNICALL Java_org_quark_dr_canapp_CanSocket__1bindToSocket
+    JNIEXPORT void JNICALL Java_org_quark_dr_socketcan_CanSocket__1bindToSocket
             (JNIEnv *env, jclass obj, jint fd, jint ifIndex, jint rxid, jint txid) {
         struct sockaddr_can addr;
         addr.can_family = AF_CAN;
@@ -163,7 +163,7 @@ extern "C" {
         }
     }
 
-    JNIEXPORT void JNICALL Java_org_quark_dr_canapp_CanSocket__1sendIsoTp
+    JNIEXPORT void JNICALL Java_org_quark_dr_socketcan_CanSocket__1sendIsoTp
             (JNIEnv *env, jclass obj, jint fd, jbyteArray data) {
         const int flags = 0;
         int retval;
@@ -185,7 +185,7 @@ extern "C" {
             throwIOExceptionErrno(env, errno);
     }
 
-    JNIEXPORT jobject JNICALL Java_org_quark_dr_canapp_CanSocket__1recvIsoTp
+    JNIEXPORT jobject JNICALL Java_org_quark_dr_socketcan_CanSocket__1recvIsoTp
             (JNIEnv *env, jclass obj, jint fd, jint timeoutms) {
         ssize_t nbytes;
         fd_set rdfs;
@@ -224,7 +224,7 @@ extern "C" {
         return data;
     }
 
-    JNIEXPORT void JNICALL Java_org_quark_dr_canapp_CanSocket__1sendFrame
+    JNIEXPORT void JNICALL Java_org_quark_dr_socketcan_CanSocket__1sendFrame
             (JNIEnv *env, jclass obj, jint fd, jint if_idx, jint canid, jbyteArray data) {
         const int flags = 0;
         ssize_t nbytes;
@@ -254,7 +254,7 @@ extern "C" {
         }
     }
 
-    JNIEXPORT jobject JNICALL Java_org_quark_dr_canapp_CanSocket__1recvFrame
+    JNIEXPORT jobject JNICALL Java_org_quark_dr_socketcan_CanSocket__1recvFrame
             (JNIEnv *env, jclass obj, jint fd, int timeoutms) {
         const int flags = 0;
         ssize_t nbytes;
@@ -321,7 +321,7 @@ extern "C" {
         return ret;
     }
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1fetchInterfaceMtu
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1fetchInterfaceMtu
             (JNIEnv *env, jclass obj, jint fd, jstring ifName) {
         struct ifreq ifreq;
 
@@ -343,7 +343,7 @@ extern "C" {
         }
     }
 
-    JNIEXPORT void JNICALL Java_org_quark_dr_canapp_CanSocket__1setsockopt
+    JNIEXPORT void JNICALL Java_org_quark_dr_socketcan_CanSocket__1setsockopt
             (JNIEnv *env, jclass obj, jint fd, jint op, jint stat) {
         const int _stat = stat;
         if (setsockopt(fd, SOL_CAN_RAW, op, &_stat, sizeof(_stat)) == -1) {
@@ -351,7 +351,7 @@ extern "C" {
         }
     }
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1getsockopt
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1getsockopt
             (JNIEnv *env, jclass obj, jint fd, jint op) {
         int _stat = 0;
         socklen_t len = sizeof(_stat);
@@ -368,100 +368,100 @@ extern "C" {
 
     /*** constants ***/
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1fetch_1CAN_1MTU
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1fetch_1CAN_1MTU
             (JNIEnv *env, jclass obj) {
         return CAN_MTU;
     }
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1fetch_1CAN_1FD_1MTU
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1fetch_1CAN_1FD_1MTU
             (JNIEnv *env, jclass obj) {
         return CANFD_MTU;
     }
 
     /*** ioctls ***/
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1fetch_1CAN_1RAW_1FILTER
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1fetch_1CAN_1RAW_1FILTER
             (JNIEnv *env, jclass obj) {
         return CAN_RAW_FILTER;
     }
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1fetch_1CAN_1RAW_1ERR_1FILTER
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1fetch_1CAN_1RAW_1ERR_1FILTER
             (JNIEnv *env, jclass obj) {
         return CAN_RAW_ERR_FILTER;
     }
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1fetch_1CAN_1RAW_1LOOPBACK
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1fetch_1CAN_1RAW_1LOOPBACK
             (JNIEnv *env, jclass obj) {
         return CAN_RAW_LOOPBACK;
     }
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1fetch_1CAN_1RAW_1RECV_1OWN_1MSGS
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1fetch_1CAN_1RAW_1RECV_1OWN_1MSGS
             (JNIEnv *env, jclass obj) {
         return CAN_RAW_RECV_OWN_MSGS;
     }
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1fetch_1CAN_1RAW_1FD_1FRAMES
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1fetch_1CAN_1RAW_1FD_1FRAMES
             (JNIEnv *env, jclass obj) {
         return CAN_RAW_FD_FRAMES;
     }
 
     /*** ADR MANIPULATION FUNCTIONS ***/
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1getCANID_1SFF
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1getCANID_1SFF
             (JNIEnv *env, jclass obj, jint canid) {
         return canid & CAN_SFF_MASK;
     }
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1getCANID_1EFF
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1getCANID_1EFF
             (JNIEnv *env, jclass obj, jint canid) {
         return canid & CAN_EFF_MASK;
     }
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1getCANID_1ERR
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1getCANID_1ERR
             (JNIEnv *env, jclass obj, jint canid) {
         return canid & CAN_ERR_MASK;
     }
 
-    JNIEXPORT jboolean JNICALL Java_org_quark_dr_canapp_CanSocket__1isSetEFFSFF
+    JNIEXPORT jboolean JNICALL Java_org_quark_dr_socketcan_CanSocket__1isSetEFFSFF
             (JNIEnv *env, jclass obj, jint canid) {
         return (canid & CAN_EFF_FLAG) != 0 ? JNI_TRUE : JNI_FALSE;
     }
 
-    JNIEXPORT jboolean JNICALL Java_org_quark_dr_canapp_CanSocket__1isSetRTR
+    JNIEXPORT jboolean JNICALL Java_org_quark_dr_socketcan_CanSocket__1isSetRTR
             (JNIEnv *env, jclass obj, jint canid) {
         return (canid & CAN_RTR_FLAG) != 0 ? JNI_TRUE : JNI_FALSE;
     }
 
-    JNIEXPORT jboolean JNICALL Java_org_quark_dr_canapp_CanSocket__1isSetERR
+    JNIEXPORT jboolean JNICALL Java_org_quark_dr_socketcan_CanSocket__1isSetERR
             (JNIEnv *env, jclass obj, jint canid) {
         return (canid & CAN_ERR_FLAG) != 0 ? JNI_TRUE : JNI_FALSE;
     }
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1setEFFSFF
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1setEFFSFF
             (JNIEnv *env, jclass obj, jint canid) {
         return canid | CAN_EFF_FLAG;
     }
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1setRTR
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1setRTR
             (JNIEnv *env, jclass obj, jint canid) {
         return canid | CAN_RTR_FLAG;
     }
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1setERR
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1setERR
             (JNIEnv *env, jclass obj, jint canid) {
         return canid | CAN_ERR_FLAG;
     }
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1clearEFFSFF
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1clearEFFSFF
             (JNIEnv *env, jclass obj, jint canid) {
         return canid & ~CAN_EFF_FLAG;
     }
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1clearRTR
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1clearRTR
             (JNIEnv *env, jclass obj, jint canid) {
         return canid & ~CAN_RTR_FLAG;
     }
 
-    JNIEXPORT jint JNICALL Java_org_quark_dr_canapp_CanSocket__1clearERR
+    JNIEXPORT jint JNICALL Java_org_quark_dr_socketcan_CanSocket__1clearERR
             (JNIEnv *env, jclass obj, jint canid) {
         return canid & ~CAN_ERR_FLAG;
     }
