@@ -1,4 +1,6 @@
 package org.quark.dr.canapp;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
@@ -6,6 +8,8 @@ import android.widget.TextView;
 
 import com.github.anastr.speedviewlib.DeluxeSpeedView;
 import com.github.anastr.speedviewlib.TubeSpeedometer;
+import com.github.anastr.speedviewlib.components.note.Note;
+import com.github.anastr.speedviewlib.components.note.TextNote;
 
 import org.quark.dr.socketcan.CanSocket;
 
@@ -21,9 +25,9 @@ public class CanAdapter {
     private Thread          socketThread;
     private long            mSpeedMemory, mRpmMemory, mOdometerMemory, mOilLevelMemory;
     private long            mWaterTempMemory, mFuelLevelMemory, mExternalTempMemory;
-    private long            mLockMemory, mFuelAcc;
+    private long            mLockMemory, mFuelAcc, mSpeedLimiterMemory;
     private long[]          mTimeStamps;
-    byte                    mLastFuelConsumptionMemory;
+    byte                    mLastFuelConsumptionMemory, mLimiterEnableMemory;
     volatile private boolean socketThreadRunning = true;
 
     private static class SafeHandler extends Handler {
@@ -66,17 +70,39 @@ public class CanAdapter {
                     adapter.mOdometerMemory = odometer;
                 }
                 if (oillevel != adapter.mOilLevelMemory){
-                    adapter.mOilView.speedTo(oillevel >> 2, 2000);
+                    adapter.mOilView.speedTo(oillevel >> 2, 4000);
                     adapter.mOilLevelMemory = oillevel;
                 }
                 if (fuellevel != adapter.mFuelLevelMemory){
-                    adapter.mFuelLevelView.speedTo(fuellevel, 5000);
+                    adapter.mFuelLevelView.speedTo(fuellevel, 15000);
                     adapter.mFuelLevelMemory = fuellevel;
                 }
             } else if (canaddr == 0x0551){
                 long time = cants - adapter.mTimeStamps[1];
                 int waterTemp = data[0] & 0xFF;
                 byte fuelConsumption = data[1];
+                byte limiter = (byte)((data[5] & 0b01110000) >> 4);
+                long speedlimit = data[4] & 0xFF;
+
+                if (limiter != adapter.mLimiterEnableMemory){
+                    if (limiter == 0){
+                        adapter.mSpeedView.removeAllNotes();
+                    }
+                    adapter.mLimiterEnableMemory = limiter;
+                }
+
+                if ( (speedlimit != adapter.mSpeedLimiterMemory) && limiter > 0 ){
+                    adapter.mSpeedView.removeAllNotes();
+                    TextNote mSpeedNote = new TextNote(adapter.mMainActivity.getApplicationContext(), String.valueOf(speedlimit))
+                            .setPosition(Note.Position.CenterIndicator)
+                            .setAlign(Note.Align.Top)
+                            .setTextTypeFace(Typeface.create(Typeface.DEFAULT, Typeface.BOLD))
+                            .setBackgroundColor(Color.parseColor("#41FF41"))
+                            .setCornersRound(20f)
+                            .setTextSize(adapter.mSpeedView.dpTOpx(10f));
+                    adapter.mSpeedView.addNote(mSpeedNote, TextNote.INFINITE);
+                    adapter.mSpeedLimiterMemory = speedlimit;
+                }
 
                 byte  diff = (byte)(fuelConsumption - adapter.mLastFuelConsumptionMemory);
                 adapter.mLastFuelConsumptionMemory = fuelConsumption;
@@ -87,7 +113,7 @@ public class CanAdapter {
                     adapter.mWaterTempMemory = waterTemp;
                 }
 
-                if (time > 400) {
+                if (time > 300) {
                     float seconds = time * 0.001f;
                     float mm3 = (float)adapter.mFuelAcc * 80.f;
                     float mm3perheour = (mm3 / seconds) * 3600.f;
@@ -96,7 +122,8 @@ public class CanAdapter {
                     adapter.mFuelAcc = 0;
 
                     if (adapter.mSpeedMemory > 2000) {
-                        float dm3per100kmh = (dm3perhour * 100.f) / (float) adapter.mSpeedMemory;
+                        // Speed is in km/h * 100, so do not multiply dm3perhour by 100
+                        float dm3per100kmh = (dm3perhour) / ((float) adapter.mSpeedMemory);
                         String fuelstring = String.format("%.2f", dm3per100kmh) + " L/100";
                         adapter.mFuelConsumptionView.setText(fuelstring);
                     } else {

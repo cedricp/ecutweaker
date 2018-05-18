@@ -20,6 +20,8 @@ extern "C" {
 
 #include "jni.h"
 
+// Code borrowed from https://github.com/entropia/libsocket-can-java
+// Added ISO_TP send/recv method + timeouts
 
 static const int ERRNO_BUFFER_LEN = 1024;
 
