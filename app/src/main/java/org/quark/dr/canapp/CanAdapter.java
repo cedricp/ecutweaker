@@ -30,9 +30,10 @@ public class CanAdapter {
     byte                    mLastFuelConsumptionMemory, mLimiterEnableMemory;
     volatile private boolean socketThreadRunning = true;
 
-    private static class SafeHandler extends Handler {
+    private static class canDataHandler extends Handler {
         private final WeakReference<CanAdapter> mAdapter;
-        public SafeHandler(CanAdapter adapter) {
+        public canDataHandler(CanAdapter adapter) {
+            super(adapter.mMainActivity.getMainLooper());
             mAdapter = new WeakReference<>(adapter);
         }
 
@@ -45,85 +46,92 @@ public class CanAdapter {
             }
 
             CanSocket.CanFrame frame = (CanSocket.CanFrame)msg.obj;
-            int canaddr = frame.getCanId().getAddress();
-            long cants = frame.getTimeStamp();
-            byte[] data = frame.getData();
-            if (canaddr == 0x0354) {
-                long time = cants - adapter.mTimeStamps[0];
-                adapter.mTimeStamps[0] = cants;
-                int vehicleSpeed = data[1] & 0xFF;
-                vehicleSpeed |= (data[0] & 0xFF) << 8;
+            int can_id = frame.getCanId().getAddress();
+            long frame_timestamp = frame.getTimeStamp();
+
+            byte[] frame_data = frame.getData();
+            if (can_id == 0x0354) {
+                long time = frame_timestamp - adapter.mTimeStamps[0];
+                adapter.mTimeStamps[0] = frame_timestamp;
+                int vehicleSpeed = frame_data[1] & 0xFF;
+                vehicleSpeed |= (frame_data[0] & 0xFF) << 8;
 
                 if (vehicleSpeed != adapter.mSpeedMemory) {
                     adapter.mSpeedView.speedTo((float)vehicleSpeed * 0.01f, time);
                     adapter.mSpeedMemory = vehicleSpeed;
                 }
-            } else if (canaddr == 0x0715){
-                long odometer = (data[0] & 0xFF) << 16;
-                odometer |= (data[1] & 0xFF) << 8;
-                odometer |= data[2] & 0xFF;
-                int oillevel = (data[3] & 0xFF) & 0b00111100;
-                int fuellevel = (data[4] & 0b11111110) >> 1;
+            } else if (can_id == 0x0715){
+                long odometer = (frame_data[0] & 0xFF) << 16;
+                odometer     |= (frame_data[1] & 0xFF) << 8;
+                odometer     |= frame_data[2] & 0xFF;
+                int oil_level  = frame_data[3] & 0b00111100;
+                int fuel_level = (frame_data[4] & 0b11111110) >> 1;
 
                 if (odometer != adapter.mOdometerMemory){
                     adapter.mOdometerView.setText(String.valueOf(odometer) + " KM");
                     adapter.mOdometerMemory = odometer;
                 }
-                if (oillevel != adapter.mOilLevelMemory){
-                    adapter.mOilView.speedTo(oillevel >> 2, 4000);
-                    adapter.mOilLevelMemory = oillevel;
+                if (oil_level != adapter.mOilLevelMemory){
+                    adapter.mOilView.speedTo(oil_level >> 2, 4000);
+                    adapter.mOilLevelMemory = oil_level;
                 }
-                if (fuellevel != adapter.mFuelLevelMemory){
-                    adapter.mFuelLevelView.speedTo(fuellevel, 15000);
-                    adapter.mFuelLevelMemory = fuellevel;
+                if (fuel_level != adapter.mFuelLevelMemory){
+                    adapter.mFuelLevelView.speedTo(fuel_level, 15000);
+                    adapter.mFuelLevelMemory = fuel_level;
                 }
-            } else if (canaddr == 0x0551){
-                long time = cants - adapter.mTimeStamps[1];
-                int waterTemp = data[0] & 0xFF;
-                byte fuelConsumption = data[1];
-                byte limiter = (byte)((data[5] & 0b01110000) >> 4);
-                long speedlimit = data[4] & 0xFF;
+            } else if (can_id == 0x0551){
+                long time = frame_timestamp - adapter.mTimeStamps[1];
+                int water_temp = frame_data[0] & 0xFF;
+                byte fuel_consumption = frame_data[1];
+                byte limiter_byte = (byte)((frame_data[5] & 0b01110000) >> 4);
+                long speed_limit = frame_data[4] & 0xFF;
+                boolean draw_limiter_note = (limiter_byte > 0) && (speed_limit != 254);
+                boolean limiter_switched_on = false;
 
-                if (limiter != adapter.mLimiterEnableMemory){
-                    if (limiter == 0){
-                        adapter.mSpeedView.removeAllNotes();
-                    }
-                    adapter.mLimiterEnableMemory = limiter;
-                }
-
-                if ( (speedlimit != adapter.mSpeedLimiterMemory) && limiter > 0 ){
-                    adapter.mSpeedView.removeAllNotes();
-                    TextNote mSpeedNote = new TextNote(adapter.mMainActivity.getApplicationContext(), String.valueOf(speedlimit))
-                            .setPosition(Note.Position.CenterIndicator)
-                            .setAlign(Note.Align.Top)
-                            .setTextTypeFace(Typeface.create(Typeface.DEFAULT, Typeface.BOLD))
-                            .setBackgroundColor(Color.parseColor("#41FF41"))
-                            .setCornersRound(20f)
-                            .setTextSize(adapter.mSpeedView.dpTOpx(10f));
-                    adapter.mSpeedView.addNote(mSpeedNote, TextNote.INFINITE);
-                    adapter.mSpeedLimiterMemory = speedlimit;
-                }
-
-                byte  diff = (byte)(fuelConsumption - adapter.mLastFuelConsumptionMemory);
-                adapter.mLastFuelConsumptionMemory = fuelConsumption;
+                byte  diff = (byte)(fuel_consumption - adapter.mLastFuelConsumptionMemory);
+                adapter.mLastFuelConsumptionMemory = fuel_consumption;
                 adapter.mFuelAcc += diff & 0xFF;
 
-                if (waterTemp != adapter.mWaterTempMemory){
-                    adapter.mWaterTempView.speedTo(waterTemp - 40, 3000);
-                    adapter.mWaterTempMemory = waterTemp;
+                if (limiter_byte != adapter.mLimiterEnableMemory){
+                    if (limiter_byte == 0){
+                        adapter.mSpeedView.removeAllNotes();
+                    } else {
+                        limiter_switched_on = true;
+                    }
+                    adapter.mLimiterEnableMemory = limiter_byte;
+                }
+
+                if ( limiter_switched_on || (speed_limit != adapter.mSpeedLimiterMemory) ){
+                    adapter.mSpeedView.removeAllNotes();
+                    if (draw_limiter_note) {
+                        TextNote mSpeedNote = new TextNote(adapter.mMainActivity.getApplicationContext(), String.valueOf(speed_limit))
+                                .setPosition(Note.Position.CenterIndicator)
+                                .setAlign(Note.Align.Top)
+                                .setTextTypeFace(Typeface.create(Typeface.DEFAULT, Typeface.BOLD))
+                                .setBackgroundColor(Color.parseColor("#41FF41"))
+                                .setCornersRound(20f)
+                                .setTextSize(adapter.mSpeedView.dpTOpx(15f));
+                        adapter.mSpeedView.addNote(mSpeedNote, TextNote.INFINITE);
+                    }
+                    adapter.mSpeedLimiterMemory = speed_limit;
+                }
+
+                if (water_temp != adapter.mWaterTempMemory){
+                    adapter.mWaterTempView.speedTo(water_temp - 40, 3000);
+                    adapter.mWaterTempMemory = water_temp;
                 }
 
                 if (time > 300) {
-                    float seconds = time * 0.001f;
+                    float seconds = (float)time * 0.001f;
                     float mm3 = (float)adapter.mFuelAcc * 80.f;
                     float mm3perheour = (mm3 / seconds) * 3600.f;
                     float dm3perhour = mm3perheour * 0.000001f;
-                    adapter.mTimeStamps[1] = cants;
+                    adapter.mTimeStamps[1] = frame_timestamp;
                     adapter.mFuelAcc = 0;
 
                     if (adapter.mSpeedMemory > 2000) {
-                        // Speed is in km/h * 100, so do not multiply dm3perhour by 100
-                        float dm3per100kmh = (dm3perhour) / ((float) adapter.mSpeedMemory);
+                        // mSpeedMemory is in km/h * 100
+                        float dm3per100kmh = (dm3perhour * 10000.f) / ((float) adapter.mSpeedMemory);
                         String fuelstring = String.format("%.2f", dm3per100kmh) + " L/100";
                         adapter.mFuelConsumptionView.setText(fuelstring);
                     } else {
@@ -131,19 +139,19 @@ public class CanAdapter {
                         adapter.mFuelConsumptionView.setText(fuelstring);
                     }
                 }
-            } else if (canaddr == 0x0181) {
-                long time = cants - adapter.mTimeStamps[2];
-                adapter.mTimeStamps[2] = cants;
-                int rpm = (data[0] & 0xFF) << 8;
-                rpm |= data[1] & 0xFF;
+            } else if (can_id == 0x0181) {
+                long time = frame_timestamp - adapter.mTimeStamps[2];
+                adapter.mTimeStamps[2] = frame_timestamp;
+                int rpm = (frame_data[0] & 0xFF) << 8;
+                rpm |= frame_data[1] & 0xFF;
 
                 if (rpm != adapter.mRpmMemory){
                     adapter.mRpmView.speedTo((rpm * 0.00125f), time);
                     adapter.mRpmMemory = rpm;
                 }
-            } else if (canaddr == 0x060D) {
-                int globallock = data[2] & 0b00011000;
-                int externaltemp = data[4] & 0xFF;
+            } else if (can_id == 0x060D) {
+                int globallock = frame_data[2] & 0b00011000;
+                int externaltemp = frame_data[4] & 0xFF;
 
                 if (externaltemp != adapter.mExternalTempMemory){
                     adapter.mExternalTempView.setText(String.valueOf(externaltemp - 40) + " °C");
@@ -161,7 +169,7 @@ public class CanAdapter {
 
     CanAdapter(MainActivity activity){
         mMainActivity = activity;
-        mTimeStamps         = new long[10];
+        mTimeStamps         = new long[5];
         mWaterTempView      = activity.findViewById(R.id.waterTempView);
         mFuelLevelView      = activity.findViewById(R.id.fuelLevelView);
         mOilView            = activity.findViewById(R.id.oilLevelView);
@@ -172,7 +180,7 @@ public class CanAdapter {
         mFuelConsumptionView = activity.findViewById(R.id.fuelView);
         mTimeView           = activity.findViewById(R.id.timeView);
 
-        handler = new SafeHandler(this);
+        handler = new canDataHandler(this);
 
         socketThread = new Thread(new Runnable() {
             public void run() {
@@ -185,9 +193,13 @@ public class CanAdapter {
                         Log.i(TAG, "interface bound : " + caninterface.toString());
                         while (true) {
                             CanSocket.CanFrame frame = canSockAdapter.recv();
-                            Message message = handler.obtainMessage();
-                            message.obj = frame;
-                            handler.sendMessage(message);
+                            int id = frame.getCanId().getAddress();
+                            // Filter out unnecessary messages
+                            if (id == 0x060D || id == 0x0181 || id == 0x0551 || id == 0x0715 || id == 0x0354) {
+                                Message message = handler.obtainMessage();
+                                message.obj = frame;
+                                handler.sendMessage(message);
+                            }
 
                             if (Thread.currentThread().isInterrupted() || !socketThreadRunning) {
                                 Log.i(TAG, "Thread stop");
