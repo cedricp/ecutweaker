@@ -1,6 +1,7 @@
-
 package org.quark.dr.socketcan;
 
+// Code borrowed from https://github.com/entropia/libsocket-can-java
+// Added ISO_TP send/recv method + timeouts
 
 import java.io.Closeable;
 import java.io.IOException;

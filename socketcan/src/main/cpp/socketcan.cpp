@@ -20,6 +20,8 @@ extern "C" {
 
 #include "jni.h"
 
+// Code borrowed from https://github.com/entropia/libsocket-can-java
+// Added ISO_TP send/recv method + timeouts
 
 static const int ERRNO_BUFFER_LEN = 1024;
 
@@ -294,7 +296,7 @@ extern "C" {
                                                         static_cast<size_t>(nbytes -
                                                                             offsetof(struct can_frame,
                                                                                      data))));
-        const jclass can_frame_clazz = env->FindClass("org/quark/dr/canapp/"
+        const jclass can_frame_clazz = env->FindClass("org/quark/dr/socketcan/"
                                                               "CanSocket$CanFrame");
         if (can_frame_clazz == NULL) {
             return NULL;
