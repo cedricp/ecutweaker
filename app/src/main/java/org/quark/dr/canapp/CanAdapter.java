@@ -66,11 +66,11 @@ public class CanAdapter {
                     adapter.mOdometerMemory = odometer;
                 }
                 if (oillevel != adapter.mOilLevelMemory){
-                    adapter.mOilView.speedTo(oillevel >> 2, 2000);
+                    adapter.mOilView.speedTo(oillevel >> 2, 4000);
                     adapter.mOilLevelMemory = oillevel;
                 }
                 if (fuellevel != adapter.mFuelLevelMemory){
-                    adapter.mFuelLevelView.speedTo(fuellevel, 5000);
+                    adapter.mFuelLevelView.speedTo(fuellevel, 15000);
                     adapter.mFuelLevelMemory = fuellevel;
                 }
             } else if (canaddr == 0x0551){
@@ -96,7 +96,8 @@ public class CanAdapter {
                     adapter.mFuelAcc = 0;
 
                     if (adapter.mSpeedMemory > 2000) {
-                        float dm3per100kmh = (dm3perhour * 100.f) / (float) adapter.mSpeedMemory;
+                        // Speed is in km/h * 100
+                        float dm3per100kmh = (dm3perhour) / ((float) adapter.mSpeedMemory);
                         String fuelstring = String.format("%.2f", dm3per100kmh) + " L/100";
                         adapter.mFuelConsumptionView.setText(fuelstring);
                     } else {
