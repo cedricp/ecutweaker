@@ -294,7 +294,7 @@ extern "C" {
                                                         static_cast<size_t>(nbytes -
                                                                             offsetof(struct can_frame,
                                                                                      data))));
-        const jclass can_frame_clazz = env->FindClass("org/quark/dr/canapp/"
+        const jclass can_frame_clazz = env->FindClass("org/quark/dr/socketcan/"
                                                               "CanSocket$CanFrame");
         if (can_frame_clazz == NULL) {
             return NULL;
