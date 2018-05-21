@@ -54,6 +54,7 @@ public final class CanSocket implements Closeable {
     private static native int _openSocketISOTP() throws IOException;
     private static native void _close(final int fd) throws IOException;
     private static native void _setNonBlocking(final int fd) throws IOException;
+    private static native void _setFilters(final int fd, final int[] farray, final int[] marray) throws IOException;
 
     private static native int _fetchInterfaceMtu(final int fd,
                                                  final String ifName) throws IOException;
@@ -395,6 +396,10 @@ public final class CanSocket implements Closeable {
 
     public CanFrame recv() throws IOException {
         return recv(1000);
+    }
+
+    public void setFilterMask(int[] filters, int[] masks) throws IOException {
+        _setFilters(_fd, filters, masks);
     }
 
     @Override
