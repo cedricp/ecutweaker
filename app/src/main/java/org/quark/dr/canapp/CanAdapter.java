@@ -194,7 +194,7 @@ public class CanAdapter {
                         while (true) {
                             CanSocket.CanFrame frame = canSockAdapter.recv();
                             int id = frame.getCanId().getAddress();
-                            // Filter out unnecessary messages
+                            // Filter out unnecessary frames
                             if (id == 0x060D || id == 0x0181 || id == 0x0551 || id == 0x0715 || id == 0x0354) {
                                 Message message = handler.obtainMessage();
                                 message.obj = frame;

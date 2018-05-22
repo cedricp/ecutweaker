@@ -318,29 +318,29 @@ JNIEXPORT jobject JNICALL Java_org_quark_dr_socketcan_CanSocket__1recvFrame
 }
 
 JNIEXPORT void JNICALL Java_org_quark_dr_socketcan_CanSocket__1setFilters
-        (JNIEnv *env, jclass obj, jint fd, jintArray farrays, jintArray marrays) {
-    const jsize flen = env->GetArrayLength(farrays);
-    const jsize mlen = env->GetArrayLength(marrays);
-    jint *farray, *marray;
+        (JNIEnv *env, jclass obj, jint fd, jintArray farray, jintArray marray) {
+    const jsize flen = env->GetArrayLength(farray);
+    const jsize mlen = env->GetArrayLength(marray);
+    jint *fbuffer, *mbuffer;
 
     if (flen != mlen){
         throwIllegalArgumentException(env, "Filter array size != Mask array size");
         return;
     }
 
-    env->GetIntArrayRegion(farrays, 0, flen, farray);
+    env->GetIntArrayRegion(farray, 0, flen, fbuffer);
     if (env->ExceptionCheck() == JNI_TRUE) {
         return;
     }
-    env->GetIntArrayRegion(farrays, 0, flen, marray);
+    env->GetIntArrayRegion(farray, 0, flen, mbuffer);
     if (env->ExceptionCheck() == JNI_TRUE) {
         return;
     }
 
     can_filter* canfilters = (can_filter*)calloc(flen, sizeof(can_filter));
     for (int i = 0; i < flen; ++i){
-        canfilters[i].can_id = farray[i];
-        canfilters[i].can_mask = marray[i];
+        canfilters[i].can_id = (unsigned int)fbuffer[i];
+        canfilters[i].can_mask = (unsigned int)mbuffer[i];
     }
 
     if (env->ExceptionCheck() == JNI_TRUE) {
