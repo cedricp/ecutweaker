@@ -28,35 +28,10 @@
             tools:layout_editor_absoluteX="150dp"
             tools:layout_editor_absoluteY="157dp">
 
-            <com.github.anastr.speedviewlib.DeluxeSpeedView
-                android:id="@+id/speedView"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_weight="0"
-                android:background="@android:color/background_dark"
-                app:sv_indicator="NeedleIndicator"
-                app:sv_maxSpeed="240"
-                app:sv_minSpeed="0"
-                app:sv_speedBackgroundColor="@android:color/black"
-                app:sv_speedTextColor="@android:color/white"
-                app:sv_speedTextFormat="INTEGER"
-                app:sv_speedTextSize="60dp"
-                app:sv_speedTextTypeface="fonts/ds_digii.ttf"
-                app:sv_textRightToLeft="false"
-                app:sv_textSize="25dp"
-                app:sv_textTypeface="fonts/ds_digii.ttf"
-                app:sv_tickNumber="9"
-                app:sv_tickPadding="4dp"
-                app:sv_unitTextColor="@android:color/holo_green_light"
-                app:sv_unitUnderSpeedText="true"
-                app:sv_withEffects="true"
-                app:sv_withIndicatorLight="false"
-                app:sv_withTremble="false" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
                 android:orientation="vertical">
 
                 <TextView
@@ -71,6 +46,49 @@
                     android:textSize="25sp" />
 
                 <TextView
+                    android:id="@+id/fuelView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0"
+                    android:text="---"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="24sp" />
+
+                <com.github.anastr.speedviewlib.DeluxeSpeedView
+                    android:id="@+id/speedView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0"
+                    android:background="@android:color/background_dark"
+                    app:sv_indicator="NeedleIndicator"
+                    app:sv_maxSpeed="240"
+                    app:sv_minSpeed="0"
+                    app:sv_speedBackgroundColor="@android:color/black"
+                    app:sv_speedTextColor="@android:color/white"
+                    app:sv_speedTextFormat="INTEGER"
+                    app:sv_speedTextSize="60dp"
+                    app:sv_speedTextTypeface="fonts/ds_digii.ttf"
+                    app:sv_textRightToLeft="false"
+                    app:sv_textSize="25dp"
+                    app:sv_textTypeface="fonts/ds_digii.ttf"
+                    app:sv_tickNumber="9"
+                    app:sv_tickPadding="4dp"
+                    app:sv_unitTextColor="@android:color/holo_green_light"
+                    app:sv_unitUnderSpeedText="true"
+                    app:sv_withEffects="true"
+                    app:sv_withIndicatorLight="false"
+                    app:sv_withTremble="false" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
                     android:id="@+id/externalTempView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -79,16 +97,6 @@
                     android:textAlignment="center"
                     android:textColor="@android:color/white"
                     android:textSize="35sp" />
-
-                <TextView
-                    android:id="@+id/fuelView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="0"
-                    android:text="0 mm3"
-                    android:textAlignment="center"
-                    android:textColor="@android:color/white"
-                    android:textSize="24sp" />
 
                 <TextView
                     android:id="@+id/timeView"

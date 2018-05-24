@@ -332,7 +332,7 @@ JNIEXPORT void JNICALL Java_org_quark_dr_socketcan_CanSocket__1setFilters
     if (env->ExceptionCheck() == JNI_TRUE) {
         return;
     }
-    env->GetIntArrayRegion(farray, 0, flen, mbuffer);
+    env->GetIntArrayRegion(marray, 0, flen, mbuffer);
     if (env->ExceptionCheck() == JNI_TRUE) {
         return;
     }
