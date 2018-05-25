@@ -1,22 +1,13 @@
 package org.quark.dr.ecu;
 
-import android.support.annotation.RequiresPermission;
-import android.util.JsonReader;
-import android.util.Log;
-
-import org.json.JSONObject;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.quark.dr.ecu.R;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
@@ -62,19 +53,19 @@ public class unitTest {
         BigInteger bi = new BigInteger("FF", 16);
         BigInteger bi2 = new BigInteger("11111110", 2);
 
-        assertThat(ecu.hex8_tosigned(125), is(125));
-        assertThat(ecu.hex8_tosigned(254), is(-2));
-        assertThat(ecu.hex16_tosigned(63000), is(-2536));
-        assertThat(ecu.hex16_tosigned(6000), is(6000));
+        assertThat(ecu.hex8ToSigned(125), is(125));
+        assertThat(ecu.hex8ToSigned(254), is(-2));
+        assertThat(ecu.hex16ToSigned(63000), is(-2536));
+        assertThat(ecu.hex16ToSigned(6000), is(6000));
         assertThat(ecu.padLeft("FFFF", 8, "0"), is("0000FFFF"));
         assertThat(ecu.hexStringToByteArray("00FF0A"), is(testbyte));
+        assertThat(ecu.integerToBinaryString(1), is ("00000001"));
+        assertThat(ecu.integerToBinaryString(254), is ("11111110"));
 
         assertThat(bi.intValue(), is(255));
         assertThat(bi2.intValue(), is(254));
 
-        assertThat(ecu.integer_tobinarystring(254), is("11111110"));
-
-        HashMap<String, String> hash = ecu.getRequestValues(ucttest, "ReadDataByLocalIdentifier: misc timings and values");
+        HashMap<String, String> hash = ecu.getRequestValues(ucttest, "ReadDataByLocalIdentifier: misc timings and values", true);
 
         Iterator<String> it = hash.keySet().iterator();
         for (;it.hasNext();){

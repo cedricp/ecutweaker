@@ -1,11 +1,15 @@
 package org.quark.dr.ecu;
 
+import android.widget.ProgressBar;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 public class Ecu {
@@ -116,6 +120,119 @@ public class Ecu {
             }
         }
 
+        public byte[] setValue(Object value, byte[] byte_list, EcuDataItem dataitem){
+            int start_byte = dataitem.firstbyte - 1;
+            int start_bit = dataitem.bitoffset;
+            boolean little_endian = false;
+
+            if (global_endian == "Little")
+                little_endian = true;
+
+            if (dataitem.endian == "Little")
+                little_endian = true;
+
+            if (dataitem.endian == "Big")
+                little_endian = false;
+
+            String finalbinvalue = "";
+
+            if (bytesascii){
+                if (value instanceof String == false){
+                    throw new ClassCastException("Value must be a string");
+                }
+                String strvalue = (String)value;
+                if (bytescount > strvalue.length())
+                    strvalue = padLeft(strvalue, bytescount, " ");
+                if (bytescount < strvalue.length())
+                    strvalue = strvalue.substring(0, bytescount);
+
+                strvalue = stringToHex(strvalue);
+                finalbinvalue = hexToBinary(strvalue);
+            }
+
+            if (scaled){
+                // We want a float or integer here
+                float floatval;
+                if (value instanceof Integer){
+                    floatval = (float)((Integer)value);
+                } else if (value instanceof Float){
+                    floatval = (float)value;
+                } else {
+                    throw new ClassCastException("Value must be an integer or float");
+                }
+
+                floatval = ((floatval * divideby) - offset) / step;
+                int intval = (int)floatval;
+                finalbinvalue = integerToBinaryString(intval);
+            } else {
+                // Hex string
+                if (value instanceof String == false){
+                    throw new ClassCastException("Value must be a string");
+                }
+                finalbinvalue = hexToBinary((String)value);
+            }
+
+            finalbinvalue = padLeft(finalbinvalue, bitscount, "0");
+
+            int numreqbytes = (int)(Math.ceil((float)bitscount + start_bit) / 8.f);
+            byte[] request_bytes = Arrays.copyOfRange(byte_list, start_byte, start_byte + numreqbytes);
+            String requestasbin = "";
+
+            for (int i = 0; i < request_bytes.length; ++i){
+                requestasbin += integerToBinaryString(request_bytes[i]);
+            }
+
+            char[] binreq = requestasbin.toCharArray();
+            char[] binfin = finalbinvalue.toCharArray();
+
+            if (!little_endian){
+                // Big endian
+                for (int i = 0; i < bitscount; ++i){
+                    binreq[i + start_bit] = binfin[i];
+                }
+            } else {
+                // Little endian
+                int remainingbytes = bitscount;
+                int lastbit = 7 - start_bit + 1;
+                int firstbit = lastbit - bitscount;
+
+                if (firstbit < 0)
+                    firstbit = 0;
+
+                int count = 0;
+                for (int i = firstbit; i < lastbit; ++i, ++count){
+                    binreq[i] = binfin[count];
+                }
+
+                remainingbytes -= count;
+
+                int currentbyte = 1;
+                while(remainingbytes >= 8){
+                    for (int i = 0; i < 8; ++i){
+                        binreq[currentbyte * 8 + i] = binfin[count];
+                        ++count;
+                        remainingbytes -= 8;
+                        currentbyte += 1;
+                    }
+                }
+
+                if (remainingbytes > 0){
+                    lastbit = 8;
+                    firstbit = lastbit - remainingbytes;
+                    for(int i = firstbit; i < lastbit; ++i){
+                        binreq[currentbyte * 8 + i] = binfin[count];
+                        ++count;
+                    }
+
+                }
+            }
+
+            BigInteger bigfinal = new BigInteger(new String(binreq), 2);
+            String hexfinal = bigfinal.toString(16);
+
+            return hexStringToByteArray(hexfinal);
+        }
+
         public String getHexValue(byte[] resp, EcuDataItem dataitem){
             int startByte = dataitem.firstbyte;
             int startBit = dataitem.bitoffset;
@@ -140,14 +257,14 @@ public class Ecu {
                 throw new ArrayIndexOutOfBoundsException("Response too short");
             }
 
-            String hextobin = "";
+            String hextobin = new String();
 
             for (int i = 0; i < reqdatabytelen; ++i){
                 byte b = resp[i+sb];
-                hextobin += integer_tobinarystring(b);
+                hextobin += integerToBinaryString(b);
             }
 
-            String hex = "";
+            String hex = new String();
             if (little_endian){
                 int totalremainingbits = bits;
                 int lastbit = 7 - startBit + 1;
@@ -190,6 +307,10 @@ public class Ecu {
             return Integer.parseInt(val);
         }
 
+        public String getDisplayValueWithUnit(byte[] resp, EcuDataItem dataitem){
+            return getDisplayValue(resp, dataitem) + " " + unit;
+        }
+
         public String getDisplayValue(byte[] resp, EcuDataItem dataitem){
             String hexval = getHexValue(resp, dataitem);
              if (bytesascii){
@@ -204,10 +325,10 @@ public class Ecu {
                  if (signed){
                      // Check that
                      if (bytescount == 1) {
-                         val = hex8_tosigned(val);
+                         val = hex8ToSigned(val);
                      } else if (bytescount == 2){
-                         val = hex16_tosigned(val);
-                     }
+                         val = hex16ToSigned(val);
+                     } // 32 bits are already signed
                  }
 
                  if (lists.containsKey(val))
@@ -221,9 +342,9 @@ public class Ecu {
 
             if (signed){
                 if (bytescount == 1){
-                    val = hex8_tosigned(val);
+                    val = hex8ToSigned(val);
                 } else if (bytescount == 2){
-                    val = hex8_tosigned(val);
+                    val = hex8ToSigned(val);
                 }
             }
 
@@ -246,15 +367,22 @@ public class Ecu {
         }
     }
 
-    public static String integer_tobinarystring(int b){
-        return String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0');
+    public static String integerToBinaryString(int b){
+        return padLeft(Integer.toBinaryString(b & 0xFF), 8, "0");
     }
 
-    public static int hex8_tosigned(int val){
+    public String hexToBinary(String Hex)
+    {
+        BigInteger i = new BigInteger(Hex, 16);
+        String Bin = i.toString(2);
+        return Bin;
+    }
+
+    public static int hex8ToSigned(int val){
         return -((val) & 0x80) | (val & 0x7f);
     }
 
-    public static int hex16_tosigned(int val){
+    public static int hex16ToSigned(int val){
         return -((val) & 0x8000) | (val & 0x7fff);
     }
 
@@ -266,6 +394,16 @@ public class Ecu {
                     + Character.digit(s.charAt(i+1), 16));
         }
         return data;
+    }
+
+    public static String stringToHex(String string) {
+        StringBuilder buf = new StringBuilder(1024);
+        for (char ch: string.toCharArray()) {
+            if (buf.length() > 0)
+                buf.append(' ');
+            buf.append(String.format("%02x", (int) ch));
+        }
+        return buf.toString();
     }
 
     public static String padLeft(String str, int length, String padChar) {
@@ -380,7 +518,7 @@ public class Ecu {
         return Integer.getInteger(ecu_recv_id);
     }
 
-    HashMap<String, String> getRequestValues(byte[] bytes, String requestname){
+    HashMap<String, String> getRequestValues(byte[] bytes, String requestname, boolean with_units){
         EcuRequest request = getRequest(requestname);
         HashMap<String, String> hash = new HashMap<>();
         Set<String> keys = request.recvbyte_dataitems.keySet();
@@ -389,8 +527,13 @@ public class Ecu {
             String key = it.next();
             EcuDataItem dataitem = request.recvbyte_dataitems.get(key);
             EcuData ecudata = getData(key);
-            String val = ecudata.getDisplayValue(bytes, dataitem) + " " + ecudata.unit;
-            hash.put(key, val);
+            if (with_units) {
+                String val = ecudata.getDisplayValue(bytes, dataitem);
+                hash.put(key, val);
+            } else {
+                String val = ecudata.getDisplayValueWithUnit(bytes, dataitem);
+                hash.put(key, val);
+            }
         }
         return hash;
     }
