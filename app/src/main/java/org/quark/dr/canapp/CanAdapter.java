@@ -25,7 +25,7 @@ public class CanAdapter {
     private Thread          socketThread;
     private long            mSpeedMemory, mRpmMemory, mOdometerMemory, mOilLevelMemory;
     private long            mWaterTempMemory, mFuelLevelMemory, mExternalTempMemory;
-    private long            mLockMemory, mFuelAcc, mSpeedLimiterMemory;
+    private long            mLockMemory, mFuelAcc, mSpeedLimiterMemory, mFuelAcc2, mFuelTime2;
     private long[]          mTimeStamps;
     byte                    mLastFuelConsumptionMemory, mLimiterEnableMemory;
     volatile private boolean socketThreadRunning = true;
@@ -121,15 +121,17 @@ public class CanAdapter {
                     adapter.mWaterTempMemory = water_temp;
                 }
 
-                if (time > 300) {
-                    float seconds = (float)time * 0.001f;
-                    float mm3 = (float)adapter.mFuelAcc * 80.f;
+                if (time > 400) {
+                    float seconds = ((float)time + (float)adapter.mFuelTime2) * 0.001f;
+                    float mm3 = ((float)adapter.mFuelAcc + (float)adapter.mFuelAcc2) * 80.f;
                     float mm3perheour = (mm3 / seconds) * 3600.f;
                     float dm3perhour = mm3perheour * 0.000001f;
+                    adapter.mFuelTime2 = time;
+                    adapter.mFuelAcc2 = adapter.mFuelAcc;
                     adapter.mTimeStamps[1] = frame_timestamp;
                     adapter.mFuelAcc = 0;
 
-                    if (adapter.mSpeedMemory > 2000) {
+                    if (adapter.mSpeedMemory > 3000) {
                         // mSpeedMemory is in km/h * 100
                         float dm3per100kmh = (dm3perhour * 10000.f) / ((float) adapter.mSpeedMemory);
                         String fuelstring = String.format("%.2f", dm3per100kmh) + " L/100";
@@ -190,18 +192,21 @@ public class CanAdapter {
                         CanSocket canSockAdapter = new CanSocket(CanSocket.Mode.RAW);
                         CanSocket.CanInterface caninterface = new CanSocket.CanInterface(canSockAdapter, "can0");
                         canSockAdapter.bind(caninterface, 0x00, 0x00);
+                        // We are interested in only some frames
+                        int[] filters = new int[]{0x060D, 0x0181, 0x0551, 0x0715, 0x0354};
+                        int[] masks = new int[]{0x07FF, 0x07FF, 0x07FF, 0x07FF, 0x07FF};
+                        canSockAdapter.setFilterMask(filters, masks);
+
                         Log.i(TAG, "interface bound : " + caninterface.toString());
+
                         while (true) {
                             CanSocket.CanFrame frame = canSockAdapter.recv();
-                            int id = frame.getCanId().getAddress();
-                            // Filter out unnecessary frames
-                            if (id == 0x060D || id == 0x0181 || id == 0x0551 || id == 0x0715 || id == 0x0354) {
-                                Message message = handler.obtainMessage();
-                                message.obj = frame;
-                                handler.sendMessage(message);
-                            }
+                            Message message = handler.obtainMessage();
+                            message.obj = frame;
+                            handler.sendMessage(message);
 
                             if (Thread.currentThread().isInterrupted() || !socketThreadRunning) {
+                                canSockAdapter.close();
                                 Log.i(TAG, "Thread stop");
                                 return;
                             }
