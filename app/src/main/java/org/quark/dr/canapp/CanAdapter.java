@@ -11,6 +11,7 @@ import com.github.anastr.speedviewlib.TubeSpeedometer;
 import com.github.anastr.speedviewlib.components.note.Note;
 import com.github.anastr.speedviewlib.components.note.TextNote;
 
+import org.quark.dr.ecu.Ecu;
 import org.quark.dr.socketcan.CanSocket;
 
 import java.lang.ref.WeakReference;
