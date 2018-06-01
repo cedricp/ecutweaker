@@ -49,6 +49,7 @@ public class unitTest {
         byte[] ucttest = new byte[] {0x61, 0x0A, 0x16, 0x32, 0x32, 0x02, 0x58, 0x00, (byte)0xB4, 0x3C,
                 0x3C, 0x1E, 0x3C, 0x0A, 0x0A, 0x0A, 0x0A, 0x01, 0x2C, 0x5C, 0x61, 0x67, (byte)0xB5, (byte)0xBB,
                 (byte)0xC1, 0x0A, 0x5C};
+        byte[] ucttest2 = new byte[27];
 
         BigInteger bi = new BigInteger("FF", 16);
         BigInteger bi2 = new BigInteger("11111110", 2);
@@ -59,8 +60,8 @@ public class unitTest {
         assertThat(ecu.hex16ToSigned(6000), is(6000));
         assertThat(ecu.padLeft("FFFF", 8, "0"), is("0000FFFF"));
         assertThat(ecu.hexStringToByteArray("00FF0A"), is(testbyte));
-        assertThat(ecu.integerToBinaryString(1), is ("00000001"));
-        assertThat(ecu.integerToBinaryString(254), is ("11111110"));
+        assertThat(ecu.integerToBinaryString(1, 8), is ("00000001"));
+        assertThat(ecu.integerToBinaryString(254, 8), is ("11111110"));
 
         assertThat(bi.intValue(), is(255));
         assertThat(bi2.intValue(), is(254));
@@ -72,5 +73,16 @@ public class unitTest {
             String key = it.next();
             System.out.println(">>>>>>> " + key + " = " + hash.get(key));
         }
+        HashMap<String, Object> hash2 = new HashMap<>();
+        hash2.put("Timeout Supply Voltage Range 3", 1000);
+        hash2.put("Tolerance Window Button Open Timer", 5000);
+        hash2.put("Timeout Supply Voltage Range 4", 1000);
+        hash2.put("Timeout Buzzer Alert", 30);
+
+        byte[] frame = ecu.setRequestValues(ucttest2, "WriteDataByLocalIdentifier: misc timings and val.", hash2);
+        for(byte c : frame) {
+            System.out.format("%02X ", c);
+        }
+        System.out.println();
     }
 }

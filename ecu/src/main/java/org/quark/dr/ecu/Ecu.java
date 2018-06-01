@@ -1,7 +1,5 @@
 package org.quark.dr.ecu;
 
-import android.widget.ProgressBar;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -9,7 +7,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class Ecu {
@@ -148,28 +146,28 @@ public class Ecu {
 
                 strvalue = stringToHex(strvalue);
                 finalbinvalue = hexToBinary(strvalue);
-            }
-
-            if (scaled){
-                // We want a float or integer here
-                float floatval;
-                if (value instanceof Integer){
-                    floatval = (float)((Integer)value);
-                } else if (value instanceof Float){
-                    floatval = (float)value;
-                } else {
-                    throw new ClassCastException("Value must be an integer or float");
-                }
-
-                floatval = ((floatval * divideby) - offset) / step;
-                int intval = (int)floatval;
-                finalbinvalue = integerToBinaryString(intval);
             } else {
-                // Hex string
-                if (value instanceof String == false){
-                    throw new ClassCastException("Value must be a string");
+                if (scaled) {
+                    // We want a float or integer here
+                    float floatval;
+                    if (value instanceof Integer) {
+                        floatval = (float) ((Integer) value);
+                    } else if (value instanceof Float) {
+                        floatval = (float) value;
+                    } else {
+                        throw new ClassCastException("Value must be an integer or float");
+                    }
+
+                    floatval = ((floatval * divideby) - offset) / step;
+                    int intval = (int) floatval;
+                    finalbinvalue = integerToBinaryString(intval, bitscount);
+                } else {
+                    // Hex string
+                    if (value instanceof String == false) {
+                        throw new ClassCastException("Value must be a string");
+                    }
+                    finalbinvalue = hexToBinary((String) value);
                 }
-                finalbinvalue = hexToBinary((String)value);
             }
 
             finalbinvalue = padLeft(finalbinvalue, bitscount, "0");
@@ -179,11 +177,12 @@ public class Ecu {
             String requestasbin = "";
 
             for (int i = 0; i < request_bytes.length; ++i){
-                requestasbin += integerToBinaryString(request_bytes[i]);
+                requestasbin += integerToBinaryString(request_bytes[i], 8);
             }
 
             char[] binreq = requestasbin.toCharArray();
             char[] binfin = finalbinvalue.toCharArray();
+
 
             if (!little_endian){
                 // Big endian
@@ -227,10 +226,16 @@ public class Ecu {
                 }
             }
 
-            BigInteger bigfinal = new BigInteger(new String(binreq), 2);
-            String hexfinal = bigfinal.toString(16);
+            BigInteger valueashex = new BigInteger(new String(binreq), 2);
+            String str16 = padLeft(valueashex.toString(16), bytescount*2, "0");
 
-            return hexStringToByteArray(hexfinal);
+            for (int i = 0; i < numreqbytes; ++i){
+                String hexpart = str16.substring(i*2, i*2 + 2);
+                byte[] b = hexStringToByteArray(hexpart);
+                byte_list[i + start_byte] = b[0];
+            }
+
+            return byte_list;
         }
 
         public String getHexValue(byte[] resp, EcuDataItem dataitem){
@@ -261,7 +266,7 @@ public class Ecu {
 
             for (int i = 0; i < reqdatabytelen; ++i){
                 byte b = resp[i+sb];
-                hextobin += integerToBinaryString(b);
+                hextobin += integerToBinaryString(b, 8);
             }
 
             String hex = new String();
@@ -367,8 +372,8 @@ public class Ecu {
         }
     }
 
-    public static String integerToBinaryString(int b){
-        return padLeft(Integer.toBinaryString(b & 0xFF), 8, "0");
+    public static String integerToBinaryString(int b, int padding){
+        return padLeft(Integer.toBinaryString(b), padding, "0");
     }
 
     public String hexToBinary(String Hex)
@@ -407,6 +412,8 @@ public class Ecu {
     }
 
     public static String padLeft(String str, int length, String padChar) {
+        if (str.length() >= length)
+            return str.substring(0, length);
         String pad = "";
         for (int i = 0; i < length; i++) {
             pad += padChar;
@@ -431,6 +438,10 @@ public class Ecu {
         public HashMap<String, EcuDataItem> sendbyte_dataitems;
         public String name;
         public SDS sds;
+
+        EcuDataItem getSendDataItem(String item){
+            return sendbyte_dataitems.get(item);
+        }
 
         EcuRequest(JSONObject json) {
             sds = new SDS();
@@ -518,7 +529,7 @@ public class Ecu {
         return Integer.getInteger(ecu_recv_id);
     }
 
-    HashMap<String, String> getRequestValues(byte[] bytes, String requestname, boolean with_units){
+    public HashMap<String, String> getRequestValues(byte[] bytes, String requestname, boolean with_units){
         EcuRequest request = getRequest(requestname);
         HashMap<String, String> hash = new HashMap<>();
         Set<String> keys = request.recvbyte_dataitems.keySet();
@@ -536,6 +547,16 @@ public class Ecu {
             }
         }
         return hash;
+    }
+
+    public byte[] setRequestValues(byte[] barray, String requestname, HashMap<String, Object> hash){
+        EcuRequest req = getRequest(requestname);
+        for (Map.Entry<String, Object> entry: hash.entrySet()){
+            EcuDataItem item = req.getSendDataItem(entry.getKey());
+            EcuData data = getData(entry.getKey());
+            barray = data.setValue(entry.getValue(), barray, item);
+        }
+        return barray;
     }
 
     private void init(JSONObject ecudef){
