@@ -3,6 +3,9 @@ package org.quark.dr.ecu;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -154,9 +157,12 @@ public class Ecu {
                         floatval = (float) ((Integer) value);
                     } else if (value instanceof Float) {
                         floatval = (float) value;
+                    } else if (value instanceof String) {
+                        floatval = Float.valueOf((String)value);
                     } else {
                         throw new ClassCastException("Value must be an integer or float");
                     }
+
 
                     floatval = ((floatval * divideby) - offset) / step;
                     int intval = (int) floatval;
@@ -164,7 +170,7 @@ public class Ecu {
                 } else {
                     // Hex string
                     if (value instanceof String == false) {
-                        throw new ClassCastException("Value must be a string");
+                        throw new ClassCastException("Value must be hex a string");
                     }
                     finalbinvalue = hexToBinary((String) value);
                 }
@@ -182,7 +188,6 @@ public class Ecu {
 
             char[] binreq = requestasbin.toCharArray();
             char[] binfin = finalbinvalue.toCharArray();
-
 
             if (!little_endian){
                 // Big endian
@@ -266,7 +271,7 @@ public class Ecu {
 
             for (int i = 0; i < reqdatabytelen; ++i){
                 byte b = resp[i+sb];
-                hextobin += integerToBinaryString(b, 8);
+                hextobin += byteToBinaryString(b, 8);
             }
 
             String hex = new String();
@@ -349,7 +354,7 @@ public class Ecu {
                 if (bytescount == 1){
                     val = hex8ToSigned(val);
                 } else if (bytescount == 2){
-                    val = hex8ToSigned(val);
+                    val = hex16ToSigned(val);
                 }
             }
 
@@ -374,6 +379,10 @@ public class Ecu {
 
     public static String integerToBinaryString(int b, int padding){
         return padLeft(Integer.toBinaryString(b), padding, "0");
+    }
+
+    public static String byteToBinaryString(int b, int padding){
+        return padLeft(Integer.toBinaryString(b & 0xFF), padding, "0");
     }
 
     public String hexToBinary(String Hex)
@@ -493,6 +502,27 @@ public class Ecu {
         }
     }
 
+    Ecu(InputStream is){
+        String line;
+        BufferedReader br;
+        StringBuilder sb = new StringBuilder();
+
+        try {
+            br = new BufferedReader(new InputStreamReader(is));
+            while ((line = br.readLine()) != null) {
+                sb.append(line + "\n");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            init(new JSONObject(sb.toString()));
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
     Ecu(String json){
         try {
             init(new JSONObject(json));
@@ -549,8 +579,9 @@ public class Ecu {
         return hash;
     }
 
-    public byte[] setRequestValues(byte[] barray, String requestname, HashMap<String, Object> hash){
+    public byte[] setRequestValues(String requestname, HashMap<String, Object> hash){
         EcuRequest req = getRequest(requestname);
+        byte[] barray = hexStringToByteArray(req.sentbytes);
         for (Map.Entry<String, Object> entry: hash.entrySet()){
             EcuDataItem item = req.getSendDataItem(entry.getKey());
             EcuData data = getData(entry.getKey());

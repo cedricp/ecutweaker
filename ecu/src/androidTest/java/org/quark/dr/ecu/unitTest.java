@@ -24,22 +24,7 @@ public class unitTest {
         assertTrue(getClass().getResource("test.json") == null);
         InputStream is = this.getClass().getClassLoader().getResourceAsStream("test.json");
 
-        String result;
-        String line;
-        BufferedReader br = null;
-        StringBuilder sb = new StringBuilder();
-
-        try {
-            br = new BufferedReader(new InputStreamReader(is));
-            while ((line = br.readLine()) != null) {
-                sb.append(line + "\n");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        result = sb.toString();
-        Ecu ecu = new Ecu(result);
+        Ecu ecu = new Ecu(is);
         System.out.println(ecu.funcaddr);
         System.out.println(ecu.protocol);
         System.out.println(ecu.ecu_name);
@@ -48,8 +33,8 @@ public class unitTest {
         byte[] testbyte = new byte[] {0x00, -1, 10};
         byte[] ucttest = new byte[] {0x61, 0x0A, 0x16, 0x32, 0x32, 0x02, 0x58, 0x00, (byte)0xB4, 0x3C,
                 0x3C, 0x1E, 0x3C, 0x0A, 0x0A, 0x0A, 0x0A, 0x01, 0x2C, 0x5C, 0x61, 0x67, (byte)0xB5, (byte)0xBB,
-                (byte)0xC1, 0x0A, 0x5C};
-        byte[] ucttest2 = new byte[27];
+                (byte)0xC1, 0X0A};
+        byte[] ucttest2 = new byte[26];
 
         BigInteger bi = new BigInteger("FF", 16);
         BigInteger bi2 = new BigInteger("11111110", 2);
@@ -67,19 +52,16 @@ public class unitTest {
         assertThat(bi2.intValue(), is(254));
 
         HashMap<String, String> hash = ecu.getRequestValues(ucttest, "ReadDataByLocalIdentifier: misc timings and values", true);
+        HashMap<String, Object> hash2 = new HashMap<>();
 
         Iterator<String> it = hash.keySet().iterator();
         for (;it.hasNext();){
             String key = it.next();
             System.out.println(">>>>>>> " + key + " = " + hash.get(key));
+            hash2.put(key, hash.get(key));
         }
-        HashMap<String, Object> hash2 = new HashMap<>();
-        hash2.put("Timeout Supply Voltage Range 3", 1000);
-        hash2.put("Tolerance Window Button Open Timer", 5000);
-        hash2.put("Timeout Supply Voltage Range 4", 1000);
-        hash2.put("Timeout Buzzer Alert", 30);
 
-        byte[] frame = ecu.setRequestValues(ucttest2, "WriteDataByLocalIdentifier: misc timings and val.", hash2);
+        byte[] frame = ecu.setRequestValues("WriteDataByLocalIdentifier: misc timings and val.", hash2);
         for(byte c : frame) {
             System.out.format("%02X ", c);
         }
