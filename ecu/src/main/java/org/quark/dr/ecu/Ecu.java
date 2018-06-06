@@ -172,7 +172,8 @@ public class Ecu {
                     if (value instanceof String == false) {
                         throw new ClassCastException("Value must be hex a string");
                     }
-                    finalbinvalue = hexToBinary((String) value);
+                    String vv = (String)value;
+                    finalbinvalue = hexToBinary(vv.replaceAll(" ", ""));
                 }
             }
 
@@ -413,8 +414,6 @@ public class Ecu {
     public static String stringToHex(String string) {
         StringBuilder buf = new StringBuilder(1024);
         for (char ch: string.toCharArray()) {
-            if (buf.length() > 0)
-                buf.append(' ');
             buf.append(String.format("%02x", (int) ch));
         }
         return buf.toString();

@@ -1946,6 +1946,14 @@
       "deny_sds": [],
       "minbytes": 1,
       "manualsend": true,
+      "sendbyte_dataitems": {
+        "VIN Data": {
+          "firstbyte": 3
+        },
+        "VIN CRC": {
+          "firstbyte": 20
+        }
+      },
       "name": "WriteDataByLocalIdentifier: VIN"
     },
     {

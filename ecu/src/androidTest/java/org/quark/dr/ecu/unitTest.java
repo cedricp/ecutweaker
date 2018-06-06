@@ -53,6 +53,7 @@ public class unitTest {
 
         HashMap<String, String> hash = ecu.getRequestValues(ucttest, "ReadDataByLocalIdentifier: misc timings and values", true);
         HashMap<String, Object> hash2 = new HashMap<>();
+        HashMap<String, Object> hash3 = new HashMap<>();
 
         Iterator<String> it = hash.keySet().iterator();
         for (;it.hasNext();){
@@ -62,6 +63,13 @@ public class unitTest {
         }
 
         byte[] frame = ecu.setRequestValues("WriteDataByLocalIdentifier: misc timings and val.", hash2);
+        for(byte c : frame) {
+            System.out.format("%02X ", c);
+        }
+        System.out.println();
+        hash3.put("VIN Data", "VF1000000000000");
+        hash3.put("VIN CRC", "AA BB");
+        frame = ecu.setRequestValues("WriteDataByLocalIdentifier: VIN", hash3);
         for(byte c : frame) {
             System.out.format("%02X ", c);
         }
