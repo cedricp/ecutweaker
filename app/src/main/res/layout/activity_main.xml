@@ -9,10 +9,26 @@
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/AppTheme.AppBarOverlay">
-
+        app:elevation="0dp">
     </android.support.design.widget.AppBarLayout>
 
-    <include layout="@layout/content_main" />
+    <HorizontalScrollView
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent">
+
+        <ScrollView
+            android:id="@+id/scrollView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fillViewport="true"
+            android:scrollbars="horizontal">
+
+            <RelativeLayout
+                android:id="@+id/mainLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"></RelativeLayout>
+        </ScrollView>
+    </HorizontalScrollView>
+
 
 </android.support.design.widget.CoordinatorLayout>

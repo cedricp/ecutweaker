@@ -75,4 +75,12 @@ public class unitTest {
         }
         System.out.println();
     }
+
+    @Test
+    public void test_layout() {
+        assertTrue(getClass().getResource("test.json.layout") == null);
+        InputStream is = this.getClass().getClassLoader().getResourceAsStream("test.json.layout");
+
+        Layout layout = new Layout(is);
+    }
 }

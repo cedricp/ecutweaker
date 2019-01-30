@@ -1,1 +1,1 @@
-include ':app', ':speedviewlib', ':socketcan', ':ecu'
+include ':app', ':socketcan', ':ecu'

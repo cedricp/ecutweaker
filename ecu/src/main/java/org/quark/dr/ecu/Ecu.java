@@ -501,7 +501,7 @@ public class Ecu {
         }
     }
 
-    Ecu(InputStream is){
+    public Ecu(InputStream is){
         String line;
         BufferedReader br;
         StringBuilder sb = new StringBuilder();
@@ -522,7 +522,7 @@ public class Ecu {
         }
     }
 
-    Ecu(String json){
+    public Ecu(String json){
         try {
             init(new JSONObject(json));
         } catch (Exception e){
@@ -530,7 +530,7 @@ public class Ecu {
         }
     }
 
-    Ecu(JSONObject ecudef) {
+    public Ecu(JSONObject ecudef) {
         init(ecudef);
     }
 
