@@ -51,7 +51,7 @@ public class unitTest {
         assertThat(bi.intValue(), is(255));
         assertThat(bi2.intValue(), is(254));
 
-        HashMap<String, String> hash = ecu.getRequestValues(ucttest, "ReadDataByLocalIdentifier: misc timings and values", true);
+        HashMap<String, String> hash = ecu.getRequestValues(ucttest, "ReadDataByLocalIdentifier: misc timings and values", false);
         HashMap<String, Object> hash2 = new HashMap<>();
         HashMap<String, Object> hash3 = new HashMap<>();
 
@@ -82,5 +82,10 @@ public class unitTest {
         InputStream is = this.getClass().getClassLoader().getResourceAsStream("test.json.layout");
 
         Layout layout = new Layout(is);
+    }
+
+    @Test
+    public void test_isotp() {
+
     }
 }

@@ -318,6 +318,14 @@ public class Ecu {
             return Integer.parseInt(val);
         }
 
+        public String fmt(double d)
+        {
+            if(d == (long) d)
+                return String.format("%d",(long)d);
+            else
+                return String.format("%s",d);
+        }
+
         public String getDisplayValueWithUnit(byte[] resp, EcuDataItem dataitem){
             return getDisplayValue(resp, dataitem) + " " + unit;
         }
@@ -373,8 +381,8 @@ public class Ecu {
                     return fmtd;
                 }
             }
-
-            return Float.toString(res);
+            return fmt(res);
+            //return Float.toString(res);
         }
     }
 
@@ -402,6 +410,7 @@ public class Ecu {
     }
 
     public static byte[] hexStringToByteArray(String s) {
+        s = s.replace(" ", "");
         int len = s.length();
         byte[] data = new byte[len / 2];
         for (int i = 0, j = 0; i < len; i += 2, ++j) {
@@ -568,10 +577,10 @@ public class Ecu {
             EcuDataItem dataitem = request.recvbyte_dataitems.get(key);
             EcuData ecudata = getData(key);
             if (with_units) {
-                String val = ecudata.getDisplayValue(bytes, dataitem);
+                String val = ecudata.getDisplayValueWithUnit(bytes, dataitem);
                 hash.put(key, val);
             } else {
-                String val = ecudata.getDisplayValueWithUnit(bytes, dataitem);
+                String val = ecudata.getDisplayValue(bytes, dataitem);
                 hash.put(key, val);
             }
         }

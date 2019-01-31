@@ -1,1 +1,1 @@
-include ':app', ':socketcan', ':ecu'
+include ':app', ':ecu'
