@@ -3,12 +3,13 @@ package org.quark.dr.canapp;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.speech.tts.TextToSpeech;
+import android.text.method.ScrollingMovementMethod;
+import android.util.Pair;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Gravity;
@@ -47,16 +48,14 @@ public class ScreenActivity extends AppCompatActivity {
     private RelativeLayout m_layoutView;
     private Ecu m_ecu;
     private Layout m_layout;
-    private ImageButton m_searchbutton;
-    private ImageView m_icon_status;
-    private boolean m_connection_ok = false;
-    private boolean m_messagereceived = false;
-    private String m_lastelmmessage;
+    private ImageButton m_searchButton;
+    private ImageView m_iconStatus;
+    private TextView m_logView;
 
-    private HashMap<String, EditText> m_edittextviews;
-    private HashMap<String, EditText> m_displayviews;
-    private HashMap<String, Spinner> m_spinnerviews;
-    private Set<String> m_displays_request_set;
+    private HashMap<String, EditText> m_editTextViews;
+    private HashMap<String, EditText> m_displayViews;
+    private HashMap<String, Spinner> m_spinnerViews;
+    private Set<String> m_displaysRequestSet;
 
     private BluetoothAdapter mBluetoothAdapter = null;
     private ElmThread mChatService = null;
@@ -88,10 +87,10 @@ public class ScreenActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        m_searchbutton = findViewById(R.id.buttonSearch);
-        m_icon_status = findViewById(R.id.iconBt);
+        m_searchButton = findViewById(R.id.buttonSearch);
+        m_iconStatus = findViewById(R.id.iconBt);
 
-        m_searchbutton.setOnClickListener(new View.OnClickListener() {
+        m_searchButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 connectElm();
             }
@@ -107,6 +106,8 @@ public class ScreenActivity extends AppCompatActivity {
 
         m_scrollView = this.findViewById(R.id.scrollView);
         m_layoutView = this.findViewById(R.id.mainLayout);
+        m_logView = this.findViewById(R.id.logView);
+        m_logView.setMovementMethod(new ScrollingMovementMethod());
 
         InputStream ecu_stream = getClass().getClassLoader().getResourceAsStream("test.json");
 
@@ -118,10 +119,10 @@ public class ScreenActivity extends AppCompatActivity {
 
     void drawScreen(String screenName)
     {
-        m_displayviews = new HashMap<>();
-        m_edittextviews = new HashMap<>();
-        m_spinnerviews = new HashMap<>();
-        m_displays_request_set = new HashSet<>();
+        m_displayViews = new HashMap<>();
+        m_editTextViews = new HashMap<>();
+        m_spinnerViews = new HashMap<>();
+        m_displaysRequestSet = new HashSet<>();
 
         Layout.ScreenData screenData = m_layout.getScreen(screenName);
 
@@ -176,9 +177,9 @@ public class ScreenActivity extends AppCompatActivity {
             textEdit.setPadding(0,0,0,4);
             textEdit.setBackgroundColor(displaydata.color.get());
             textEdit.setTextColor(displaydata.font.color.get());
-            m_displayviews.put(displaydata.text, textEdit);
+            m_displayViews.put(displaydata.text, textEdit);
             m_layoutView.addView(textEdit);
-            m_displays_request_set.add(displaydata.request);
+            m_displaysRequestSet.add(displaydata.request);
         }
 
         Set<String> inputs = screenData.getInputs();
@@ -207,7 +208,7 @@ public class ScreenActivity extends AppCompatActivity {
                 textEdit.setTextColor(inputdata.font.color.get());
                 textEdit.setBackgroundColor(inputdata.color.get());
                 textEdit.setSingleLine();
-                m_edittextviews.put(inputdata.text, textEdit);
+                m_editTextViews.put(inputdata.text, textEdit);
                 m_layoutView.addView(textEdit);
             } else {
                 String items[] = new String[m_ecu.getData(inputdata.text).items.size()];
@@ -229,7 +230,7 @@ public class ScreenActivity extends AppCompatActivity {
                 dataAdapter.setSpinnerTextSize((int)convertFontToPixel(inputdata.font.size));
                 dataAdapter.setSpinnerTextColor(inputdata.font.color.get());
                 spinner.setAdapter(dataAdapter);
-                m_spinnerviews.put(inputdata.text, spinner);
+                m_spinnerViews.put(inputdata.text, spinner);
                 m_layoutView.addView(spinner);
             }
         }
@@ -251,16 +252,16 @@ public class ScreenActivity extends AppCompatActivity {
             m_layoutView.addView(buttonView);
         }
 
-        m_scrollView.requestLayout();;
+        m_scrollView.requestLayout();
     }
 
     void updateDisplays(){
-        if (m_displays_request_set == null)
+        if (m_displaysRequestSet == null)
             return;
 
         sendCmd("10C0");
 
-        for(String requestname : m_displays_request_set){
+        for(String requestname : m_displaysRequestSet){
             Ecu.EcuRequest request = m_ecu.getRequest(requestname);
             Log.i("CanApp", "Managing request : " + requestname);
             if (request == null){
@@ -269,26 +270,33 @@ public class ScreenActivity extends AppCompatActivity {
 
             Log.i("CanApp", "Send bytes " + request.sentbytes);
 
-            String response = sendCmd(request.sentbytes);
-            if (response == null){
-                Log.i("CanApp", "Request returned null : " + requestname);
-                continue;
+            sendCmd(request.sentbytes);
+        }
+    }
+
+    private void updateScreen(String req, String response){
+        for(String requestname : m_displaysRequestSet){
+            Ecu.EcuRequest request = m_ecu.getRequest(requestname);
+            Log.i("CanApp", "Managing request : " + requestname);
+            if (request == null){
+                Log.i("CanApp", "Cannot find request " + requestname);
             }
 
-            byte[] bytes = Ecu.hexStringToByteArray(response);
-            HashMap<String, String> mapval = m_ecu.getRequestValues(bytes, requestname, false);
-            HashMap<String, String> map = m_ecu.getRequestValues(bytes, requestname, true);
+            if (request.sentbytes.equals(req)) {
+                byte[] bytes = Ecu.hexStringToByteArray(response);
+                HashMap<String, Pair<String, String>> mapValues = m_ecu.getRequestValuesWithUnit(bytes, requestname);
 
-            for (String key : map.keySet()) {
-                if (m_displayviews.containsKey(key)) {
-                    m_displayviews.get(key).setText(map.get(key));
-                }
-                if (m_edittextviews.containsKey(key)) {
-                    m_edittextviews.get(key).setText(mapval.get(key));
-                }
-                if (m_spinnerviews.containsKey(key)) {
-                    Spinner spinner = m_spinnerviews.get(key);
-                    spinner.setSelection(((CustomAdapter)spinner.getAdapter()).getPosition(mapval.get(key)));
+                for (String key : mapValues.keySet()) {
+                    if (m_displayViews.containsKey(key)) {
+                        m_displayViews.get(key).setText(mapValues.get(key).first + " " + mapValues.get(key).second);
+                    }
+                    if (m_editTextViews.containsKey(key)) {
+                        m_editTextViews.get(key).setText(mapValues.get(key).first);
+                    }
+                    if (m_spinnerViews.containsKey(key)) {
+                        Spinner spinner = m_spinnerViews.get(key);
+                        spinner.setSelection(((CustomAdapter) spinner.getAdapter()).getPosition(mapValues.get(key).first));
+                    }
                 }
             }
         }
@@ -301,12 +309,6 @@ public class ScreenActivity extends AppCompatActivity {
             System.out.println("Clicked on " + clickedButton.getText());
         }
     };
-
-    @Override
-    protected void onDestroy(){
-        super.onDestroy();
-    }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -346,7 +348,6 @@ public class ScreenActivity extends AppCompatActivity {
                 } else {
                     // User did not enable Bluetooth or an error occurred
                     Log.d(TAG, "BT not enabled");
-                    //mLogView.append("Bluetooth adapter not enabled\n");
                 }
         }
     }
@@ -365,6 +366,16 @@ public class ScreenActivity extends AppCompatActivity {
             if (mChatService == null) setupChat();
         }
     }
+
+    @Override
+    public void onDestroy()
+    {
+        Log.e(TAG, "+ ON DESTROY +");
+        super.onDestroy();
+        if (mChatService != null)
+            mChatService.stop();
+    }
+
 
     private void setupChat() {
         Log.d(TAG, "setupChat()");
@@ -402,25 +413,21 @@ public class ScreenActivity extends AppCompatActivity {
         }
     }
 
-    private void setStatus(int resId) {
-        //getSupportActionBar().setSubtitle(resId);
-    }
 
-    private void setStatus(CharSequence subTitle) {
-        //getSupportActionBar().setSubtitle(subTitle);
+    private void setStatus(CharSequence status) {
+        m_logView.append(status + "\n");
     }
 
     private void setConnected(boolean c){
-        m_connection_ok = c;
         if (c) {
-            m_icon_status.setImageResource(R.drawable.ic_bt_connected);
+            m_iconStatus.setImageResource(R.drawable.ic_bt_connected);
         } else {
-            m_icon_status.setImageResource(R.drawable.ic_bt_disconnected);
+            m_iconStatus.setImageResource(R.drawable.ic_bt_disconnected);
         }
     }
 
-    private boolean isConnected(){
-        return m_connection_ok;
+    private boolean isChatConnected(){
+        return (mChatService != null && mChatService.getState() == STATE_CONNECTED);
     }
 
     private void initELM() {
@@ -441,41 +448,43 @@ public class ScreenActivity extends AppCompatActivity {
 
         sendCmd("AT SP 6");
         sendCmd("AT SH " + txa);
-        sendCmd("AT CRA "  + rxa.toUpperCase());
-        sendCmd("AT FC SH " + rxa.toUpperCase());
+        sendCmd("AT CRA " + rxa.toUpperCase());
+        sendCmd("AT FC SH " + txa.toUpperCase());
         sendCmd("AT FC SD 30 00 00");
         sendCmd("AT FC SM 1");
 
         updateDisplays();
     }
 
-    private String sendCmd(String cmd) {
+    private void sendCmd(String cmd) {
         // Check that we're actually connected before trying anything
-        if (mBluetoothAdapter == null)
-            return null;
-        if (mChatService.getState() != STATE_CONNECTED) {
-            return null;
+        if (mBluetoothAdapter == null) {
+            m_logView.append("Trying to send command without BT connection " + cmd + "\n");
+            return;
+        }
+        if (!isChatConnected()) {
+            m_logView.append("Trying to send command without chat session " + cmd + "\n");
+            return;
         }
 
-        setMessageReceived(false);
+        // Send command
         mChatService.write(cmd);
-        long millis = System.currentTimeMillis();
 
-        while(!m_messagereceived){
-            if (System.currentTimeMillis() - millis > 2000){
-                break;
-            }
+    }
+
+    void handleElmResult(String result){
+        String[] results = result.split(";");
+        if (results.length < 2){
+            m_logView.append("No ELM Response (" + result + ")\n");
+            return;
         }
-        return m_lastelmmessage;
-    }
+        m_logView.append("ELM Response : " + results[1] + " to " + results[0] +"\n");
 
-    private void setElmResult(String message){
-        m_lastelmmessage = message;
-        setMessageReceived(true);
-    }
+        if (results[1].isEmpty() || results[0].substring(0,2).toUpperCase().equals("AT")){
+            return;
+        }
 
-    private void setMessageReceived(boolean state){
-        m_messagereceived  = state;
+        updateScreen(results[0], results[1]);
     }
 
     private static class messageHandler extends Handler {
@@ -495,33 +504,25 @@ public class ScreenActivity extends AppCompatActivity {
                             activity.setConnected(true);
                             break;
                         case STATE_CONNECTING:
-                            activity.setStatus(R.string.title_connecting);
+                            activity.setStatus(activity.getString(R.string.title_connecting));
                             break;
                         case STATE_LISTEN:
                         case STATE_NONE:
-                            activity.setStatus(R.string.title_not_connected);
+                            activity.setStatus(activity.getString(R.string.title_not_connected));
                             break;
                         case STATE_DISCONNECTED:
                             activity.setConnected(false);
                             break;
                     }
                     break;
-//                case MESSAGE_WRITE:
-//                    byte[] writeBuf = (byte[]) msg.obj;
-//                    // construct a string from the buffer
-//                    //String writeMessage = new String(writeBuf);
-//                    //activity.mLogView.append("Sent : " + writeMessage);
-//                    break;
                 case MESSAGE_READ:
                     byte[] m = (byte[]) msg.obj;
-                    // construct a string from the valid bytes in the buffer
                     String readMessage = new String(m, 0, msg.arg1);
-                    Log.i(TAG, "handler resp: " + msg.arg1 + " : " + readMessage );
-                    activity.setElmResult(readMessage);
+                    activity.handleElmResult(readMessage);
                     break;
                 case MESSAGE_DEVICE_NAME:
-                    // save the connected device's name
                     activity.mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
+                    activity.m_logView.append("New device : " + activity.mConnectedDeviceName + "\n");
                     break;
                 case MESSAGE_TOAST:
                     Toast.makeText(activity.getApplicationContext(), msg.getData().getString(TOAST), Toast.LENGTH_SHORT).show();

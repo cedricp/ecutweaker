@@ -1,5 +1,7 @@
 package org.quark.dr.ecu;
 
+import android.util.Pair;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -126,13 +128,13 @@ public class Ecu {
             int start_bit = dataitem.bitoffset;
             boolean little_endian = false;
 
-            if (global_endian == "Little")
+            if (global_endian.equals("Little"))
                 little_endian = true;
 
-            if (dataitem.endian == "Little")
+            if (dataitem.endian.equals("Little"))
                 little_endian = true;
 
-            if (dataitem.endian == "Big")
+            if (dataitem.endian.equals("Big"))
                 little_endian = false;
 
             String finalbinvalue = "";
@@ -382,7 +384,6 @@ public class Ecu {
                 }
             }
             return fmt(res);
-            //return Float.toString(res);
         }
     }
 
@@ -583,6 +584,23 @@ public class Ecu {
                 String val = ecudata.getDisplayValue(bytes, dataitem);
                 hash.put(key, val);
             }
+        }
+        return hash;
+    }
+
+    public HashMap<String, Pair<String, String>> getRequestValuesWithUnit(byte[] bytes, String requestname){
+        EcuRequest request = getRequest(requestname);
+        HashMap<String, Pair<String, String>> hash = new HashMap<>();
+        Set<String> keys = request.recvbyte_dataitems.keySet();
+        Iterator<String> it = keys.iterator();
+        for (;it.hasNext();){
+            String key = it.next();
+            EcuDataItem dataitem = request.recvbyte_dataitems.get(key);
+            EcuData ecudata = getData(key);
+            String val = ecudata.getDisplayValue(bytes, dataitem);
+            String unit = ecudata.unit;
+            Pair<String, String> pair = new Pair<>(val, unit);
+            hash.put(key, pair);
         }
         return hash;
     }

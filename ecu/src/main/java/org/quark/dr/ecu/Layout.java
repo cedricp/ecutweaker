@@ -1,11 +1,14 @@
 package org.quark.dr.ecu;
 
+import android.support.v4.util.Pair;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
@@ -100,9 +103,10 @@ public class Layout {
     }
 
     public class ButtonData {
-        public String text, uniquename;
+        public String text, uniqueName;
         public Rect rect;
         public Font font;
+        public ArrayList<Pair<Integer, String>> sendData;
     }
 
     public class ScreenData {
@@ -183,7 +187,16 @@ public class Layout {
                     if (inputobj.has("text")) data.text = inputobj.getString("text");
                     if (inputobj.has("rect")) data.rect = new Rect(inputobj.getJSONObject("rect"));
                     if (inputobj.has("font")) data.font = new Font(inputobj.getJSONObject("font"));
-                    if (inputobj.has("uniquename")) data.uniquename = inputobj.getString("uniquename");
+                    if (inputobj.has("uniquename")) data.uniqueName = inputobj.getString("uniquename");
+                    if (inputobj.has("send")) {
+                        JSONArray sendData = inputobj.getJSONArray("send");
+                        data.sendData = new ArrayList<>();
+                        for (int j = 0; j < sendData.length(); ++j) {
+                            JSONObject jdata = sendData.getJSONObject(j);
+                            Pair<Integer, String> pair = new Pair<>(Integer.parseInt(jdata.getString("Delay")), jdata.getString("RequestName"));
+                            data.sendData.add(pair);
+                        }
+                    }
                     m_buttons.put(data.text, data);
                 }
             } catch (Exception e) {

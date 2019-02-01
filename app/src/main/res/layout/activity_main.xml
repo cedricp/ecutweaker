@@ -6,11 +6,6 @@
     android:layout_height="match_parent"
     tools:context="org.quark.dr.canapp.ScreenActivity">
 
-    <android.support.design.widget.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:elevation="0dp"></android.support.design.widget.AppBarLayout>
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -23,7 +18,7 @@
 
             <ImageButton
                 android:id="@+id/buttonSearch"
-                android:layout_width="wrap_content"
+                android:layout_width="188dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 app:srcCompat="@drawable/ic_bt_search" />
@@ -36,9 +31,24 @@
                 app:srcCompat="@drawable/ic_bt_disconnected" />
         </LinearLayout>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/logView"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:scrollbars="vertical"
+                android:enabled="true"
+                android:isScrollContainer="false"
+                android:keepScreenOn="false" />
+        </LinearLayout>
+
         <HorizontalScrollView
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="wrap_content">
 
             <ScrollView
                 android:id="@+id/scrollView"
@@ -50,9 +60,12 @@
                 <RelativeLayout
                     android:id="@+id/mainLayout"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"></RelativeLayout>
+                    android:layout_height="wrap_content">
+
+                </RelativeLayout>
             </ScrollView>
         </HorizontalScrollView>
+
     </LinearLayout>
 
 

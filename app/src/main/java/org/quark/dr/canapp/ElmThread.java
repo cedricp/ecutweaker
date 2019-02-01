@@ -331,7 +331,7 @@ public class ElmThread {
                     }
                     if ( message.substring(0,2).toUpperCase().equals("AT") ) {
                         String result = write_raw(message);
-
+                        result = message + ";" + result;
                         int result_length = result.length();
                         byte[] tmpbuf = new byte[result_length];
                         System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);  //Make copy for not to rewrite in other thread
@@ -375,6 +375,9 @@ public class ElmThread {
             // Wait ELM response
             int u = -1;
             while (true) {
+                if (System.currentTimeMillis() - time_start > 1500){
+                    return "ERROR : TIMEOUT";
+                }
                 try {
                     // Read from the InputStream
                     u = u + 1;
@@ -394,9 +397,6 @@ public class ElmThread {
                     // Start the service over to restart listening mode
                     ElmThread.this.start();
                     break;
-                }
-                if (System.currentTimeMillis() - time_start > 1000){
-                    return "ERROR : TIMEOUT";
                 }
             }
             return "ERROR : UNKNOWN";
@@ -420,7 +420,7 @@ public class ElmThread {
             return true;
         }
 
-        private boolean send_can(String message){
+        private void send_can(String message){
             IsotpEncode isotpm = new IsotpEncode(message);
             // Encode ISO_TP data
             ArrayList<String> raw_command = isotpm.getFormattedArray();
@@ -430,7 +430,6 @@ public class ElmThread {
             // Send data
             for (String frame: raw_command) {
                 String frsp = write_raw(frame);
-                int frsp_length = frsp.length();
 
                 for(String s: frsp.split("\n")){
                     // Remove unwanted characters
@@ -462,13 +461,11 @@ public class ElmThread {
                 IsotpDecode isotpdec = new IsotpDecode(responses);
                 result = isotpdec.decodeCan();
             }
-
+            result = message + ";" + result;
             int result_length = result.length();
             byte[] tmpbuf = new byte[result_length];
             System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);  //Make copy for not to rewrite in other thread
             mHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, -1, tmpbuf).sendToTarget();
-
-            return true;
         }
     }
 }
