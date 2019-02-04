@@ -1,6 +1,6 @@
 package org.quark.dr.ecu;
 
-import android.support.v4.util.Pair;
+import android.util.Pair;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -117,6 +117,7 @@ public class Layout {
         public String m_screen_name;
         public int m_width, m_height;
         public Color m_color;
+        public ArrayList<Pair<Integer, String>> preSendData;
 
         ScreenData(String name, JSONObject jobj){
             m_inputs = new HashMap<>();
@@ -125,6 +126,21 @@ public class Layout {
             m_buttons = new HashMap<>();
 
             m_screen_name = name;
+
+            try {
+                if (jobj.has("presend")) {
+                    JSONArray sendData = jobj.getJSONArray("presend");
+                    preSendData = new ArrayList<>();
+                    for (int j = 0; j < sendData.length(); ++j) {
+                        JSONObject jdata = sendData.getJSONObject(j);
+                        Pair<Integer, String> pair = new Pair<>(Integer.parseInt(jdata.getString("Delay")), jdata.getString("RequestName"));
+                        preSendData.add(pair);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
             try {
                 if (jobj.has("width")) m_width = jobj.getInt("width");
                 if (jobj.has("height")) m_height = jobj.getInt("height");
@@ -197,7 +213,7 @@ public class Layout {
                             data.sendData.add(pair);
                         }
                     }
-                    m_buttons.put(data.text, data);
+                    m_buttons.put(data.uniqueName, data);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -251,9 +267,14 @@ public class Layout {
                 return null;
             }
         }
+
+        public ArrayList<Pair<Integer, String>> getPreSendData(){
+            return preSendData;
+        }
     }
 
     public HashMap<String, ScreenData> m_screens;
+    HashMap<String, ArrayList<String>> m_categories;
     public Layout(InputStream is){
         String line;
         BufferedReader br;
@@ -277,6 +298,7 @@ public class Layout {
 
     void init(JSONObject jobj){
         m_screens = new HashMap<>();
+        m_categories = new HashMap<>();
         try {
             // Gather all screens
             if (jobj.has("screens")) {
@@ -293,10 +315,36 @@ public class Layout {
         }  catch (Exception e) {
             e.printStackTrace();
         }
+
+        try{
+
+            JSONObject categories = jobj.getJSONObject("categories");
+            Iterator<String> iterator = categories.keys();
+            while(iterator.hasNext()) {
+                String currentKey = iterator.next();
+                ArrayList<String> screennames = new ArrayList<>();
+                JSONArray jscreenarry = categories.getJSONArray(currentKey);
+                for (int i = 0; i < jscreenarry.length(); ++i) {
+                    screennames.add(jscreenarry.getString(i));
+                }
+                m_categories.put(currentKey, screennames);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public Set<String> getScreens(){
         return m_screens.keySet();
+    }
+
+    public Set<String> getCategories(){
+        return m_categories.keySet();
+    }
+
+    public ArrayList<String> getScreenNames(String category){
+        return m_categories.get(category);
     }
 
     public ScreenData getScreen(String screenName){

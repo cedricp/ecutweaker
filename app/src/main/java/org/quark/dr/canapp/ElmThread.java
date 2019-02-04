@@ -325,20 +325,32 @@ public class ElmThread {
             while (true) {
                 if (mmessages.size() > 0){
                     String message;
+                    int num_queue = -1;
                     synchronized (this) {
                         message = mmessages.get(0);
                         mmessages.remove(0);
+                        num_queue = mmessages.size();
                     }
-                    if ( message.substring(0,2).toUpperCase().equals("AT") ) {
+                    int message_len = message.length();
+                    if ( (message_len > 6) && message.substring(0,6).toUpperCase().equals("DELAY:") ) {
+                        int delay = Integer.parseInt(message.substring(6));
+                        try {
+                            Thread.sleep(delay);
+                        }  catch (InterruptedException e) {
+
+                        }
+                    } else if ( (message_len > 2) && message.substring(0,2).toUpperCase().equals("AT") ) {
                         String result = write_raw(message);
                         result = message + ";" + result;
                         int result_length = result.length();
                         byte[] tmpbuf = new byte[result_length];
                         System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);  //Make copy for not to rewrite in other thread
                         mHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, -1, tmpbuf).sendToTarget();
+                        mHandler.obtainMessage(ScreenActivity.MESSAGE_QUEUE_STATE, num_queue, -1, null).sendToTarget();
                     }
                     else {
                         send_can(message);
+                        mHandler.obtainMessage(ScreenActivity.MESSAGE_QUEUE_STATE, num_queue, -1, null).sendToTarget();
                     }
                 }
                 try {

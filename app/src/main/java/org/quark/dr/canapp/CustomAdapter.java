@@ -12,7 +12,7 @@ public class CustomAdapter extends ArrayAdapter<String> {
     Context context;
     int color;
     String[] items = new String[] {};
-    private int textSize=40;
+    private int textSize=20;
 
     public CustomAdapter(final Context context, final int textViewResourceId, final String[] objects) {
         super(context, textViewResourceId, objects);

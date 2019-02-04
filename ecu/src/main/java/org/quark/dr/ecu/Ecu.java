@@ -20,7 +20,8 @@ public class Ecu {
     public HashMap<String, EcuRequest> requests;
     public HashMap<String, EcuDevice> devices;
     public HashMap<String, EcuData> data;
-    public String protocol, funcname, funcaddr, ecu_name;
+    public HashMap<String, String> sdsrequests;
+    public String protocol, funcname, funcaddr, ecu_name, default_sds;
     public String kw1, kw2, ecu_send_id, ecu_recv_id;
     public boolean fastinit;
     public int baudrate;
@@ -94,20 +95,45 @@ public class Ecu {
             try {
                 lists = new HashMap<>();
                 items = new HashMap<>();
-                if(json.has("bitscount")) bitscount = json.getInt("bitscount");
-                if(json.has("scaled")) scaled = json.getBoolean("scaled");
-                if(json.has("byte")) isbyte = json.getBoolean("byte");
-                if(json.has("signed")) signed = json.getBoolean("signed");
-                if(json.has("binary")) binary = json.getBoolean("binary");
-                if(json.has("bytesascii")) bytesascii = json.getBoolean("bytesascii");
-                if(json.has("bytescount")) bytescount = json.getInt("bytescount");
-                if(json.has("step")) step = (float)json.getDouble("step");
-                if(json.has("offset")) offset = (float)json.getDouble("offset");
-                if(json.has("divideby")) divideby = (float)json.getDouble("divideby");
-                if(json.has("format")) format = json.getString("format");
-                if(json.has("description")) description = json.getString("description");
-                if(json.has("unit")) unit = json.getString("unit");
-                if(json.has("comment")) comment = json.getString("comment");
+                if(json.has("bitscount"))
+                    bitscount = json.getInt("bitscount");
+                if(json.has("scaled"))
+                    scaled = json.getBoolean("scaled");
+
+                if(json.has("byte"))
+                    isbyte = json.getBoolean("byte");
+
+                if(json.has("signed"))
+                    signed = json.getBoolean("signed");
+                if(json.has("binary"))
+
+                    binary = json.getBoolean("binary");
+                if(json.has("bytesascii"))
+                    bytesascii = json.getBoolean("bytesascii");
+
+                if(json.has("bytescount"))
+                    bytescount = json.getInt("bytescount");
+
+                if(json.has("step"))
+                    step = (float)json.getDouble("step");
+
+                if(json.has("offset"))
+                    offset = (float)json.getDouble("offset");
+
+                if(json.has("divideby"))
+                    divideby = (float)json.getDouble("divideby");
+
+                if(json.has("format"))
+                    format = json.getString("format");
+
+                if(json.has("description"))
+                    description = json.getString("description");
+
+                if(json.has("unit"))
+                    unit = json.getString("unit");
+
+                if(json.has("comment"))
+                    comment = json.getString("comment");
 
                 if (json.has("lists")) {
                     JSONObject listobj = json.getJSONObject("lists");
@@ -605,21 +631,42 @@ public class Ecu {
         return hash;
     }
 
+    public static String byteArrayToHex(byte[] a) {
+        StringBuilder sb = new StringBuilder(a.length * 2);
+        for(byte b: a)
+            sb.append(String.format("%02x", b));
+        return sb.toString();
+    }
+
     public byte[] setRequestValues(String requestname, HashMap<String, Object> hash){
         EcuRequest req = getRequest(requestname);
         byte[] barray = hexStringToByteArray(req.sentbytes);
         for (Map.Entry<String, Object> entry: hash.entrySet()){
             EcuDataItem item = req.getSendDataItem(entry.getKey());
             EcuData data = getData(entry.getKey());
+            if (!data.items.isEmpty() && (entry.getValue() instanceof String == true)){
+                String val = (String)entry.getValue();
+                if (data.items.containsKey(val)){
+                    barray = data.setValue(Integer.toHexString(data.items.get(val)), barray, item);
+                    return barray;
+                }
+
+            }
             barray = data.setValue(entry.getValue(), barray, item);
         }
         return barray;
+    }
+
+    public String getDefaultSDS(){
+        return default_sds;
     }
 
     private void init(JSONObject ecudef){
         requests = new HashMap<>();
         devices = new HashMap<>();
         data = new HashMap<>();
+        sdsrequests = new HashMap<>();
+        default_sds = "10C0";
 
         try {
             if (ecudef.has("endian")) global_endian = ecudef.getString("endian");
@@ -665,6 +712,34 @@ public class Ecu {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+
+        // Gather StartDiagnosticSession requests
+        for (String requestName : requests.keySet()){
+            String upperReqName = requestName.toUpperCase();
+            if (upperReqName.contains("START") && upperReqName.contains("DIAG") && upperReqName.contains("SESSION")){
+                EcuRequest request = requests.get(requestName);
+                for (String sdsDataItemName : request.sendbyte_dataitems.keySet()){
+
+                    EcuDataItem ecuDataItem = request.sendbyte_dataitems.get(sdsDataItemName);
+                    String upperSdsDataItemName = sdsDataItemName.toUpperCase();
+
+                    if (upperSdsDataItemName.contains("SESSION") && upperSdsDataItemName.contains("NAME")){
+                        for (String dataitem: data.get(sdsDataItemName).items.keySet()) {
+                            HashMap sdsBuildValues = new HashMap();
+                            sdsBuildValues.put(ecuDataItem.name, dataitem);
+                            byte[] dataStream = setRequestValues(requestName, sdsBuildValues);
+                            sdsrequests.put(ecuDataItem.name, byteArrayToHex(dataStream).toUpperCase());
+                            if (ecuDataItem.name.toUpperCase().contains("EXTENDED")){
+                                default_sds = byteArrayToHex(dataStream).toUpperCase();
+                            }
+                        }
+                    }
+                }
+                if (request.sendbyte_dataitems.keySet().size() == 0){
+                    sdsrequests.put(requestName, request.sentbytes);
+                }
+            }
         }
     }
 }

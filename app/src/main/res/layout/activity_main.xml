@@ -17,11 +17,25 @@
             android:orientation="horizontal">
 
             <ImageButton
+                android:id="@+id/screenButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:srcCompat="@drawable/ic_screen" />
+
+            <ImageButton
                 android:id="@+id/buttonSearch"
-                android:layout_width="188dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 app:srcCompat="@drawable/ic_bt_search" />
+
+            <ImageButton
+                android:id="@+id/reloadButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:srcCompat="@drawable/ic_reload" />
 
             <ImageView
                 android:id="@+id/iconBt"
@@ -29,6 +43,7 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 app:srcCompat="@drawable/ic_bt_disconnected" />
+
         </LinearLayout>
 
         <LinearLayout
