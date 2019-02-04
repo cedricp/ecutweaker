@@ -22,6 +22,7 @@ import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -55,6 +56,7 @@ public class ScreenActivity extends AppCompatActivity {
     private ImageButton m_searchButton, m_reloadButton, m_screenButton;
     private ImageView m_btIconStatus;
     private TextView m_logView;
+    private String m_currentScreenName, m_currentEcuName;
 
     private HashMap<String, EditText> m_editTextViews;
     private HashMap<String, EditText> m_displayViews;
@@ -133,11 +135,29 @@ public class ScreenActivity extends AppCompatActivity {
         m_logView.setMovementMethod(new ScrollingMovementMethod());
         m_btIconStatus.clearColorFilter();
 
-        InputStream ecu_stream = getClass().getClassLoader().getResourceAsStream("test.json");
+        openEcu("test.json");
+    }
 
+    void openEcu(String ecuname){
+        String layoutName = ecuname + ".layout";
+        InputStream ecu_stream = getClass().getClassLoader().getResourceAsStream(ecuname);
+        InputStream layout_stream = getClass().getClassLoader().getResourceAsStream(layoutName);
         m_ecu = new Ecu(ecu_stream);
-        InputStream layout_stream = getClass().getClassLoader().getResourceAsStream("test.json.layout");
         m_currentLayoutData = new Layout(layout_stream);
+        m_currentEcuName = ecuname;
+    }
+
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        openEcu(savedInstanceState.getString("ecu_name"));
+        drawScreen(savedInstanceState.getString("screen_name"));
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putString("screen_name", m_currentScreenName);
+        outState.putString("ecu_name", m_currentEcuName);
+        super.onSaveInstanceState(outState);
     }
 
     void drawScreen(String screenName)
@@ -149,10 +169,15 @@ public class ScreenActivity extends AppCompatActivity {
         m_displaysRequestSet = new HashSet<>();
 
         m_currentScreenData = m_currentLayoutData.getScreen(screenName);
+        if (m_currentScreenData == null)
+            return;
 
         m_layoutView.removeAllViews();
-        m_layoutView.getLayoutParams().width = (int) convertToPixel(m_currentScreenData.m_width);
-        m_layoutView.getLayoutParams().height = (int) convertToPixel(m_currentScreenData.m_height);
+        m_layoutView.setLayoutParams(new FrameLayout.LayoutParams(
+                (int) convertToPixel(m_currentScreenData.m_width),
+                (int) convertToPixel(m_currentScreenData.m_height)));
+        //m_layoutView.getLayoutParams().width = (int) convertToPixel(m_currentScreenData.m_width);
+        //m_layoutView.getLayoutParams().height = (int) convertToPixel(m_currentScreenData.m_height);
         m_layoutView.setBackgroundColor(m_currentScreenData.m_color.get());
 
         Set<String> labels = m_currentScreenData.getLabels();
@@ -512,6 +537,7 @@ public class ScreenActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int which) {
                 String selected = screens[which];
                 drawScreen(selected);
+                m_currentScreenName = selected;
             }
         });
 

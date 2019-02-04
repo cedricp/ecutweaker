@@ -8,20 +8,21 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="match_parent"
+        android:baselineAligned="false"
+        android:orientation="horizontal">
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:orientation="horizontal">
+            android:orientation="vertical">
 
-            <ImageButton
-                android:id="@+id/screenButton"
-                android:layout_width="wrap_content"
+            <ImageView
+                android:id="@+id/iconBt"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                app:srcCompat="@drawable/ic_screen" />
+                app:srcCompat="@drawable/ic_bt_disconnected" />
 
             <ImageButton
                 android:id="@+id/buttonSearch"
@@ -31,24 +32,24 @@
                 app:srcCompat="@drawable/ic_bt_search" />
 
             <ImageButton
+                android:id="@+id/screenButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:srcCompat="@drawable/ic_screen" />
+
+            <ImageButton
                 android:id="@+id/reloadButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 app:srcCompat="@drawable/ic_reload" />
 
-            <ImageView
-                android:id="@+id/iconBt"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                app:srcCompat="@drawable/ic_bt_disconnected" />
-
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:orientation="vertical">
 
             <TextView
@@ -59,27 +60,27 @@
                 android:isScrollContainer="false"
                 android:keepScreenOn="false"
                 android:scrollbars="vertical" />
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <ScrollView
+                    android:id="@+id/scrollView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="horizontal">
+
+                    <RelativeLayout
+                        android:id="@+id/mainLayout"
+                        android:layout_width="300dp"
+                        android:layout_height="300dp">
+
+                    </RelativeLayout>
+                </ScrollView>
+            </HorizontalScrollView>
+
         </LinearLayout>
-
-        <HorizontalScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <ScrollView
-                android:id="@+id/scrollView"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:fillViewport="true"
-                android:scrollbars="horizontal">
-
-                <RelativeLayout
-                    android:id="@+id/mainLayout"
-                    android:layout_width="200dp"
-                    android:layout_height="300dp">
-
-                </RelativeLayout>
-            </ScrollView>
-        </HorizontalScrollView>
 
     </LinearLayout>
 
