@@ -106,7 +106,7 @@ public class ScreenActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        EcuDatabase ecuDatabase = new EcuDatabase();
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -152,7 +152,11 @@ public class ScreenActivity extends AppCompatActivity {
         m_btIconStatus.clearColorFilter();
 
         askPermission();
-
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_GRANTED){
+            EcuDatabase ecuDatabase = new EcuDatabase();
+        }
         openEcu("test.json");
         chooseCategory();
     }

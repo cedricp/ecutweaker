@@ -1,17 +1,13 @@
 package org.quark.dr.ecu;
 
 import android.os.Environment;
-import android.util.JsonReader;
-
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -20,29 +16,37 @@ public class EcuDatabase {
 
     public EcuDatabase(){
         m_ok = false;
-        String ecufile = walkdir(Environment.getExternalStorageDirectory());
-        if (ecufile == null) {
-            ecufile = walkdir(Environment.getDataDirectory());
-        }
+        System.out.println("?? Start walking");
+        //String ecufile;// = walkdir(Environment.getExternalStorageDirectory());
+        //if (ecufile == null) {
+        //    ecufile = walkdir(Environment.getDataDirectory());
+        //}
+        //if (ecufile == null) {
+        String    ecufile = walkDir(new File("/storage"));
 
-        byte[] bytes = getZipFile(ecufile, "db.json");
+        System.out.println("?? Found " + ecufile);
+        System.out.println("?? End walking");
+        String bytes = getZipFile(ecufile, "db.json");
         try {
-            JSONObject jobj = new JSONObject(bytes.toString());
+            JSONObject jobj = new JSONObject(bytes);
         } catch (Exception e) {
             e.printStackTrace();
         }
+        System.out.println("?? End Json");
         m_ok = true;
     }
 
 
-    public String walkdir(File dir) {
+    public String walkDir(File dir) {
         String searchFile = "ECU.ZIP";
-
+        String result = "";
         File listFile[] = dir.listFiles();
         if (listFile != null) {
             for (File f : listFile) {
                 if (f.isDirectory()) {
-                    walkdir(f);
+                    String res = walkDir(f);
+                    if (!res.isEmpty())
+                        result = res;
                 } else {
                     if (f.getName().toUpperCase().equals(searchFile)){
                         return f.getAbsolutePath();
@@ -50,10 +54,10 @@ public class EcuDatabase {
                 }
             }
         }
-        return null;
+        return result;
     }
 
-    private byte[] getZipFile(String ecufile, String filename)
+    private String getZipFile(String ecufile, String filename)
     {
         try {
             InputStream zip_is = new FileInputStream(ecufile);
@@ -63,13 +67,14 @@ public class EcuDatabase {
             while ((ze = zis.getNextEntry()) != null)
             {
                 if (ze.getName().equals(filename)){
-                    ByteArrayOutputStream streamBuilder = new ByteArrayOutputStream();
-                    int bytesRead;
-                    byte[] tempBuffer = new byte[8192*2];
-                    while ( (bytesRead = zis.read(tempBuffer)) != -1 ){
-                        streamBuilder.write(tempBuffer, 0, bytesRead);
+                    int read = 0;
+                    byte[] buffer = new byte[1024];
+                    StringBuilder s = new StringBuilder();
+
+                    while ((read = zis.read(buffer, 0, 1024)) >= 0) {
+                        s.append(new String(buffer, 0, read));
                     }
-                    return streamBuilder.toByteArray();
+                    return s.toString();
                 }
             }
         } catch(IOException e)
