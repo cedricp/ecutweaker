@@ -320,6 +320,7 @@ public class ElmThread {
 
         public void run() {
             Log.i(TAG, "BEGIN mConnectedThread");
+            long timer = System.currentTimeMillis();
 
             // Keep listening to the InputStream while connected
             while (true) {
@@ -357,6 +358,12 @@ public class ElmThread {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
 
+                }
+
+                // Keep session alive
+                if (System.currentTimeMillis() - timer > 1500){
+                    timer = System.currentTimeMillis();
+                    write_raw("013E");
                 }
             }
         }

@@ -1,16 +1,22 @@
 package org.quark.dr.canapp;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.speech.tts.TextToSpeech;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Pair;
 import android.support.v7.app.AppCompatActivity;
@@ -32,11 +38,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.quark.dr.ecu.Ecu;
+import org.quark.dr.ecu.EcuDatabase;
+import org.quark.dr.ecu.IsotpDecode;
 import org.quark.dr.ecu.Layout;
 
+import java.io.File;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.quark.dr.canapp.ElmThread.STATE_CONNECTED;
@@ -54,14 +65,16 @@ public class ScreenActivity extends AppCompatActivity {
     private Layout m_currentLayoutData;
     private Layout.ScreenData m_currentScreenData;
     private ImageButton m_searchButton, m_reloadButton, m_screenButton;
-    private ImageView m_btIconStatus;
+    private ImageView m_btIconStatus, m_btCommStatus;
     private TextView m_logView;
     private String m_currentScreenName, m_currentEcuName;
 
     private HashMap<String, EditText> m_editTextViews;
     private HashMap<String, EditText> m_displayViews;
     private HashMap<String, Spinner> m_spinnerViews;
-    private HashMap<String, Button> m_ButtonsViews;
+    private HashMap<String, Button> m_buttonsViews;
+    private HashMap<Button, String> m_buttonsCommand;
+    private HashMap<String, ArrayList<Layout.InputData>> m_requestsInputs;
     private Set<String> m_displaysRequestSet;
 
     private BluetoothAdapter mBluetoothAdapter = null;
@@ -80,6 +93,7 @@ public class ScreenActivity extends AppCompatActivity {
     public static final int     MESSAGE_QUEUE_STATE     = 6;
     public static final String  DEVICE_NAME = "device_name";
     public static final String  TOAST       = "toast";
+    public static final int     MY_PERMISSIONS_ACCESS_EXTERNAL_STORAGE = 0;
     private String              mConnectedDeviceName = null;
 
     public float convertToPixel(float val){
@@ -92,6 +106,7 @@ public class ScreenActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        EcuDatabase ecuDatabase = new EcuDatabase();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -99,6 +114,7 @@ public class ScreenActivity extends AppCompatActivity {
         m_reloadButton = findViewById(R.id.reloadButton);
         m_btIconStatus = findViewById(R.id.iconBt);
         m_screenButton = findViewById(R.id.screenButton);
+        m_btCommStatus = findViewById(R.id.bt_comm);
 
         m_reloadButton.setEnabled(false);
 
@@ -135,7 +151,26 @@ public class ScreenActivity extends AppCompatActivity {
         m_logView.setMovementMethod(new ScrollingMovementMethod());
         m_btIconStatus.clearColorFilter();
 
+        askPermission();
+
         openEcu("test.json");
+        chooseCategory();
+    }
+
+    void askPermission(){
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            } else {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                        MY_PERMISSIONS_ACCESS_EXTERNAL_STORAGE);
+
+            }
+        } else {
+        }
     }
 
     void openEcu(String ecuname){
@@ -165,7 +200,9 @@ public class ScreenActivity extends AppCompatActivity {
         m_displayViews = new HashMap<>();
         m_editTextViews = new HashMap<>();
         m_spinnerViews = new HashMap<>();
-        m_ButtonsViews = new HashMap<>();
+        m_buttonsViews = new HashMap<>();
+        m_buttonsCommand = new HashMap<>();
+        m_requestsInputs = new HashMap<>();
         m_displaysRequestSet = new HashSet<>();
 
         m_currentScreenData = m_currentLayoutData.getScreen(screenName);
@@ -176,8 +213,6 @@ public class ScreenActivity extends AppCompatActivity {
         m_layoutView.setLayoutParams(new FrameLayout.LayoutParams(
                 (int) convertToPixel(m_currentScreenData.m_width),
                 (int) convertToPixel(m_currentScreenData.m_height)));
-        //m_layoutView.getLayoutParams().width = (int) convertToPixel(m_currentScreenData.m_width);
-        //m_layoutView.getLayoutParams().height = (int) convertToPixel(m_currentScreenData.m_height);
         m_layoutView.setBackgroundColor(m_currentScreenData.m_color.get());
 
         Set<String> labels = m_currentScreenData.getLabels();
@@ -284,6 +319,11 @@ public class ScreenActivity extends AppCompatActivity {
                 m_spinnerViews.put(inputdata.text, spinner);
                 m_layoutView.addView(spinner);
             }
+            if (!m_requestsInputs.containsKey(inputdata.request)){
+                m_requestsInputs.put(inputdata.request, new ArrayList<Layout.InputData>());
+            }
+            ArrayList<Layout.InputData> tmp = m_requestsInputs.get(inputdata.request);
+            tmp.add(inputdata);
         }
 
         Set<String> buttons = m_currentScreenData.getButtons();
@@ -300,8 +340,9 @@ public class ScreenActivity extends AppCompatActivity {
             buttonView.setText(buttondata.text);
             buttonView.setTextSize(convertFontToPixel(buttondata.font.size));
             buttonView.setOnClickListener(buttonClickListener);
+            m_buttonsCommand.put(buttonView, buttondata.uniqueName);
             m_layoutView.addView(buttonView);
-            m_ButtonsViews.put(buttondata.uniqueName, buttonView);
+            m_buttonsViews.put(buttondata.uniqueName, buttonView);
         }
 
         m_scrollView.requestLayout();
@@ -311,6 +352,11 @@ public class ScreenActivity extends AppCompatActivity {
     void updateDisplays(){
         if (!isChatConnected()) {
             setConnected(false);
+            return;
+        }
+
+        if (m_currentScreenData == null){
+            // No screen defined yet
             return;
         }
 
@@ -346,6 +392,8 @@ public class ScreenActivity extends AppCompatActivity {
             // Test data
             response = "610A163232025800B43C3C1E3C0A0A0A0A012C5C6167B5BBC10A5C";
             req = "210A";
+//            response = "610F1F1F7F01";
+//            req = "210F";
         }
         try {
             for (String requestname : m_displaysRequestSet) {
@@ -375,16 +423,84 @@ public class ScreenActivity extends AppCompatActivity {
             }
         } catch (Exception e) {
             m_logView.append(e.toString());
+            e.printStackTrace();
         }
     }
 
     private View.OnClickListener buttonClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            Button clickedButton = (Button)v;
-            System.out.println("Clicked on " + clickedButton.getText());
+            if (! m_buttonsCommand.containsKey(v))
+                return;
+            String uniqueName = m_buttonsCommand.get(v);
+            exectuteButtonCommands(uniqueName);
         }
     };
+
+    void exectuteButtonCommands(String buttonUniqueName){
+        Layout.ButtonData buttonData = m_currentScreenData.getButtonData(buttonUniqueName);
+        if (buttonData == null)
+            return;
+
+        ArrayList<Pair<Integer, String>> commands = new ArrayList<>();
+        for(Pair<Integer, String> sendData: buttonData.sendData){
+            Integer delay = sendData.first;
+            Ecu.EcuRequest request = m_ecu.getRequest(sendData.second);
+            if (request == null){
+                Log.d("CanApp", "Cannot find request " + sendData.second);
+                return;
+            }
+
+            if (!m_requestsInputs.containsKey(sendData.second)){
+                commands.add(new Pair<>(delay, request.sentbytes));
+                Log.d("CanApp", ">>>>>>>>>>> Computed (no data) " + request.sentbytes);
+                continue;
+            }
+
+            HashMap<String, Object> inputBuilder = new HashMap<>();
+
+            ArrayList<Layout.InputData> inputs = m_requestsInputs.get(sendData.second);
+            for (Layout.InputData input : inputs){
+                if (m_editTextViews.containsKey(input.text)){
+                    EditText editText = m_editTextViews.get(input.text);
+                    String currentText = editText.getText().toString();
+                    if (request.sendbyte_dataitems.containsKey(input.text)){
+                        Ecu.EcuData ecuData = m_ecu.getData(input.text);
+                        if (!ecuData.bytesascii) {
+                            if (ecuData.scaled) {
+                                if (!currentText.matches("[-+]?[0-9]*\\.?[0-9]+")) {
+                                    Toast.makeText(getApplicationContext(), "Invalid value, check inputs", Toast.LENGTH_LONG).show();
+                                    return;
+                                }
+                            } else {
+                                if (!IsotpDecode.isHexadecimal(currentText)) {
+                                    Toast.makeText(getApplicationContext(), "Invalid value, check inputs", Toast.LENGTH_LONG).show();
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                    inputBuilder.put(input.text, currentText);
+                }
+
+                if (m_spinnerViews.containsKey(input.text)){
+                    Spinner spinner = m_spinnerViews.get(input.text);
+                    String currentText = spinner.getSelectedItem().toString();
+                    inputBuilder.put(input.text, currentText);
+                }
+            }
+
+            byte[] builtStream = m_ecu.setRequestValues(sendData.second, inputBuilder);
+            Log.d("CanApp","Computed frame : " + Ecu.byteArrayToHex(builtStream));
+            commands.add(new Pair<Integer, String>(delay, Ecu.byteArrayToHex(builtStream)));
+        }
+
+        for (Pair<Integer, String> command : commands){
+            if (command.first > 0)
+                sendDelay(command.first);
+            sendCmd(command.second);
+        }
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -497,9 +613,11 @@ public class ScreenActivity extends AppCompatActivity {
     private void setConnected(boolean c){
         if (c) {
             m_btIconStatus.setImageResource(R.drawable.ic_bt_connected);
+            m_btIconStatus.setColorFilter(Color.GREEN);
             m_reloadButton.setEnabled(true);
         } else {
             m_btIconStatus.setImageResource(R.drawable.ic_bt_disconnected);
+            m_btIconStatus.clearColorFilter();
             m_reloadButton.setEnabled(false);
         }
     }
@@ -607,13 +725,13 @@ public class ScreenActivity extends AppCompatActivity {
 
     private void setElMWorking(boolean isWorking){
         if (isWorking) {
-            m_btIconStatus.setColorFilter(Color.GREEN);
-            for (Button button : m_ButtonsViews.values()){
+            m_btCommStatus.setColorFilter(Color.GREEN);
+            for (Button button : m_buttonsViews.values()){
                 button.setEnabled(false);
             }
         } else {
-            m_btIconStatus.clearColorFilter();
-            for (Button button : m_ButtonsViews.values()){
+            m_btCommStatus.clearColorFilter();
+            for (Button button : m_buttonsViews.values()){
                 button.setEnabled(true);
             }
         }

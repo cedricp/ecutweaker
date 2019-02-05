@@ -287,9 +287,8 @@ public class Ecu {
             if (dataitem.endian.equals("Big"))
                 little_endian = false;
 
-            int databytelen = (int)(Math.ceil((float)bits) / 8.0f);
-            int reqdatabytelen = (int)(Math.ceil((float)bits + (float)startBit) / 8.0f);
-
+            int databytelen = (int)(Math.ceil((float)bits / 8.0f));
+            int reqdatabytelen = (int)(Math.ceil(((float)bits + (float)startBit) / 8.0f));
             int sb = startByte - 1;
 
             if ((sb + databytelen) > resp.length) {
@@ -334,6 +333,7 @@ public class Ecu {
                     throw new ArithmeticException("Problem computing little endian value");
                 }
             } else {
+                hextobin = hextobin.substring(startBit, startBit + bitscount);
                 BigInteger bigval = new BigInteger(hextobin, 2);
                 hex = bigval.toString(16);
             }
@@ -635,7 +635,7 @@ public class Ecu {
         StringBuilder sb = new StringBuilder(a.length * 2);
         for(byte b: a)
             sb.append(String.format("%02x", b));
-        return sb.toString();
+        return sb.toString().toUpperCase();
     }
 
     public byte[] setRequestValues(String requestname, HashMap<String, Object> hash){
@@ -648,7 +648,7 @@ public class Ecu {
                 String val = (String)entry.getValue();
                 if (data.items.containsKey(val)){
                     barray = data.setValue(Integer.toHexString(data.items.get(val)), barray, item);
-                    return barray;
+                    continue;
                 }
 
             }

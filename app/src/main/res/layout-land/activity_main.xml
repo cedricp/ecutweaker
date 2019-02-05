@@ -18,6 +18,13 @@
             android:orientation="vertical">
 
             <ImageView
+                android:id="@+id/bt_comm"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:srcCompat="@drawable/ic_communication" />
+
+            <ImageView
                 android:id="@+id/iconBt"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
