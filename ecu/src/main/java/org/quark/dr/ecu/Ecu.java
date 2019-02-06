@@ -207,7 +207,7 @@ public class Ecu {
 
             finalbinvalue = padLeft(finalbinvalue, bitscount, "0");
 
-            int numreqbytes = (int)(Math.ceil((float)bitscount + start_bit) / 8.f);
+            int numreqbytes = (int)(Math.ceil(((float)bitscount + start_bit) / 8.f));
             byte[] request_bytes = Arrays.copyOfRange(byte_list, start_byte, start_byte + numreqbytes);
             String requestasbin = "";
 
@@ -653,6 +653,7 @@ public class Ecu {
 
             }
             barray = data.setValue(entry.getValue(), barray, item);
+
         }
         return barray;
     }

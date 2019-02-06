@@ -296,6 +296,14 @@ public class Layout {
         }
     }
 
+    public Layout(String js){
+        try {
+            init(new JSONObject(js));
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
     void init(JSONObject jobj){
         m_screens = new HashMap<>();
         m_categories = new HashMap<>();

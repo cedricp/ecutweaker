@@ -1,5 +1,5 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_name">CanApp</string>
+    <string name="activity_screen">CanAppScreen</string>
     <string name="action_settings">Settings</string>
     <string name="font">ds_digii</string>
 
@@ -32,4 +32,5 @@
     <string name="title_activity_moniror_errors">Error Monitor</string>
     <string name="title_activity_monitor_data">MonitorData</string>
     <string name="data_test_str">Test script</string>
+    <string name="title_activity_main">Ecu Tweaker</string>
 </resources>

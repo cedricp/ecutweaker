@@ -1,22 +1,15 @@
 package org.quark.dr.canapp;
 
-import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.speech.tts.TextToSpeech;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Pair;
 import android.support.v7.app.AppCompatActivity;
@@ -42,12 +35,9 @@ import org.quark.dr.ecu.EcuDatabase;
 import org.quark.dr.ecu.IsotpDecode;
 import org.quark.dr.ecu.Layout;
 
-import java.io.File;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import static org.quark.dr.canapp.ElmThread.STATE_CONNECTED;
@@ -58,7 +48,6 @@ import static org.quark.dr.canapp.ElmThread.STATE_NONE;
 
 public class ScreenActivity extends AppCompatActivity {
     private static final String TAG = "org.quark.dr.canapp";
-    private TextToSpeech mTts;
     private ScrollView m_scrollView;
     private RelativeLayout m_layoutView;
     private Ecu m_ecu;
@@ -67,7 +56,7 @@ public class ScreenActivity extends AppCompatActivity {
     private ImageButton m_searchButton, m_reloadButton, m_screenButton;
     private ImageView m_btIconStatus, m_btCommStatus;
     private TextView m_logView;
-    private String m_currentScreenName, m_currentEcuName;
+    private String m_currentScreenName, m_currentEcuName, m_ecuZipFileName;
 
     private HashMap<String, EditText> m_editTextViews;
     private HashMap<String, EditText> m_displayViews;
@@ -93,7 +82,6 @@ public class ScreenActivity extends AppCompatActivity {
     public static final int     MESSAGE_QUEUE_STATE     = 6;
     public static final String  DEVICE_NAME = "device_name";
     public static final String  TOAST       = "toast";
-    public static final int     MY_PERMISSIONS_ACCESS_EXTERNAL_STORAGE = 0;
     private String              mConnectedDeviceName = null;
 
     public float convertToPixel(float val){
@@ -108,8 +96,18 @@ public class ScreenActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_screen);
 
+        String ecuFile = "";
+        String ecuHref = "";
+
+        Bundle b = getIntent().getExtras();
+        if (b != null) {
+            ecuFile = b.getString("ecuFile");
+            ecuHref = b.getString("ecuRef");
+        }
+
+        m_ecuZipFileName = ecuFile;
         m_searchButton = findViewById(R.id.buttonSearch);
         m_reloadButton = findViewById(R.id.reloadButton);
         m_btIconStatus = findViewById(R.id.iconBt);
@@ -150,45 +148,29 @@ public class ScreenActivity extends AppCompatActivity {
         m_logView = this.findViewById(R.id.logView);
         m_logView.setMovementMethod(new ScrollingMovementMethod());
         m_btIconStatus.clearColorFilter();
-
-        askPermission();
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.READ_EXTERNAL_STORAGE)
-                == PackageManager.PERMISSION_GRANTED){
-            EcuDatabase ecuDatabase = new EcuDatabase();
+        if (!ecuFile.isEmpty()){
+            openEcu(ecuFile, ecuHref);
         }
-        openEcu("test.json");
         chooseCategory();
     }
 
-    void askPermission(){
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.READ_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.READ_EXTERNAL_STORAGE)) {
-            } else {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                        MY_PERMISSIONS_ACCESS_EXTERNAL_STORAGE);
+    void openEcu(String ecuFile, String ecuName){
+        String layoutFileName = ecuName + ".layout";
 
-            }
-        } else {
-        }
-    }
+        System.out.println(">>>> Opening " + ecuName);
+        System.out.println(">>>> Opening layout " + layoutFileName);
 
-    void openEcu(String ecuname){
-        String layoutName = ecuname + ".layout";
-        InputStream ecu_stream = getClass().getClassLoader().getResourceAsStream(ecuname);
-        InputStream layout_stream = getClass().getClassLoader().getResourceAsStream(layoutName);
-        m_ecu = new Ecu(ecu_stream);
-        m_currentLayoutData = new Layout(layout_stream);
-        m_currentEcuName = ecuname;
+        String ecuJson = EcuDatabase.getZipFile(ecuFile, ecuName);
+        String layoutJson = EcuDatabase.getZipFile(ecuFile, layoutFileName);
+
+        m_ecu = new Ecu(ecuJson);
+        m_currentLayoutData = new Layout(layoutJson);
+        m_currentEcuName = ecuName;
     }
 
     @Override
     public void onRestoreInstanceState(Bundle savedInstanceState) {
-        openEcu(savedInstanceState.getString("ecu_name"));
+        openEcu(m_ecuZipFileName, savedInstanceState.getString("ecu_name"));
         drawScreen(savedInstanceState.getString("screen_name"));
     }
 
@@ -215,25 +197,25 @@ public class ScreenActivity extends AppCompatActivity {
 
         m_layoutView.removeAllViews();
         m_layoutView.setLayoutParams(new FrameLayout.LayoutParams(
-                (int) convertToPixel(m_currentScreenData.m_width),
-                (int) convertToPixel(m_currentScreenData.m_height)));
+                (int) convertToPixel(m_currentScreenData.m_width + 50),
+                (int) convertToPixel(m_currentScreenData.m_height) + 50));
         m_layoutView.setBackgroundColor(m_currentScreenData.m_color.get());
 
         Set<String> labels = m_currentScreenData.getLabels();
         for (String label : labels) {
-            Layout.LabelData labeldata = m_currentScreenData.getLabelData(label);
+            Layout.LabelData labelData = m_currentScreenData.getLabelData(label);
             TextView textView = new TextView(this);
-            textView.setX(convertToPixel(labeldata.rect.x));
-            textView.setY(convertToPixel(labeldata.rect.y));
-            textView.setWidth((int) convertToPixel(labeldata.rect.w));
-            textView.setHeight((int) convertToPixel(labeldata.rect.h));
-            textView.setText(labeldata.text);
-            textView.setBackgroundColor(labeldata.color.get());
-            textView.setTextColor(labeldata.font.color.get());
-            textView.setTextSize(convertFontToPixel(labeldata.font.size));
-            if (labeldata.alignment == 2){
+            textView.setX(convertToPixel(labelData.rect.x));
+            textView.setY(convertToPixel(labelData.rect.y));
+            textView.setWidth((int) convertToPixel(labelData.rect.w));
+            textView.setHeight((int) convertToPixel(labelData.rect.h));
+            textView.setText(labelData.text);
+            textView.setBackgroundColor(labelData.color.get());
+            textView.setTextColor(labelData.font.color.get());
+            textView.setTextSize(convertFontToPixel(labelData.font.size));
+            if (labelData.alignment == 2){
                 textView.setGravity(Gravity.CENTER_HORIZONTAL);
-            } else if (labeldata.alignment == 1){
+            } else if (labelData.alignment == 1){
                 textView.setGravity(Gravity.RIGHT);
             }
             m_layoutView.addView(textView);
@@ -350,7 +332,6 @@ public class ScreenActivity extends AppCompatActivity {
         }
 
         m_scrollView.requestLayout();
-        updateScreen("", "");
     }
 
     void updateDisplays(){
@@ -648,11 +629,11 @@ public class ScreenActivity extends AppCompatActivity {
 
     private void chooseScreen(String screenname){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Choose a category");
+        builder.setTitle("Choose a screen");
 
         final String[] screens =
                 m_currentLayoutData.getScreenNames(screenname).toArray(
-                        new String[m_currentLayoutData.getCategories().size()]);
+                        new String[m_currentLayoutData.getScreenNames(screenname).size()]);
 
         builder.setItems(screens, new DialogInterface.OnClickListener() {
             @Override
@@ -768,7 +749,7 @@ public class ScreenActivity extends AppCompatActivity {
                     Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
                     switch (msg.arg1) {
                         case STATE_CONNECTED:
-                            activity.setStatus(activity.getString(R.string.title_connected_to, activity.mConnectedDeviceName));
+                            //activity.setStatus(activity.getString(R.string.title_connected_to, activity.mConnectedDeviceName));
                             activity.initELM();
                             activity.setConnected(true);
                             break;
