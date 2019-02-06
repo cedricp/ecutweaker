@@ -10,35 +10,27 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
         android:orientation="vertical">
 
-        <LinearLayout
+        <CheckBox
+            android:id="@+id/databaseCheckBox"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <CheckBox
-                android:id="@+id/databaseCheckBox"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Database found" />
-
-        </LinearLayout>
+            android:layout_height="40dp"
+            android:text="Database found" />
 
         <Button
             android:id="@+id/btButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="40dp"
             android:text="Choose BlueTooth device..."
             android:textSize="14sp" />
 
         <ListView
             android:id="@+id/ecuListView"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight=".5">
+            android:layout_height="0dp"
+            android:layout_weight="1">
 
         </ListView>
 
@@ -51,15 +43,16 @@
 
         <ListView
             android:id="@+id/deviceView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight=".5"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:baselineAligned="false"
             tools:layout_editor_absoluteY="128dp" />
 
         <Button
             android:id="@+id/buttonScreen"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="40dp"
             android:text="GOTO SCREEN" />
 
     </LinearLayout>

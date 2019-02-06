@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -20,6 +21,7 @@ import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import org.quark.dr.ecu.Ecu;
 import org.quark.dr.ecu.EcuDatabase;
 
 import java.util.ArrayList;
@@ -215,34 +217,58 @@ public class MainActivity extends AppCompatActivity {
 
     void parseDatabase(){
         String ecuFile = "";
-
         SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
         if (defaultPrefs.contains("ecuZipFile")) {
             ecuFile = defaultPrefs.getString("ecuZipFile", "");
             System.out.println(">>> Default ecu OK : "+ecuFile);
         }
 
-        try {
-            ecuFile = m_ecuDatabase.loadDatabase(ecuFile);
-        } catch (EcuDatabase.DatabaseException e){
-            Log.e(TAG, "Database exception : " + e.getMessage());
-            return;
-        }
+        new LoadDbTask(m_ecuDatabase).execute(ecuFile);
+    }
 
+    void updateListView(String ecuFile){
         m_databaseTextView.setChecked(true);
-        ArrayAdapter<String> adapter;
+        SharedPreferences defaultPrefs = getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
         SharedPreferences.Editor edit = defaultPrefs.edit();
         edit.putString("ecuZipFile", ecuFile);
         edit.commit();
 
         m_ecuFilePath = ecuFile;
 
-        adapter=new ArrayAdapter<>(this,
+        ArrayAdapter<String> adapter;
+        adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_list_item_1,
                 m_ecuDatabase.getEcuByFunctions());
         m_ecuListView.setAdapter(adapter);
 
         Log.i(TAG, "Database sucessfully loaded");
+    }
+
+    public class LoadDbTask extends AsyncTask<String, Void, String> {
+
+        private final EcuDatabase db;
+
+        public LoadDbTask(EcuDatabase data) {
+            this.db = data;
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            String ecuFile = params[0];
+            try {
+                ecuFile = m_ecuDatabase.loadDatabase(ecuFile);
+            } catch (EcuDatabase.DatabaseException e){
+                Log.e(TAG, "Database exception : " + e.getMessage());
+                return "";
+            }
+
+            return ecuFile;
+        }
+
+        @Override
+        protected void onPostExecute(String ecuFile) {
+            updateListView(ecuFile);
+        }
     }
 
 }
