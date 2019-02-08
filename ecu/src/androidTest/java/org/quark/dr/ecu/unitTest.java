@@ -20,6 +20,28 @@ import static org.junit.Assert.*;
  */
 public class unitTest {
     @Test
+    public void test_ecu_little_endian(){
+        InputStream is = this.getClass().getClassLoader().getResourceAsStream("UCH_LE.json");
+        Ecu ecu = new Ecu(is);
+        HashMap<String, Object> hash = new HashMap<>();
+        byte[] uchTest = Ecu.hexStringToByteArray("61112110010104001400000000DCE9");
+        HashMap<String, String> hash2 = ecu.getRequestValues(uchTest, "Trame 11 : Etats des entrées", false);
+        Iterator<String> it = hash2.keySet().iterator();
+        for (;it.hasNext();){
+            String key = it.next();
+            System.out.println("??  " + key + " = " + hash2.get(key));
+            hash2.put(key, hash2.get(key));
+        }
+
+
+        hash.put("Code APV", "001122334455");
+        byte[] frame;
+        frame = ecu.setRequestValues("ACCEDER AU MODE APRES-VENTE", hash);
+        System.out.println("??  " + Ecu.byteArrayToHex(frame));
+    }
+
+
+    @Test
     public void test_ecu() {
         assertTrue(getClass().getResource("test.json") == null);
         InputStream is = this.getClass().getClassLoader().getResourceAsStream("test.json");
@@ -88,4 +110,6 @@ public class unitTest {
     public void test_isotp() {
 
     }
+
+
 }

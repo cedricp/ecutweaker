@@ -1,1 +1,1 @@
-include ':app', ':ecu'
+include ':EcuTweaker', ':ecu'

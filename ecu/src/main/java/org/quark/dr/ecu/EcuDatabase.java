@@ -3,7 +3,6 @@ package org.quark.dr.ecu;
 import android.os.Environment;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
@@ -25,49 +24,70 @@ public class EcuDatabase {
     boolean m_loaded;
     private HashMap<Integer, ArrayList<EcuInfo>> m_ecuInfo;
     private HashMap<Integer, String> m_ecuAddressing;
+
     public class EcuInfo {
         public Set<String> projects;
         public String href;
         public String ecuName;
+        public int addressId;
     }
 
-    public class DatabaseException extends Exception{
+    public class DatabaseException extends Exception {
         public DatabaseException(String message) {
             super(message);
         }
     }
 
-    public ArrayList<EcuInfo> getEcuInfo(int addr){
+    public ArrayList<EcuInfo> getEcuInfo(int addr) {
         return m_ecuInfo.get(addr);
     }
 
-    public ArrayList<String> getEcuByFunctions(){
+    public ArrayList<String> getEcuByFunctions() {
         ArrayList<String> list = new ArrayList<>();
-        Iterator<String> iter = m_ecuAddressing.values().iterator();
-        while(iter.hasNext()){
-            list.add(iter.next());
+        Iterator<String> valueIterator = m_ecuAddressing.values().iterator();
+        while (valueIterator.hasNext()) {
+            list.add(valueIterator.next());
         }
         return list;
     }
 
-    public int getAddressByFunction(String name){
+    public ArrayList<String> getEcuByFunctionsAndType(String type) {
+        Set<String> list = new HashSet<>();
+        Iterator<ArrayList<EcuInfo>> ecuArrayIterator = m_ecuInfo.values().iterator();
+
+        while (ecuArrayIterator.hasNext()) {
+            ArrayList<EcuInfo> ecuArray = ecuArrayIterator.next();
+            for (EcuInfo ecuInfo : ecuArray) {
+                if (ecuInfo.projects.contains(type) && m_ecuAddressing.containsKey(ecuInfo.addressId)) {
+                    list.add(m_ecuAddressing.get(ecuInfo.addressId));
+                }
+            }
+        }
+        ArrayList<String> ret = new ArrayList<>();
+        for (String txt : list) {
+            ret.add(txt);
+        }
+        return ret;
+    }
+
+    public int getAddressByFunction(String name) {
         Set<Integer> keySet = m_ecuAddressing.keySet();
-        for(Integer i : keySet){
-            if (m_ecuAddressing.get(i) == name){
+        for (Integer i : keySet) {
+            if (m_ecuAddressing.get(i) == name) {
                 return i;
             }
         }
         return -1;
     }
 
-    public EcuDatabase(){
+    public EcuDatabase() {
         m_ecuInfo = new HashMap<>();
         m_ecuAddressing = new HashMap<>();
         m_loaded = false;
         loadAddressing();
     }
 
-    private void loadAddressing(){
+    private void loadAddressing() {
         String addressingResource = "addressing.json";
         InputStream ecu_stream = getClass().getClassLoader().getResourceAsStream(addressingResource);
         String line;
@@ -92,7 +112,7 @@ public class EcuDatabase {
                 String name = ecuArray.getString(1);
                 m_ecuAddressing.put(Integer.parseInt(key, 16), name);
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -100,18 +120,18 @@ public class EcuDatabase {
     public String loadDatabase(String ecuFile) throws DatabaseException {
         if (ecuFile.isEmpty()) {
             ecuFile = walkDir(Environment.getExternalStorageDirectory());
-            if (ecuFile == null) {
-                ecuFile = walkDir(Environment.getDataDirectory());
-            }
-            if (ecuFile == null) {
-                ecuFile = walkDir(new File("/storage"));
-            }
-            if (ecuFile == null) {
-                ecuFile = walkDir(new File("/mnt"));
-            }
-            if (ecuFile == null) {
-                throw new DatabaseException("Ecu file not found");
-            }
+        }
+        if (ecuFile.isEmpty()) {
+            ecuFile = walkDir(Environment.getDataDirectory());
+        }
+        if (ecuFile.isEmpty()) {
+            ecuFile = walkDir(new File("/storage"));
+        }
+        if (ecuFile.isEmpty()) {
+            ecuFile = walkDir(new File("/mnt"));
+        }
+        if (ecuFile.isEmpty()) {
+            throw new DatabaseException("Ecu file not found");
         }
 
         JSONObject jobj;
@@ -133,7 +153,7 @@ public class EcuDatabase {
                 Set<String> hashSet = new HashSet<>();
                 for (int i = 0; i < projobjects.length(); ++i) {
                     String project = projobjects.getString(i);
-                    hashSet.add(project);
+                    hashSet.add(project.toUpperCase());
                 }
                 int addrId = Integer.parseInt(ecuobj.getString("address"), 16);
                 addrSet.add(addrId);
@@ -141,23 +161,24 @@ public class EcuDatabase {
                 info.ecuName = ecuobj.getString("ecuname");
                 info.href = href;
                 info.projects = hashSet;
+                info.addressId = addrId;
                 ArrayList<EcuInfo> ecuList;
-                if (!m_ecuInfo.containsKey(addrId)){
+                if (!m_ecuInfo.containsKey(addrId)) {
                     ecuList = new ArrayList<>();
                     m_ecuInfo.put(addrId, ecuList);
                 } else {
                     ecuList = m_ecuInfo.get(addrId);
                 }
                 ecuList.add(info);
-                            } catch (Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
                 throw new DatabaseException("JSON parsing issue");
             }
         }
 
         Set<Integer> keySet = new HashSet<>(m_ecuAddressing.keySet());
-        for (Integer key : keySet){
-            if (!addrSet.contains(key)){
+        for (Integer key : keySet) {
+            if (!addrSet.contains(key)) {
                 m_ecuAddressing.remove(key);
             }
         }
@@ -166,32 +187,48 @@ public class EcuDatabase {
         return ecuFile;
     }
 
-    public boolean isLoaded(){
+    public boolean isLoaded() {
         return m_loaded;
     }
 
     public String walkDir(File dir) {
         String searchFile = "ECU.ZIP";
-        String result = "";
         File listFile[] = dir.listFiles();
         if (listFile != null) {
             for (File f : listFile) {
                 if (f.isDirectory()) {
                     String res = walkDir(f);
                     if (!res.isEmpty())
-                        result = res;
+                        return res;
                 } else {
-                    if (f.getName().toUpperCase().equals(searchFile)){
+                    if (f.getName().toUpperCase().equals(searchFile)) {
                         return f.getAbsolutePath();
                     }
                 }
             }
         }
-        return result;
+        return "";
     }
 
-    static public String getZipFile(String ecuFile, String filename)
-    {
+    public ArrayList<String> getZipEntries(String zipFile) {
+        ArrayList<String> entries = new ArrayList<>();
+        try {
+            InputStream zip_is = new FileInputStream(zipFile);
+            ZipInputStream zis = new ZipInputStream(new BufferedInputStream(zip_is));
+            ZipEntry ze;
+
+            while ((ze = zis.getNextEntry()) != null) {
+                String filename = ze.getName();
+                entries.add(filename);
+            }
+        } catch (IOException e) {
+
+        }
+        return entries;
+    }
+
+    static public String getZipFile(String ecuFile, String filename) {
+        long time = System.currentTimeMillis();
         try {
             InputStream zip_is = new FileInputStream(ecuFile);
             ZipInputStream zis = new ZipInputStream(new BufferedInputStream(zip_is));
@@ -200,7 +237,9 @@ public class EcuDatabase {
             while ((ze = zis.getNextEntry()) != null)
             {
                 if (ze.getName().equals(filename)){
-                    int read = 0;
+
+                    time = System.currentTimeMillis();
+                    int read;
                     byte[] buffer = new byte[1024];
                     StringBuilder s = new StringBuilder();
 
@@ -215,7 +254,6 @@ public class EcuDatabase {
              e.printStackTrace();
              return null;
         }
-
         return null;
     }
 }

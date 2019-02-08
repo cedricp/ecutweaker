@@ -151,7 +151,7 @@ public class Ecu {
 
         public byte[] setValue(Object value, byte[] byte_list, EcuDataItem dataitem){
             int start_byte = dataitem.firstbyte - 1;
-            int start_bit = dataitem.bitoffset;
+            int startBit = dataitem.bitoffset;
             boolean little_endian = false;
 
             if (global_endian.equals("Little"))
@@ -207,7 +207,7 @@ public class Ecu {
 
             finalbinvalue = padLeft(finalbinvalue, bitscount, "0");
 
-            int numreqbytes = (int)(Math.ceil(((float)bitscount + start_bit) / 8.f));
+            int numreqbytes = (int)(Math.ceil(((float)bitscount + startBit) / 8.f));
             byte[] request_bytes = Arrays.copyOfRange(byte_list, start_byte, start_byte + numreqbytes);
             String requestasbin = "";
 
@@ -215,52 +215,52 @@ public class Ecu {
                 requestasbin += integerToBinaryString(request_bytes[i], 8);
             }
 
-            char[] binreq = requestasbin.toCharArray();
-            char[] binfin = finalbinvalue.toCharArray();
+            char[] binaryRequest = requestasbin.toCharArray();
+            char[] binaryValue = finalbinvalue.toCharArray();
 
             if (!little_endian){
                 // Big endian
                 for (int i = 0; i < bitscount; ++i){
-                    binreq[i + start_bit] = binfin[i];
+                    binaryRequest[i + startBit] = binaryValue[i];
                 }
             } else {
                 // Little endian
-                int remainingbytes = bitscount;
-                int lastbit = 7 - start_bit + 1;
-                int firstbit = lastbit - bitscount;
+                int remainingBits = bitscount;
+                int lastBit = 7 - startBit + 1;
+                int firstBit = lastBit - bitscount;
 
-                if (firstbit < 0)
-                    firstbit = 0;
+                if (firstBit < 0)
+                    firstBit = 0;
 
                 int count = 0;
-                for (int i = firstbit; i < lastbit; ++i, ++count){
-                    binreq[i] = binfin[count];
+                for (int i = firstBit; i < lastBit; ++i, ++count){
+                    binaryRequest[i] = binaryValue[count];
                 }
 
-                remainingbytes -= count;
+                remainingBits -= count;
 
                 int currentbyte = 1;
-                while(remainingbytes >= 8){
+                while(remainingBits >= 8){
                     for (int i = 0; i < 8; ++i){
-                        binreq[currentbyte * 8 + i] = binfin[count];
+                        binaryRequest[currentbyte * 8 + i] = binaryValue[count];
                         ++count;
-                        remainingbytes -= 8;
-                        currentbyte += 1;
                     }
+                    remainingBits -= 8;
+                    currentbyte += 1;
                 }
 
-                if (remainingbytes > 0){
-                    lastbit = 8;
-                    firstbit = lastbit - remainingbytes;
-                    for(int i = firstbit; i < lastbit; ++i){
-                        binreq[currentbyte * 8 + i] = binfin[count];
+                if (remainingBits > 0){
+                    lastBit = 8;
+                    firstBit = lastBit - remainingBits;
+                    for(int i = firstBit; i < lastBit; ++i){
+                        binaryRequest[currentbyte * 8 + i] = binaryValue[count];
                         ++count;
                     }
 
                 }
             }
 
-            BigInteger valueashex = new BigInteger(new String(binreq), 2);
+            BigInteger valueashex = new BigInteger(new String(binaryRequest), 2);
             String str16 = padLeft(valueashex.toString(16), bytescount*2, "0");
 
             for (int i = 0; i < numreqbytes; ++i){
@@ -287,63 +287,59 @@ public class Ecu {
             if (dataitem.endian.equals("Big"))
                 little_endian = false;
 
-            int databytelen = (int)(Math.ceil((float)bits / 8.0f));
-            int reqdatabytelen = (int)(Math.ceil(((float)bits + (float)startBit) / 8.0f));
+            int dataBytesLen = (int)(Math.ceil((float)bits / 8.0f));
+            int requiredDataBytesLen = (int)(Math.ceil(((float)bits + (float)startBit) / 8.0f));
             int sb = startByte - 1;
 
-            if ((sb + databytelen) > resp.length) {
+            if ((sb + dataBytesLen) > resp.length) {
                 throw new ArrayIndexOutOfBoundsException("Response too short");
             }
 
-            String hextobin = new String();
+            String hexToBin = "";
 
-            for (int i = 0; i < reqdatabytelen; ++i){
+            for (int i = 0; i < requiredDataBytesLen; ++i){
                 byte b = resp[i+sb];
-                hextobin += byteToBinaryString(b, 8);
+                hexToBin += byteToBinaryString(b, 8);
             }
 
-            String hex = new String();
+            String hex;
             if (little_endian){
-                int totalremainingbits = bits;
-                int lastbit = 7 - startBit + 1;
-                int firstbit = lastbit - bits;
-                if (firstbit < 0)
-                    firstbit = 0;
+                int totalRemainingBits = bits;
+                int lastBit = 7 - startBit + 1;
+                int firstBit = lastBit - bits;
+                if (firstBit < 0)
+                    firstBit = 0;
 
-                String tmp_bin = hextobin.substring(firstbit, lastbit);
-                totalremainingbits -= lastbit -firstbit;
+                String tempBin = hexToBin.substring(firstBit, lastBit);
+                totalRemainingBits -= lastBit - firstBit;
 
-                if (totalremainingbits > 8) {
+                if (totalRemainingBits > 8) {
                     int offset1 = 8;
-                    int offset2 = offset1 + ((reqdatabytelen - 2) * 8);
-                    tmp_bin += hextobin.substring(offset1, offset2);
-                    totalremainingbits -= offset2 - offset1;
+                    int offset2 = offset1 + ((requiredDataBytesLen - 2) * 8);
+                    tempBin += hexToBin.substring(offset1, offset2);
+                    totalRemainingBits -= offset2 - offset1;
                 }
 
-                if (totalremainingbits > 0){
-                    int offset1 = (reqdatabytelen - 1) * 8;
-                    int offset2 = offset1 - totalremainingbits;
-                    tmp_bin += hextobin.substring(offset2, offset1);
-                    totalremainingbits -= offset1 - offset2;
-                    BigInteger bigval = new BigInteger(tmp_bin, 2);
-                    hex = bigval.toString(16);
+                if (totalRemainingBits > 0){
+                    int offset1 = (requiredDataBytesLen - 1) * 8;
+                    int offset2 = offset1 - totalRemainingBits;
+                    tempBin += hexToBin.substring(offset2, offset1);
+                    totalRemainingBits -= offset1 - offset2;
                 }
 
-                if (totalremainingbits != 0){
-                    throw new ArithmeticException("Problem computing little endian value");
+                if (totalRemainingBits != 0){
+                    throw new ArithmeticException("Problem while resolving little endian value");
                 }
+
+                BigInteger bigValue = new BigInteger(tempBin, 2);
+                hex = bigValue.toString(16);
             } else {
-                hextobin = hextobin.substring(startBit, startBit + bitscount);
-                BigInteger bigval = new BigInteger(hextobin, 2);
-                hex = bigval.toString(16);
+                hexToBin = hexToBin.substring(startBit, startBit + bitscount);
+                BigInteger bigValue = new BigInteger(hexToBin, 2);
+                hex = bigValue.toString(16);
             }
 
-            return padLeft(hex, databytelen * 2, "0");
-        }
-
-        public int getIntValue(byte[] resp, EcuDataItem dataitem){
-            String val = getHexValue(resp, dataitem);
-            return Integer.parseInt(val);
+            return padLeft(hex, dataBytesLen * 2, "0");
         }
 
         public String fmt(double d)
