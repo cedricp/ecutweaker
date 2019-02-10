@@ -7,16 +7,21 @@ import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -24,6 +29,8 @@ public class EcuDatabase {
     boolean m_loaded;
     private HashMap<Integer, ArrayList<EcuInfo>> m_ecuInfo;
     private HashMap<Integer, String> m_ecuAddressing;
+    private HashMap<String, Long> m_directoryEntries;
+    private String m_ecuFilePath;
 
     public class EcuInfo {
         public Set<String> projects;
@@ -133,6 +140,10 @@ public class EcuDatabase {
         if (ecuFile.isEmpty()) {
             throw new DatabaseException("Ecu file not found");
         }
+        m_ecuFilePath = ecuFile;
+        getZipEntries(ecuFile);
+        String test = getZipFile("db.json");
+        System.out.println(">>>>" + test);
 
         JSONObject jobj;
         String bytes = getZipFile(ecuFile, "db.json");
@@ -210,35 +221,58 @@ public class EcuDatabase {
         return "";
     }
 
-    public ArrayList<String> getZipEntries(String zipFile) {
-        ArrayList<String> entries = new ArrayList<>();
+    public void getZipEntries(String zipFile) {
+        m_directoryEntries = new HashMap<>();
         try {
             InputStream zip_is = new FileInputStream(zipFile);
-            ZipInputStream zis = new ZipInputStream(new BufferedInputStream(zip_is));
+            ZipInputStream zis = new ZipInputStream(zip_is);
             ZipEntry ze;
 
             while ((ze = zis.getNextEntry()) != null) {
                 String filename = ze.getName();
-                entries.add(filename);
+                long offset = 30 + ze.getName().length() + (ze.getExtra() != null ? ze.getExtra().length : 0);
+                long pos = ((FileInputStream) zip_is).getChannel().position() - 12;
+                m_directoryEntries.put(filename, pos);
+                System.out.println(">>> " + offset + " " + pos);
             }
         } catch (IOException e) {
-
+            e.printStackTrace();
         }
-        return entries;
+    }
+
+    public String getZipFile(String filename) {
+        try {
+            long pos = m_directoryEntries.get(filename);
+            byte[] array = new byte[1024];
+            FileInputStream zip_is = new FileInputStream(m_ecuFilePath);
+            zip_is.skip(pos);
+            System.out.println(">>> curpos " + pos);
+            zip_is.read(array, 0, 1024);
+            Inflater inflater = new Inflater();
+            inflater.setInput(array, 0, 1024);
+            byte[] result = new byte[1024];
+            int resultLength = inflater.inflate(result);
+            inflater.end();
+            return result.toString();
+        } catch(IOException e)
+        {
+             e.printStackTrace();
+             return null;
+        } catch (DataFormatException e){
+            e.printStackTrace();
+        }
+        return "failed";
     }
 
     static public String getZipFile(String ecuFile, String filename) {
-        long time = System.currentTimeMillis();
         try {
-            InputStream zip_is = new FileInputStream(ecuFile);
+            FileInputStream zip_is = new FileInputStream(ecuFile);
             ZipInputStream zis = new ZipInputStream(new BufferedInputStream(zip_is));
             ZipEntry ze;
 
             while ((ze = zis.getNextEntry()) != null)
             {
                 if (ze.getName().equals(filename)){
-
-                    time = System.currentTimeMillis();
                     int read;
                     byte[] buffer = new byte[1024];
                     StringBuilder s = new StringBuilder();
@@ -251,9 +285,11 @@ public class EcuDatabase {
             }
         } catch(IOException e)
         {
-             e.printStackTrace();
-             return null;
+            e.printStackTrace();
+            return null;
         }
         return null;
     }
+
+
 }

@@ -131,6 +131,7 @@ public class ScreenActivity extends AppCompatActivity {
                 } else {
                     m_reloadButton.clearColorFilter();
                 }
+                updateDisplays();
                 return true;
             }
         });
@@ -144,6 +145,7 @@ public class ScreenActivity extends AppCompatActivity {
 
         m_reloadButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+                m_autoReload = false;
                 updateDisplays();
             }
         });
@@ -174,6 +176,7 @@ public class ScreenActivity extends AppCompatActivity {
             openEcu(ecuFile, ecuHref);
         }
 
+        setupChat();
         if (m_deviceAddressPref != null && !m_deviceAddressPref.isEmpty()){
             connectDevice(m_deviceAddressPref);
         }

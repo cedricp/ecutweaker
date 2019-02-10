@@ -354,8 +354,8 @@ public class Ecu {
             return getDisplayValue(resp, dataitem) + " " + unit;
         }
 
-        public String getDisplayValue(byte[] resp, EcuDataItem dataitem){
-            String hexval = getHexValue(resp, dataitem);
+        public String getDisplayValue(byte[] resp, EcuDataItem dataItem){
+            String hexval = getHexValue(resp, dataItem);
              if (bytesascii){
                  byte[] s = hexStringToByteArray(hexval);
                  return new String(s);

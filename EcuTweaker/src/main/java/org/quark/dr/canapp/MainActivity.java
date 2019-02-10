@@ -72,8 +72,13 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        if (mBluetoothAdapter == null) {
-            Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_LONG).show();
+        if (mBluetoothAdapter != null) {
+            if (!mBluetoothAdapter.isEnabled()){
+                Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+            } else {
+                Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_LONG).show();
+            }
         }
 
         mHandler = new MainActivity.messageHandler(this);
@@ -243,6 +248,15 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
+    }
+
+    @Override
+    public void onDestroy()
+    {
+        Log.e(TAG, "+ ON DESTROY +");
+        super.onDestroy();
+        if (m_chatService != null)
+            m_chatService.stop();
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
