@@ -312,6 +312,7 @@ public class ElmThread {
         private final InputStream     mmInStream;
         private final OutputStream    mmOutStream;
         private ArrayList<String>     mmessages;
+        private boolean runStatus;
 
         public ConnectedThread(BluetoothSocket socket, String socketType) {
             Log.d(TAG, "create ConnectedThread: " + socketType);
@@ -344,9 +345,10 @@ public class ElmThread {
         public void run() {
             Log.i(TAG, "BEGIN mConnectedThread");
             long timer = System.currentTimeMillis();
+            runStatus = true;
 
             // Keep listening to the InputStream while connected
-            while (true) {
+            while (runStatus) {
                 if (mmessages.size() > 0){
                     String message;
                     int num_queue = -1;
@@ -398,6 +400,7 @@ public class ElmThread {
             } catch (IOException e) {
                 Log.e(TAG, "close() of connect socket failed", e);
             }
+            runStatus = false;
         }
 
         private String write_raw(String raw_buffer){

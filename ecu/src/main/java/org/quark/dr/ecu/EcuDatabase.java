@@ -1,35 +1,38 @@
 package org.quark.dr.ecu;
 
 import android.os.Environment;
+import android.support.v4.util.Pair;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
-import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class EcuDatabase {
+    class CustomZipEntry{
+        public long compressedSize, pos, uncompressedSize;
+    }
+
     boolean m_loaded;
     private HashMap<Integer, ArrayList<EcuInfo>> m_ecuInfo;
     private HashMap<Integer, String> m_ecuAddressing;
-    private HashMap<String, Long> m_directoryEntries;
+    private HashMap<String, CustomZipEntry> m_directoryEntries;
     private String m_ecuFilePath;
 
     public class EcuInfo {
@@ -124,52 +127,71 @@ public class EcuDatabase {
         }
     }
 
-    public String loadDatabase(String ecuFile) throws DatabaseException {
-        if (ecuFile.isEmpty()) {
-            ecuFile = walkDir(Environment.getExternalStorageDirectory());
+    public String loadDatabase(String ecuFilename, String appDir) throws DatabaseException {
+        if (ecuFilename.isEmpty()) {
+            ecuFilename = walkDir(Environment.getExternalStorageDirectory());
         }
-        if (ecuFile.isEmpty()) {
-            ecuFile = walkDir(Environment.getDataDirectory());
+        if (ecuFilename.isEmpty()) {
+            ecuFilename = walkDir(Environment.getDataDirectory());
         }
-        if (ecuFile.isEmpty()) {
-            ecuFile = walkDir(new File("/storage"));
+        if (ecuFilename.isEmpty()) {
+            ecuFilename = walkDir(new File("/storage"));
         }
-        if (ecuFile.isEmpty()) {
-            ecuFile = walkDir(new File("/mnt"));
+        if (ecuFilename.isEmpty()) {
+            ecuFilename = walkDir(new File("/mnt"));
         }
-        if (ecuFile.isEmpty()) {
+        if (ecuFilename.isEmpty()) {
             throw new DatabaseException("Ecu file not found");
         }
-        m_ecuFilePath = ecuFile;
-        getZipEntries(ecuFile);
-        String test = getZipFile("db.json");
-        System.out.println(">>>>" + test);
 
-        JSONObject jobj;
-        String bytes = getZipFile(ecuFile, "db.json");
+        String bytes;
+        m_ecuFilePath = ecuFilename;
+        String indexFileName = appDir + "/ecu.idx";
+
+        File indexFile = new File(indexFileName);
+        File ecuFile = new File(m_ecuFilePath);
+        long indexTimeStamp = indexFile.lastModified();
+        long ecuTimeStamp = ecuFile.lastModified();
+
+        /*
+         * If index is already made, use it
+         * Also check files exists and timestamps to force [re]scan
+         */
+        if (indexFile.exists() && (indexTimeStamp < ecuTimeStamp) && importZipEntries(appDir)){
+            bytes = getZipFile("db.json");
+        } else {
+            /*
+             * Else create it
+             */
+            getZipEntries(m_ecuFilePath);
+            exportZipEntries(appDir);
+            bytes = getZipFile("db.json");
+        }
+
+        JSONObject jsonRootObject;
         try {
-            jobj = new JSONObject(bytes);
+            jsonRootObject = new JSONObject(bytes);
         } catch (Exception e) {
             throw new DatabaseException("JSON conversion issue");
         }
 
-        Set<Integer> addrSet = new HashSet<>();
+        Set<Integer> addressSet = new HashSet<>();
 
-        Iterator<String> keys = jobj.keys();
+        Iterator<String> keys = jsonRootObject.keys();
         for (; keys.hasNext(); ) {
             String href = keys.next();
             try {
-                JSONObject ecuobj = jobj.getJSONObject(href);
-                JSONArray projobjects = ecuobj.getJSONArray("projects");
+                JSONObject ecuJsonObject = jsonRootObject.getJSONObject(href);
+                JSONArray projectJsonObject = ecuJsonObject.getJSONArray("projects");
                 Set<String> hashSet = new HashSet<>();
-                for (int i = 0; i < projobjects.length(); ++i) {
-                    String project = projobjects.getString(i);
+                for (int i = 0; i < projectJsonObject.length(); ++i) {
+                    String project = projectJsonObject.getString(i);
                     hashSet.add(project.toUpperCase());
                 }
-                int addrId = Integer.parseInt(ecuobj.getString("address"), 16);
-                addrSet.add(addrId);
+                int addrId = Integer.parseInt(ecuJsonObject.getString("address"), 16);
+                addressSet.add(addrId);
                 EcuInfo info = new EcuInfo();
-                info.ecuName = ecuobj.getString("ecuname");
+                info.ecuName = ecuJsonObject.getString("ecuname");
                 info.href = href;
                 info.projects = hashSet;
                 info.addressId = addrId;
@@ -189,13 +211,13 @@ public class EcuDatabase {
 
         Set<Integer> keySet = new HashSet<>(m_ecuAddressing.keySet());
         for (Integer key : keySet) {
-            if (!addrSet.contains(key)) {
+            if (!addressSet.contains(key)) {
                 m_ecuAddressing.remove(key);
             }
         }
 
         m_loaded = true;
-        return ecuFile;
+        return ecuFilename;
     }
 
     public boolean isLoaded() {
@@ -221,39 +243,113 @@ public class EcuDatabase {
         return "";
     }
 
-    public void getZipEntries(String zipFile) {
-        m_directoryEntries = new HashMap<>();
-        try {
-            InputStream zip_is = new FileInputStream(zipFile);
-            ZipInputStream zis = new ZipInputStream(zip_is);
-            ZipEntry ze;
-
-            while ((ze = zis.getNextEntry()) != null) {
-                String filename = ze.getName();
-                long offset = 30 + ze.getName().length() + (ze.getExtra() != null ? ze.getExtra().length : 0);
-                long pos = ((FileInputStream) zip_is).getChannel().position() - 12;
-                m_directoryEntries.put(filename, pos);
-                System.out.println(">>> " + offset + " " + pos);
+    public void exportZipEntries(String directoryName){
+        Iterator zeit = m_directoryEntries.entrySet().iterator();
+        JSONArray mainJson =  new JSONArray();
+        while(zeit.hasNext()){
+            HashMap.Entry pair = (HashMap.Entry)zeit.next();
+            JSONObject jsonEntry = new JSONObject();
+            try {
+                jsonEntry.put("pos", ((CustomZipEntry) pair.getValue()).pos);
+                jsonEntry.put("realsize", ((CustomZipEntry) pair.getValue()).uncompressedSize);
+                jsonEntry.put("compsize", ((CustomZipEntry) pair.getValue()).compressedSize);
+                jsonEntry.put("name", ((String)pair.getKey()));
+                mainJson.put(jsonEntry);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
+        }
+        String fileName = directoryName + "/ecu.idx";
+        try {
+            FileWriter fileWriter = new FileWriter(fileName);
+            fileWriter.write(mainJson.toString(0));
+            fileWriter.close();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    public boolean importZipEntries(String directoryName){
+        String fileName =  directoryName + "/ecu.idx";
+        m_directoryEntries = new HashMap<>();
+        try {
+            JSONArray mainJson = new JSONArray(readFile(fileName));
+            for (int i = 0; i < mainJson.length(); ++i){
+                JSONObject zipEntryJson = mainJson.getJSONObject(i);
+                CustomZipEntry ze = new CustomZipEntry();
+                ze.pos = zipEntryJson.getLong("pos");
+                ze.compressedSize = zipEntryJson.getLong("compsize");
+                ze.uncompressedSize = zipEntryJson.getLong("realsize");
+                m_directoryEntries.put(zipEntryJson.getString("name"), ze);
+            }
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    private String readFile(String file) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader (file));
+        String         line = null;
+        StringBuilder  stringBuilder = new StringBuilder();
+        String         ls = System.getProperty("line.separator");
+        try {
+            while((line = reader.readLine()) != null) {
+                stringBuilder.append(line);
+                stringBuilder.append(ls);
+            }
+
+            return stringBuilder.toString();
+        } finally {
+            reader.close();
+        }
+    }
+
+    /*
+     * Map zip entries to fast load them
+     */
+    public boolean getZipEntries(String zipFile) {
+        m_directoryEntries = new HashMap<>();
+        try {
+            FileInputStream zip_is = new FileInputStream(zipFile);
+            ZipInputStream zis = new ZipInputStream(zip_is);
+            ZipEntry ze;
+            long pos = 0;
+            while ((ze = zis.getNextEntry()) != null) {
+                String filename = ze.getName();
+                long offset = 30 + ze.getName().length() + (ze.getExtra() != null ? ze.getExtra().length : 0);
+                pos += offset;
+                CustomZipEntry cze = new CustomZipEntry();
+                cze.pos = pos;
+                cze.compressedSize = ze.getCompressedSize();
+                cze.uncompressedSize = ze.getSize();
+                m_directoryEntries.put(filename, cze);
+                pos += cze.compressedSize;
+            }
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public String getZipFile(String filename) {
         try {
-            long pos = m_directoryEntries.get(filename);
-            byte[] array = new byte[1024];
+            long pos = m_directoryEntries.get(filename).pos;
+            long compressedSize = m_directoryEntries.get(filename).compressedSize;
+            long realSize = m_directoryEntries.get(filename).uncompressedSize;
+            byte[] array = new byte[(int)compressedSize];
             FileInputStream zip_is = new FileInputStream(m_ecuFilePath);
-            zip_is.skip(pos);
-            System.out.println(">>> curpos " + pos);
-            zip_is.read(array, 0, 1024);
-            Inflater inflater = new Inflater();
-            inflater.setInput(array, 0, 1024);
-            byte[] result = new byte[1024];
+            zip_is.getChannel().position(pos);
+            zip_is.read(array, 0, (int)compressedSize);
+            Inflater inflater = new Inflater(true);
+            inflater.setInput(array, 0, (int)compressedSize);
+            byte[] result = new byte[(int)realSize];
             int resultLength = inflater.inflate(result);
             inflater.end();
-            return result.toString();
+            return new String(result, 0, resultLength, "UTF-8");
         } catch(IOException e)
         {
              e.printStackTrace();
@@ -261,35 +357,6 @@ public class EcuDatabase {
         } catch (DataFormatException e){
             e.printStackTrace();
         }
-        return "failed";
+        return "";
     }
-
-    static public String getZipFile(String ecuFile, String filename) {
-        try {
-            FileInputStream zip_is = new FileInputStream(ecuFile);
-            ZipInputStream zis = new ZipInputStream(new BufferedInputStream(zip_is));
-            ZipEntry ze;
-
-            while ((ze = zis.getNextEntry()) != null)
-            {
-                if (ze.getName().equals(filename)){
-                    int read;
-                    byte[] buffer = new byte[1024];
-                    StringBuilder s = new StringBuilder();
-
-                    while ((read = zis.read(buffer, 0, 1024)) >= 0) {
-                        s.append(new String(buffer, 0, read));
-                    }
-                    return s.toString();
-                }
-            }
-        } catch(IOException e)
-        {
-            e.printStackTrace();
-            return null;
-        }
-        return null;
-    }
-
-
 }

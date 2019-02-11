@@ -192,12 +192,20 @@ public class ScreenActivity extends AppCompatActivity {
     void openEcu(String ecuFile, String ecuName){
         String layoutFileName = ecuName + ".layout";
 
-        String ecuJson = EcuDatabase.getZipFile(ecuFile, ecuName);
-        String layoutJson = EcuDatabase.getZipFile(ecuFile, layoutFileName);
+        EcuDatabase ecudb = new EcuDatabase();
+        String appDir = getApplicationContext().getFilesDir().getAbsolutePath();
+        try {
+            ecudb.loadDatabase(ecuFile, appDir);
+            String ecuJson = ecudb.getZipFile(ecuName);
+            String layoutJson = ecudb.getZipFile(layoutFileName);
 
-        m_ecu = new Ecu(ecuJson);
-        m_currentLayoutData = new Layout(layoutJson);
-        m_currentEcuName = ecuName;
+            m_ecu = new Ecu(ecuJson);
+            m_currentLayoutData = new Layout(layoutJson);
+            m_currentEcuName = ecuName;
+            return;
+        } catch (EcuDatabase.DatabaseException e){
+            e.printStackTrace();
+        }
     }
 
 //    @Override
@@ -551,6 +559,7 @@ public class ScreenActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
             case REQUEST_CONNECT_DEVICE:

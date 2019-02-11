@@ -3,6 +3,7 @@ package org.quark.dr.canapp;
 import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -127,6 +128,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
+        m_btDeviceAddress = defaultPrefs.getString(PREF_DEVICE_ADDRESS, "");
+
         m_ecuDatabase = new EcuDatabase();
 
         if (ContextCompat.checkSelfPermission(this,
@@ -141,6 +145,17 @@ public class MainActivity extends AppCompatActivity {
         m_chatService.start();
         // Only for debug purpose
         //startScreen("/sdcard/ecu.zip", "UCH_84P2_85_V3.json");
+    }
+
+    private void connectDevice(String address) {
+        if (mBluetoothAdapter == null)
+            return;
+
+        // address is the device MAC address
+        // Get the BluetoothDevice object
+        BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+        // Attempt to connect to the device
+        m_chatService.connect(device);
     }
 
     private void setupChat() {
@@ -259,18 +274,20 @@ public class MainActivity extends AppCompatActivity {
             m_chatService.stop();
     }
 
+    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
             case REQUEST_CONNECT_DEVICE:
                 // When DeviceListActivity returns with a device to connect
                 if (resultCode == Activity.RESULT_OK) {
                     String address = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
-                    m_btDeviceAddress = address;
                     Log.d(TAG, "onActivityResult " + address);
                     SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
                     SharedPreferences.Editor edit = defaultPrefs.edit();
                     edit.putString(PREF_DEVICE_ADDRESS, address);
                     edit.commit();
+                    m_btDeviceAddress = address;
+                    connectDevice(address);
                 }
                 break;
             case REQUEST_ENABLE_BT:
@@ -290,7 +307,7 @@ public class MainActivity extends AppCompatActivity {
         if (defaultPrefs.contains(PREF_ECUZIPFILE)) {
             ecuFile = defaultPrefs.getString(PREF_ECUZIPFILE, "");
         }
-        m_statusView.setText("PARSING DATABASE...");
+        m_statusView.setText("INDEXING DATABASE...");
         new LoadDbTask(m_ecuDatabase).execute(ecuFile);
     }
 
@@ -332,7 +349,9 @@ public class MainActivity extends AppCompatActivity {
         protected String doInBackground(String... params) {
             String ecuFile = params[0];
             try {
-                ecuFile = m_ecuDatabase.loadDatabase(ecuFile);
+                String appDir = getApplicationContext().getFilesDir().getAbsolutePath();
+                ecuFile = m_ecuDatabase.loadDatabase(ecuFile, appDir);
+                m_ecuDatabase.importZipEntries(appDir);
             } catch (EcuDatabase.DatabaseException e){
                 Log.e(TAG, "Database exception : " + e.getMessage());
                 return "";
@@ -386,7 +405,6 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case MESSAGE_QUEUE_STATE:
                     int queue_len = msg.arg1;
-
                     break;
             }
         }
