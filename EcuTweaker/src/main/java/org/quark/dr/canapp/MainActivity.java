@@ -2,12 +2,13 @@ package org.quark.dr.canapp;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,10 +19,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,6 +30,9 @@ import android.widget.Toast;
 import org.quark.dr.ecu.EcuDatabase;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 
 import static org.quark.dr.canapp.ElmThread.STATE_CONNECTED;
 import static org.quark.dr.canapp.ElmThread.STATE_CONNECTING;
@@ -57,9 +61,10 @@ public class MainActivity extends AppCompatActivity {
     private EcuDatabase m_ecuDatabase;
     private TextView m_statusView;
     private Button m_btButton, m_scanButton;
-    private ListView m_ecuListView, m_deviceListView;
+    private ImageButton m_chooseProjectButton;
+    private ListView m_ecuListView, m_specificEcuListView;
     private ArrayList<EcuDatabase.EcuInfo> m_currentEcuInfoList;
-    private String m_ecuFilePath, m_btDeviceAddress;
+    private String m_ecuFilePath, m_btDeviceAddress, m_currentProject;
 
     private ElmThread m_chatService;
     private Handler mHandler = null;
@@ -72,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        m_currentProject = "";
 
         if (mBluetoothAdapter != null) {
             if (!mBluetoothAdapter.isEnabled()){
@@ -88,8 +94,9 @@ public class MainActivity extends AppCompatActivity {
         m_statusView = findViewById(R.id.statusView);
         m_btButton = findViewById(R.id.btButton);
         m_ecuListView = findViewById(R.id.ecuListView);
-        m_deviceListView = findViewById(R.id.deviceView);
+        m_specificEcuListView = findViewById(R.id.deviceView);
         m_scanButton = findViewById(R.id.buttonScan);
+        m_chooseProjectButton = findViewById(R.id.projectButton);
 
         m_scanButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -109,11 +116,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 String info = ((TextView) view).getText().toString();
-                ecuTypeSelected(info, "X84");
+                ecuTypeSelected(info, m_currentProject);
             }
         });
 
-        m_deviceListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        m_specificEcuListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if ( m_currentEcuInfoList == null || m_ecuFilePath == null){
@@ -125,6 +132,13 @@ public class MainActivity extends AppCompatActivity {
                         startScreen(m_ecuFilePath, ecuinfo.href);
                     }
                 }
+            }
+        });
+
+        m_chooseProjectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                chooseProject();
             }
         });
 
@@ -174,14 +188,14 @@ public class MainActivity extends AppCompatActivity {
     void ecuTypeSelected(String type, String project){
         int ecuAddress = m_ecuDatabase.getAddressByFunction(type);
         if (ecuAddress < 0) {
-            m_deviceListView.setAdapter(null);
+            m_specificEcuListView.setAdapter(null);
             return;
         }
 
         ArrayList<EcuDatabase.EcuInfo> ecuArray = m_ecuDatabase.getEcuInfo(ecuAddress);
         m_currentEcuInfoList = ecuArray;
         if (ecuArray == null) {
-            m_deviceListView.setAdapter(null);
+            m_specificEcuListView.setAdapter(null);
             return;
         }
         ArrayList<String> ecuNames = new ArrayList<>();
@@ -189,12 +203,13 @@ public class MainActivity extends AppCompatActivity {
             if (project.isEmpty() || info.projects.contains(project))
                 ecuNames.add(info.ecuName);
         }
+        Collections.sort(ecuNames);
         ArrayAdapter<String> adapter;
 
         adapter=new ArrayAdapter<String>(this,
                 android.R.layout.simple_list_item_1,
                 ecuNames);
-        m_deviceListView.setAdapter(adapter);
+        m_specificEcuListView.setAdapter(adapter);
     }
 
     void selectBtDevice(){
@@ -311,7 +326,7 @@ public class MainActivity extends AppCompatActivity {
         new LoadDbTask(m_ecuDatabase).execute(ecuFile);
     }
 
-    void updateListView(String ecuFile){
+    void updateListView(String ecuFile, String project){
         if (ecuFile.isEmpty()){
             m_statusView.setText("DATABASE NOT FOUND");
             return;
@@ -325,7 +340,8 @@ public class MainActivity extends AppCompatActivity {
         m_ecuFilePath = ecuFile;
 
         ArrayAdapter<String> adapter;
-        ArrayList<String> adapterList = m_ecuDatabase.getEcuByFunctionsAndType("X84");
+        ArrayList<String> adapterList = m_ecuDatabase.getEcuByFunctionsAndType(project);
+        Collections.sort(adapterList);
         if (adapterList.isEmpty())
             return;
         adapter = new ArrayAdapter<String>(this,
@@ -351,7 +367,6 @@ public class MainActivity extends AppCompatActivity {
             try {
                 String appDir = getApplicationContext().getFilesDir().getAbsolutePath();
                 ecuFile = m_ecuDatabase.loadDatabase(ecuFile, appDir);
-                m_ecuDatabase.importZipEntries(appDir);
             } catch (EcuDatabase.DatabaseException e){
                 Log.e(TAG, "Database exception : " + e.getMessage());
                 return "";
@@ -362,8 +377,28 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String ecuFile) {
-            updateListView(ecuFile);
+            updateListView(ecuFile, "");
         }
+    }
+
+    private void chooseProject(){
+        if (!m_ecuDatabase.isLoaded())
+            return;
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Choose a project");
+
+        final String[] projects = m_ecuDatabase.getProjects();
+        Arrays.sort(projects);
+        builder.setItems(projects, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                m_currentProject = projects[which];
+                updateListView(m_ecuFilePath, m_currentProject);
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     private static class messageHandler extends Handler {

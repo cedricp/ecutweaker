@@ -17,16 +17,17 @@ import java.util.Set;
 
 public class Ecu {
     public String global_endian;
-    public HashMap<String, EcuRequest> requests;
-    public HashMap<String, EcuDevice> devices;
-    public HashMap<String, EcuData> data;
-    public HashMap<String, String> sdsrequests;
-    public String protocol, funcname, funcaddr, ecu_name, default_sds;
-    public String kw1, kw2, ecu_send_id, ecu_recv_id;
-    public boolean fastinit;
-    public int baudrate;
+    private HashMap<String, EcuRequest> requests;
+    private HashMap<String, EcuDevice> devices;
+    private HashMap<String, EcuData> data;
+    private HashMap<String, String> sdsrequests;
+    private String protocol, funcname, funcaddr, ecu_name;
+    private String kw1, kw2, ecu_send_id, ecu_recv_id;
+    private boolean fastinit;
+    private int baudrate;
+    private String m_defaultSDS;
 
-    public class EcuDataItem{
+    private class EcuDataItem{
         public int firstbyte;
         public int bitoffset;
         public boolean ref;
@@ -47,7 +48,7 @@ public class Ecu {
         }
     }
 
-    public class EcuDevice {
+    private class EcuDevice {
         public int dtc;
         public int dtctype;
         HashMap<String, String> devicedata;
@@ -147,6 +148,10 @@ public class Ecu {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+
+        public HashMap<String, Integer> getItems(){
+            return items;
         }
 
         public byte[] setValue(Object value, byte[] byte_list, EcuDataItem dataitem){
@@ -582,12 +587,12 @@ public class Ecu {
         return ecudata.getDisplayValue(bytes, dataitem);
     }
 
-    public int getTxId(){
-        return Integer.getInteger(ecu_send_id);
+    public String getTxId(){
+        return ecu_send_id;
     }
 
-    public int getRxId(){
-        return Integer.getInteger(ecu_recv_id);
+    public String getRxId(){
+        return ecu_recv_id;
     }
 
     public HashMap<String, String> getRequestValues(byte[] bytes, String requestname, boolean with_units){
@@ -655,7 +660,7 @@ public class Ecu {
     }
 
     public String getDefaultSDS(){
-        return default_sds;
+        return m_defaultSDS;
     }
 
     private void init(JSONObject ecudef){
@@ -663,7 +668,7 @@ public class Ecu {
         devices = new HashMap<>();
         data = new HashMap<>();
         sdsrequests = new HashMap<>();
-        default_sds = "10C0";
+        m_defaultSDS = "10C0";
 
         try {
             if (ecudef.has("endian")) global_endian = ecudef.getString("endian");
@@ -728,7 +733,7 @@ public class Ecu {
                             byte[] dataStream = setRequestValues(requestName, sdsBuildValues);
                             sdsrequests.put(ecuDataItem.name, byteArrayToHex(dataStream).toUpperCase());
                             if (ecuDataItem.name.toUpperCase().contains("EXTENDED")){
-                                default_sds = byteArrayToHex(dataStream).toUpperCase();
+                                m_defaultSDS = byteArrayToHex(dataStream).toUpperCase();
                             }
                         }
                     }

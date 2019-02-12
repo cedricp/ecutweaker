@@ -208,12 +208,6 @@ public class ScreenActivity extends AppCompatActivity {
         }
     }
 
-//    @Override
-//    public void onRestoreInstanceState(Bundle savedInstanceState) {
-//        openEcu(m_ecuZipFileName, savedInstanceState.getString("ecu_name"));
-//        drawScreen(savedInstanceState.getString("screen_name"));
-//    }
-
     @Override
     public void onSaveInstanceState(Bundle outState) {
         outState.putString("screen_name", m_currentScreenName);
@@ -389,7 +383,7 @@ public class ScreenActivity extends AppCompatActivity {
             return;
         }
 
-        sendCmd(m_ecu.default_sds);
+        sendCmd(m_ecu.getDefaultSDS());
 
         // screen pre-send data
         for (Pair<Integer, String> pair : m_currentScreenData.getPreSendData()){
@@ -710,8 +704,8 @@ public class ScreenActivity extends AppCompatActivity {
     }
 
     private void initCan(){
-        String txa = m_ecu.ecu_send_id;
-        String rxa = m_ecu.ecu_recv_id;
+        String txa = m_ecu.getTxId();
+        String rxa = m_ecu.getRxId();
         mChatService.initCan(rxa, txa);
 
         updateDisplays();
@@ -787,7 +781,6 @@ public class ScreenActivity extends AppCompatActivity {
                     Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
                     switch (msg.arg1) {
                         case STATE_CONNECTED:
-                            //activity.setStatus(activity.getString(R.string.title_connected_to, activity.mConnectedDeviceName));
                             activity.initELM();
                             activity.setConnected(true);
                             break;

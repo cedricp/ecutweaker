@@ -21,12 +21,26 @@
             android:text="ECU TWEAKER"
             android:textSize="24sp" />
 
-        <Button
-            android:id="@+id/btButton"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="40dp"
-            android:text="Choose BlueTooth device..."
-            android:textSize="14sp" />
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btButton"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="Choose BlueTooth device..."
+                android:textSize="14sp" />
+
+            <ImageButton
+                android:id="@+id/projectButton"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                app:srcCompat="@drawable/ic_bt_search" />
+        </LinearLayout>
 
         <ListView
             android:id="@+id/ecuListView"
