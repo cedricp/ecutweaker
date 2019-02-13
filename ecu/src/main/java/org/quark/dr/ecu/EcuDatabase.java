@@ -1,6 +1,7 @@
 package org.quark.dr.ecu;
 
 import android.os.Environment;
+import android.support.annotation.Nullable;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -22,11 +23,16 @@ public class EcuDatabase {
     private String m_ecuFilePath;
     private ZipFastFileSystem m_zipFileSystem;
 
+    public class EcuIdent{
+        public String supplier_code, soft_version, version, diagnostic_version;
+    }
+
     public class EcuInfo {
         public Set<String> projects;
         public String href;
-        public String ecuName;
+        public String ecuName, protocol;
         public int addressId;
+        public EcuIdent ecuIdents[];
     }
 
     public class DatabaseException extends Exception {
@@ -46,6 +52,41 @@ public class EcuDatabase {
             list.add(valueIterator.next());
         }
         return list;
+    }
+
+    @Nullable
+    public EcuInfo identifyOldEcu(int addressId, String identRequest) {
+        identRequest = identRequest.replace(" ", "");
+        if (identRequest.length() < 40)
+            return null;
+
+        String supplier = new String(Ecu.hexStringToByteArray(identRequest.substring(16, 22)));
+        String soft_version = identRequest.substring(32, 36);
+        String version = identRequest.substring(36, 40);
+        int diag_version = Integer.parseInt(identRequest.substring(14, 16), 16);
+        ArrayList<EcuInfo> ecuInfos = m_ecuInfo.get(addressId);
+        EcuIdent closestEcuIdent = null;
+        EcuInfo keptEcuInfo = null;
+        for (EcuInfo ecuInfo : ecuInfos){
+            for(EcuIdent ecuIdent: ecuInfo.ecuIdents) {
+                if (ecuIdent.supplier_code.equals(supplier) && ecuIdent.soft_version.equals(soft_version)) {
+                    if (ecuIdent.version.equals(version) && diag_version == Integer.parseInt(ecuIdent.diagnostic_version, 10))
+                        return ecuInfo;
+                    if (closestEcuIdent == null){
+                        closestEcuIdent = ecuIdent;
+                        continue;
+                    }
+                    int intVersion = Integer.parseInt(version, 16);
+                    int currentDiff = Math.abs(Integer.parseInt(ecuIdent.version, 16) - intVersion);
+                    int oldDiff = Math.abs(Integer.parseInt(closestEcuIdent.version, 16) - intVersion);
+                    if ( currentDiff < oldDiff){
+                        closestEcuIdent = ecuIdent;
+                        keptEcuInfo = ecuInfo;
+                    }
+                }
+            }
+        }
+        return keptEcuInfo;
     }
 
     public ArrayList<String> getEcuByFunctionsAndType(String type) {
@@ -189,6 +230,17 @@ public class EcuDatabase {
                 info.href = href;
                 info.projects = projectsSet;
                 info.addressId = addrId;
+                info.protocol = ecuJsonObject.getString("protocol");
+                JSONArray jsAutoIdents = ecuJsonObject.getJSONArray("autoidents");
+                info.ecuIdents = new EcuIdent[jsAutoIdents.length()];
+                for (int i = 0; i < jsAutoIdents.length(); ++i) {
+                    JSONObject jsAutoIdent = jsAutoIdents.getJSONObject(i);
+                    info.ecuIdents[i] = new EcuIdent();
+                    info.ecuIdents[i].soft_version = jsAutoIdent.getString("soft_version");
+                    info.ecuIdents[i].supplier_code = jsAutoIdent.getString("supplier_code");
+                    info.ecuIdents[i].version = jsAutoIdent.getString("version");
+                    info.ecuIdents[i].diagnostic_version = jsAutoIdent.getString("diagnostic_version");
+                }
                 ArrayList<EcuInfo> ecuList;
                 if (!m_ecuInfo.containsKey(addrId)) {
                     ecuList = new ArrayList<>();

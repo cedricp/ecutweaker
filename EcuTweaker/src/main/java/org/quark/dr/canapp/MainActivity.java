@@ -31,7 +31,6 @@ import org.quark.dr.ecu.EcuDatabase;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 
 import static org.quark.dr.canapp.ElmThread.STATE_CONNECTED;
@@ -231,6 +230,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void startScreen(String ecuFile, String ecuHREFName){
+        m_chatService.stop();
         try {
             Intent serverIntent = new Intent(this, ScreenActivity.class);
             Bundle b = new Bundle();
@@ -327,6 +327,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void updateListView(String ecuFile, String project){
+        //m_ecuDatabase.identifyOldEcu(122, "61 80 82 00 44 66 27 44 32 31 33 82 00 38 71 38 00 A7 75 00 56 05 02 01 00 00");
         if (ecuFile.isEmpty()){
             m_statusView.setText("DATABASE NOT FOUND");
             return;
