@@ -38,8 +38,15 @@
                 android:id="@+id/projectButton"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
+                android:layout_weight="0"
                 app:srcCompat="@drawable/ic_bt_search" />
+
+            <ImageView
+                android:id="@+id/btIcon"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="0"
+                app:srcCompat="@drawable/ic_bt_connected" />
         </LinearLayout>
 
         <ListView
@@ -69,7 +76,7 @@
             android:id="@+id/buttonScan"
             android:layout_width="match_parent"
             android:layout_height="40dp"
-            android:text="SCAN BUS" />
+            android:text="AUTO IDENTIFY" />
 
     </LinearLayout>
 

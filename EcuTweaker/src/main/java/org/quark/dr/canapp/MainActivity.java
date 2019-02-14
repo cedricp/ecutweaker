@@ -9,6 +9,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -19,10 +20,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -61,9 +64,11 @@ public class MainActivity extends AppCompatActivity {
     private TextView m_statusView;
     private Button m_btButton, m_scanButton;
     private ImageButton m_chooseProjectButton;
+    private ImageView m_btIconImage;
     private ListView m_ecuListView, m_specificEcuListView;
     private ArrayList<EcuDatabase.EcuInfo> m_currentEcuInfoList;
     private String m_ecuFilePath, m_btDeviceAddress, m_currentProject;
+    private int m_currentEcuAddressId;
 
     private ElmThread m_chatService;
     private Handler mHandler = null;
@@ -77,18 +82,9 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         m_currentProject = "";
-
-        if (mBluetoothAdapter != null) {
-            if (!mBluetoothAdapter.isEnabled()){
-                Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-            } else {
-                Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_LONG).show();
-            }
-        }
+        m_currentEcuAddressId = -1;
 
         mHandler = new MainActivity.messageHandler(this);
-        setupChat();
 
         m_statusView = findViewById(R.id.statusView);
         m_btButton = findViewById(R.id.btButton);
@@ -96,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
         m_specificEcuListView = findViewById(R.id.deviceView);
         m_scanButton = findViewById(R.id.buttonScan);
         m_chooseProjectButton = findViewById(R.id.projectButton);
+        m_btIconImage = findViewById(R.id.btIcon);
 
         m_scanButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -154,14 +151,27 @@ public class MainActivity extends AppCompatActivity {
             askPermission();
         }
 
+        if (mBluetoothAdapter != null) {
+            if (!mBluetoothAdapter.isEnabled()){
+                Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+            } else {
+                Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_LONG).show();
+            }
+
+            if(mBluetoothAdapter.isEnabled() && !m_btDeviceAddress.isEmpty()) {
+                setupChat();
+                connectDevice(m_btDeviceAddress);
+            }
+        }
+
         m_scanButton.setEnabled(false);
-        m_chatService.start();
         // Only for debug purpose
         //startScreen("/sdcard/ecu.zip", "UCH_84P2_85_V3.json");
     }
 
     private void connectDevice(String address) {
-        if (mBluetoothAdapter == null)
+        if (mBluetoothAdapter == null || m_chatService == null)
             return;
 
         // address is the device MAC address
@@ -174,23 +184,39 @@ public class MainActivity extends AppCompatActivity {
     private void setupChat() {
         Log.d(TAG, "setupChat()");
         // Initialize the BluetoothChatService to perform bluetooth connections
+        if (m_chatService != null)
+            m_chatService.stop();
         m_chatService = new ElmThread(mHandler);
+        m_chatService.start();
     }
 
     void scanBus(){
-        if(m_chatService.getState() != STATE_CONNECTED){
+        if(m_chatService == null || m_chatService.getState() != STATE_CONNECTED){
             return;
         }
+
+        if (m_currentEcuInfoList.isEmpty())
+            return;
+
+        String txAddress = m_ecuDatabase.getTxAddressById(m_currentEcuAddressId);
+        String rxAddress = m_ecuDatabase.getRxAddressById(m_currentEcuAddressId);
+
         m_chatService.initElm();
+        m_chatService.initCan(rxAddress, txAddress);
+
+        sendCmd("10C0");
+        sendCmd("2180");
     }
 
     void ecuTypeSelected(String type, String project){
+        m_specificEcuListView.setBackgroundColor(Color.WHITE);
+
         int ecuAddress = m_ecuDatabase.getAddressByFunction(type);
         if (ecuAddress < 0) {
             m_specificEcuListView.setAdapter(null);
             return;
         }
-
+        m_currentEcuAddressId = ecuAddress;
         ArrayList<EcuDatabase.EcuInfo> ecuArray = m_ecuDatabase.getEcuInfo(ecuAddress);
         m_currentEcuInfoList = ecuArray;
         if (ecuArray == null) {
@@ -230,7 +256,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void startScreen(String ecuFile, String ecuHREFName){
-        m_chatService.stop();
+        if (m_chatService != null)
+            m_chatService.stop();
         try {
             Intent serverIntent = new Intent(this, ScreenActivity.class);
             Bundle b = new Bundle();
@@ -290,6 +317,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        if (mBluetoothAdapter == null)
+            return;
+        if (!mBluetoothAdapter.isEnabled()) {
+            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+            // Otherwise, setup the chat session
+        } else {
+            if (m_chatService == null) setupChat();
+        }
+    }
+
+    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
             case REQUEST_CONNECT_DEVICE:
@@ -308,7 +349,7 @@ public class MainActivity extends AppCompatActivity {
             case REQUEST_ENABLE_BT:
                 // When the request to enable Bluetooth returns
                 if (resultCode == Activity.RESULT_OK) {
-
+                    setupChat();
                 } else {
                     // User did not enable Bluetooth or an error occurred
                     Log.d(TAG, "BT not enabled");
@@ -326,7 +367,7 @@ public class MainActivity extends AppCompatActivity {
         new LoadDbTask(m_ecuDatabase).execute(ecuFile);
     }
 
-    void updateListView(String ecuFile, String project){
+    void updateEcuTypeListView(String ecuFile, String project){
         //m_ecuDatabase.identifyOldEcu(122, "61 80 82 00 44 66 27 44 32 31 33 82 00 38 71 38 00 A7 75 00 56 05 02 01 00 00");
         if (ecuFile.isEmpty()){
             m_statusView.setText("DATABASE NOT FOUND");
@@ -378,7 +419,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String ecuFile) {
-            updateListView(ecuFile, "");
+            updateEcuTypeListView(ecuFile, "");
         }
     }
 
@@ -394,12 +435,42 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 m_currentProject = projects[which];
-                updateListView(m_ecuFilePath, m_currentProject);
+                updateEcuTypeListView(m_ecuFilePath, m_currentProject);
             }
         });
 
         AlertDialog dialog = builder.create();
         dialog.show();
+    }
+
+    private void handleElmResult(String elmMessage, int txa){
+        String[] results = elmMessage.split(";");
+        if (results.length < 2){
+            return;
+        }
+        if (results[1].isEmpty() || results[0].substring(0,2).toUpperCase().equals("AT")){
+            return;
+        }
+        String ecuRequest = results[0];
+        String ecuResponse = results[1];
+        if (ecuRequest.substring(0,4).equals("2180")){
+            if (ecuResponse.substring(0,4).equals("6180")){
+                EcuDatabase.EcuInfo ecuInfo = m_ecuDatabase.identifyOldEcu(m_currentEcuAddressId, ecuResponse);
+                ArrayList<String> ecuNames = new ArrayList<>();
+                ecuNames.add(ecuInfo.ecuName);
+                Collections.sort(ecuNames);
+                ArrayAdapter<String> adapter;
+                boolean is_exact = ecuInfo.exact_match;
+                adapter=new ArrayAdapter<String>(this,
+                        android.R.layout.simple_list_item_1,
+                        ecuNames);
+                m_specificEcuListView.setAdapter(adapter);
+                if (!is_exact)
+                    m_specificEcuListView.setBackgroundColor(Color.RED);
+                else
+                    m_specificEcuListView.setBackgroundColor(Color.GREEN);
+            }
+        }
     }
 
     private static class messageHandler extends Handler {
@@ -432,6 +503,7 @@ public class MainActivity extends AppCompatActivity {
                     byte[] m = (byte[]) msg.obj;
                     String readMessage = new String(m, 0, msg.arg1);
                     int txa = msg.arg2;
+                    activity.handleElmResult(readMessage, txa);
                     break;
                 case MESSAGE_DEVICE_NAME:
 
@@ -448,6 +520,37 @@ public class MainActivity extends AppCompatActivity {
 
     void setConnected(boolean c){
         m_scanButton.setEnabled(c);
+        if (c){
+            m_btIconImage.setColorFilter(Color.GREEN);
+        } else {
+            m_btIconImage.clearColorFilter();
+        }
     }
 
+    private void sendCmd(String cmd) {
+        // Check that we're actually connected before trying anything
+        if (mBluetoothAdapter == null || !isChatConnected()) {
+            return;
+        }
+
+        // Send command
+        m_chatService.write(cmd);
+    }
+
+    private void sendDelay(int delay) {
+        // Check that we're actually connected before trying anything
+        if (mBluetoothAdapter == null) {
+            return;
+        }
+        if (!isChatConnected()) {
+            return;
+        }
+
+        // Send command
+        m_chatService.write("DELAY:" + Integer.toString(delay));
+    }
+
+    private boolean isChatConnected(){
+        return (m_chatService != null && m_chatService.getState() == STATE_CONNECTED);
+    }
 }

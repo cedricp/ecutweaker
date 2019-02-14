@@ -211,13 +211,12 @@ public class Ecu {
             }
 
             finalbinvalue = padLeft(finalbinvalue, bitscount, "0");
-
-            int numreqbytes = (int)(Math.ceil(((float)bitscount + startBit) / 8.f));
+            int numreqbytes = (int)(Math.ceil(((float)(bitscount + startBit) / 8.f)));
             byte[] request_bytes = Arrays.copyOfRange(byte_list, start_byte, start_byte + numreqbytes);
             String requestasbin = "";
 
             for (int i = 0; i < request_bytes.length; ++i){
-                requestasbin += integerToBinaryString(request_bytes[i], 8);
+                requestasbin += byteToBinaryString(request_bytes[i], 8);
             }
 
             char[] binaryRequest = requestasbin.toCharArray();
@@ -261,7 +260,6 @@ public class Ecu {
                         binaryRequest[currentbyte * 8 + i] = binaryValue[count];
                         ++count;
                     }
-
                 }
             }
 
@@ -567,10 +565,6 @@ public class Ecu {
         }
     }
 
-    public Ecu(JSONObject ecudef) {
-        init(ecudef);
-    }
-
     public EcuData getData(String dataname){
         EcuData d = data.get(dataname);
         return d;
@@ -651,10 +645,8 @@ public class Ecu {
                     barray = data.setValue(Integer.toHexString(data.items.get(val)), barray, item);
                     continue;
                 }
-
             }
             barray = data.setValue(entry.getValue(), barray, item);
-
         }
         return barray;
     }

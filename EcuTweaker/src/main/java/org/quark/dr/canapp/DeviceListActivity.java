@@ -74,7 +74,6 @@ public class DeviceListActivity extends Activity {
             public View getView(int position, View convertView, ViewGroup parent) {
                 TextView textView = (TextView) super.getView(position, convertView, parent);
                 if (textView.getText().toString().toUpperCase().contains("OBD")) {
-                    System.out.println("?? " + textView.getText().toString());
                     textView.setBackgroundColor(Color.GREEN);
                 } else {
                     textView.setBackgroundColor(Color.LTGRAY);

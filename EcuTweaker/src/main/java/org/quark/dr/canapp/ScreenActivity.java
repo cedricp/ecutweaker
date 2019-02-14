@@ -129,29 +129,33 @@ public class ScreenActivity extends AppCompatActivity {
                 if (m_autoReload){
                     m_reloadButton.setColorFilter(Color.GREEN);
                 } else {
-                    m_reloadButton.clearColorFilter();
+                    stopAutoReload();
                 }
                 updateDisplays();
                 return true;
             }
         });
 
-        m_searchButton.setOnClickListener(new View.OnClickListener() {
+        m_reloadButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                connectElm();
+                if (m_autoReload)
+                    stopAutoReload();
+                updateDisplays();
             }
         });
 
-
-        m_reloadButton.setOnClickListener(new View.OnClickListener() {
+        m_searchButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                m_autoReload = false;
-                updateDisplays();
+                if (m_autoReload)
+                    stopAutoReload();
+                connectElm();
             }
         });
 
         m_screenButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+                if (m_autoReload)
+                    stopAutoReload();
                 chooseCategory();
             }
         });
@@ -176,9 +180,11 @@ public class ScreenActivity extends AppCompatActivity {
             openEcu(ecuFile, ecuHref);
         }
 
-        setupChat();
-        if (m_deviceAddressPref != null && !m_deviceAddressPref.isEmpty()){
-            connectDevice(m_deviceAddressPref);
+        if(mBluetoothAdapter != null && mBluetoothAdapter.isEnabled()) {
+            if (m_deviceAddressPref != null && !m_deviceAddressPref.isEmpty()) {
+                setupChat();
+                connectDevice(m_deviceAddressPref);
+            }
         }
 
         if (savedInstanceState != null && savedInstanceState.containsKey("screen_name")){
@@ -187,6 +193,12 @@ public class ScreenActivity extends AppCompatActivity {
         } else {
             chooseCategory();
         }
+    }
+
+    void stopAutoReload(){
+        m_autoReload = false;
+        m_reloadButton.setEnabled(false);
+        m_reloadButton.clearColorFilter();
     }
 
     void openEcu(String ecuFile, String ecuName){
@@ -602,12 +614,14 @@ public class ScreenActivity extends AppCompatActivity {
 
     private void setupChat() {
         Log.d(TAG, "setupChat()");
+        if (mChatService != null)
+            mChatService.stop();
         // Initialize the BluetoothChatService to perform bluetooth connections
         mChatService = new ElmThread(mHandler);
     }
 
     private void connectDevice(String address) {
-        if (mBluetoothAdapter == null)
+        if (mBluetoothAdapter == null || mChatService == null)
             return;
 
         // address is the device MAC address
@@ -699,16 +713,19 @@ public class ScreenActivity extends AppCompatActivity {
     }
 
     private void initELM() {
-        mChatService.initElm();
-        initCan();
+        if (mChatService != null) {
+            mChatService.initElm();
+            initCan();
+        }
     }
 
     private void initCan(){
-        String txa = m_ecu.getTxId();
-        String rxa = m_ecu.getRxId();
-        mChatService.initCan(rxa, txa);
-
-        updateDisplays();
+        if (mChatService != null) {
+            String txa = m_ecu.getTxId();
+            String rxa = m_ecu.getRxId();
+            mChatService.initCan(rxa, txa);
+            updateDisplays();
+        }
     }
 
     private void sendCmd(String cmd) {

@@ -23,6 +23,39 @@ public class EcuDatabase {
     private String m_ecuFilePath;
     private ZipFastFileSystem m_zipFileSystem;
 
+    private HashMap<Integer, String> RXADDRMAP, TXADDRMAP;
+
+    private String RXAT =
+            "01: 760, 02: 724, 04: 762, 06: 791, 07: 771, 08: 778, 09: 7EB, 0D: 775," +
+            "0E: 76E, 0F: 770, 11: 7C9, 13: 732, 16: 18DAF271, 1A: 731, 1B: 7AC, 1C: 76B," +
+            "1E: 768, 23: 773, 24: 77D, 25: 700, 26: 765, 27: 76D, 28: 7D7, 29: 764," +
+            "2A: 76F, 2B: 735, 2C: 772, 2D: 18DAF12D, 2E: 7BC, 2F: 76C, 32: 776, 3A: 7D2," +
+            "40: 727, 41: 18DAF1D2, 46: 7CF, 47: 7A8, 4D: 7BD, 50: 738, 51: 763, 57: 767," +
+            "58: 767, 59: 734, 5B: 7A5, 60: 18DAF160, 61: 7BA, 62: 7DD, 63: 73E, 64: 7D5," +
+            "66: 739, 67: 793, 68: 77E, 6B: 7B5, 6E: 7E9, 73: 18DAF273, 77: 7DA, 78: 7BD," +
+            "79: 7EA, 7A: 7E8, 7C: 77C, 81: 761, 82: 7AD, 86: 7A2, 87: 7A0, 91: 7ED," +
+            "93: 7BB, 95: 7EC, 97: 7C8, A1: 76C, A5: 725, A6: 726, A7: 733, A8: 7B6," +
+            "C0: 7B9, D0: 18DAF1D0, D1: 7EE, D2: 18DAF1D2, D3: 7EE, D6: 18DAF2D6, DA: 18DAF1DA," +
+            "DB: 18DAF1DB, DE: 69C, DF: 18DAF1DF, E0: 18DAF1E0, E1: 18DAF1E1, E2: 18DAF1E2," +
+            "E3: 18DAF1E3, E4: 757, E6: 484, E7: 7EC, E8: 5C4, E9: 762, EA: 4B3, EB: 5B8," +
+            "EC: 5B7, ED: 704, F7: 736, F8: 737, FA: 77B, FD: 76F, FE: 76C, FF: 7D0";
+
+    private String TXAT =
+            "01: 740, 02: 704, 04: 742, 06: 790, 07: 751, 08: 758, 09: 7E3, 0D: 755," +
+            "0E: 74E, 0F: 750, 11: 7C3, 13: 712, 15: 18DA15F1, 16: 18DA71F2, 18: 18DA18F1," +
+            "1A: 711, 1B: 7A4, 1C: 74B, 1E: 748, 23: 753, 24: 75D, 25: 70C, 26: 745," +
+            "27: 74D, 28: 78A, 29: 744, 2A: 74F, 2B: 723, 2C: 752, 2D: 18DA2DF1, 2E: 79C," +
+            "2F: 74C, 32: 756, 3A: 7D6, 40: 707, 41: 18DAD0F1, 46: 7CD, 47: 788, 4D: 79D," +
+            "50: 718, 51: 743, 57: 747, 58: 747, 59: 714, 5B: 785, 60: 18DA60F1, 61: 7B7," +
+            "62: 7DC, 63: 73D, 64: 7D4, 66: 719, 67: 792, 68: 75A, 6B: 795, 6E: 7E1," +
+            "73: 18DA73F2, 77: 7CA, 78: 746, 79: 7E2, 7A: 7E0, 7B: 18DA72F2, 7C: 75C," +
+            "81: 73F, 82: 7AA, 86: 782, 87: 780, 91: 7E5, 93: 79B, 95: 7E4, 97: 7D8," +
+            "A1: 74C, A5: 705, A6: 706, A7: 713, A8: 796, C0: 799, D0: 18DAD0F1, D1: 7E6," +
+            "D2: 18DAD2F1, D3: 7E6, D6: 18DAD6F2, DA: 18DADAF1, DB: 18DADBF1, DE: 6BC," +
+            "DF: 18DADFF1, E0: 18DAE0F1, E1: 18DAE1F1, E2: 18DAE2F1, E3: 18DAE3F1, E4: 74F," +
+            "E6: 622, E7: 7E4, E8: 644, E9: 742, EA: 79A, EB: 638, EC: 637, ED: 714," +
+            "F7: 716, F8: 717, FA: 75B, FD: 74F, FE: 74C, FF: 7D0";
+
     public class EcuIdent{
         public String supplier_code, soft_version, version, diagnostic_version;
     }
@@ -33,6 +66,7 @@ public class EcuDatabase {
         public String ecuName, protocol;
         public int addressId;
         public EcuIdent ecuIdents[];
+        public boolean exact_match;
     }
 
     public class DatabaseException extends Exception {
@@ -70,8 +104,10 @@ public class EcuDatabase {
         for (EcuInfo ecuInfo : ecuInfos){
             for(EcuIdent ecuIdent: ecuInfo.ecuIdents) {
                 if (ecuIdent.supplier_code.equals(supplier) && ecuIdent.soft_version.equals(soft_version)) {
-                    if (ecuIdent.version.equals(version) && diag_version == Integer.parseInt(ecuIdent.diagnostic_version, 10))
+                    if (ecuIdent.version.equals(version) && diag_version == Integer.parseInt(ecuIdent.diagnostic_version, 10)) {
+                        ecuInfo.exact_match = true;
                         return ecuInfo;
+                    }
                     if (closestEcuIdent == null){
                         closestEcuIdent = ecuIdent;
                         continue;
@@ -86,6 +122,7 @@ public class EcuDatabase {
                 }
             }
         }
+        keptEcuInfo.exact_match = false;
         return keptEcuInfo;
     }
 
@@ -119,6 +156,7 @@ public class EcuDatabase {
     }
 
     public EcuDatabase() {
+        buildAtMap();
         m_ecuInfo = new HashMap<>();
         m_ecuAddressing = new HashMap<>();
         m_loaded = false;
@@ -291,5 +329,28 @@ public class EcuDatabase {
 
     public String getZipFile(String filePath){
         return m_zipFileSystem.getZipFile(filePath);
+    }
+
+    private void buildAtMap(){
+        RXADDRMAP = new HashMap<>();
+        TXADDRMAP = new HashMap<>();
+        String[] RXS = RXAT.replace(" ", "").split(",");
+        String[] TXS = TXAT.replace(" ", "").split(",");
+        for (String rxs : RXS){
+            String[] idToAddr = rxs.split(":");
+            RXADDRMAP.put(Integer.parseInt(idToAddr[0], 16), idToAddr[1]);
+        }
+        for (String txs : TXS){
+            String[] idToAddr = txs.split(":");
+            TXADDRMAP.put(Integer.parseInt(idToAddr[0], 16), idToAddr[1]);
+        }
+    }
+
+    public String getRxAddressById(int id){
+        return RXADDRMAP.get(id);
+    }
+
+    public String getTxAddressById(int id){
+        return TXADDRMAP.get(id);
     }
 }

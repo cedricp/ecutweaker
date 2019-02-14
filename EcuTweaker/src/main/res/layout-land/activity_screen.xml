@@ -32,13 +32,6 @@
                 app:srcCompat="@drawable/ic_bt_disconnected" />
 
             <ImageButton
-                android:id="@+id/buttonSearch"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                app:srcCompat="@drawable/ic_bt_search" />
-
-            <ImageButton
                 android:id="@+id/screenButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -51,6 +44,13 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 app:srcCompat="@drawable/ic_reload" />
+
+            <ImageButton
+                android:id="@+id/buttonSearch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:srcCompat="@drawable/ic_bt_search" />
 
         </LinearLayout>
 
