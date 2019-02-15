@@ -1,6 +1,7 @@
 package org.quark.dr.ecu;
 
 import android.util.Pair;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -8,10 +9,13 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Array;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -581,6 +585,18 @@ public class Ecu {
         return ecudata.getDisplayValue(bytes, dataitem);
     }
 
+    public String getProtocol(){
+        return protocol;
+    }
+
+    public String getFunctionnalAddress(){
+        return funcaddr;
+    }
+
+    public boolean getFastInit(){
+        return fastinit;
+    }
+
     public String getTxId(){
         return ecu_send_id;
     }
@@ -653,6 +669,40 @@ public class Ecu {
 
     public String getDefaultSDS(){
         return m_defaultSDS;
+    }
+
+    public List<List<String>> decodeDTC(String dtcRequestName, String response){
+        List<List<String>> dtcList = new ArrayList<>();
+
+        Ecu.EcuRequest dtcRequest = getRequest(dtcRequestName);
+        if (dtcRequest == null)
+            return dtcList;
+
+        int shiftBytesCount = dtcRequest.shiftbytescount;
+        byte[] bytesResponse = hexStringToByteArray(response);
+
+        int numDtc = bytesResponse[1] & 0xFF;
+
+        for (int i = 0; i < numDtc; ++i){
+            if (bytesResponse.length < shiftBytesCount)
+                break;
+            HashMap<String, String> currentDTC = getRequestValues(bytesResponse, dtcRequestName, true);
+            Iterator<String> it = currentDTC.keySet().iterator();
+            List<String> currentDtcList = new ArrayList<>();
+            for (;it.hasNext();){
+
+                String key = it.next();
+                if (key.equals("NDTC"))
+                    continue;
+                currentDtcList.add(key+":"+currentDTC.get(key));
+            }
+            dtcList.add(currentDtcList);
+            if (bytesResponse.length >= shiftBytesCount)
+                bytesResponse = Arrays.copyOfRange(bytesResponse, shiftBytesCount, bytesResponse.length);
+            else
+                break;
+        }
+        return dtcList;
     }
 
     private void init(JSONObject ecudef){

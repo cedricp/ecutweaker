@@ -38,6 +38,7 @@ import org.quark.dr.ecu.Layout;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.quark.dr.canapp.ElmThread.STATE_CONNECTED;
@@ -45,6 +46,7 @@ import static org.quark.dr.canapp.ElmThread.STATE_CONNECTING;
 import static org.quark.dr.canapp.ElmThread.STATE_DISCONNECTED;
 import static org.quark.dr.canapp.ElmThread.STATE_LISTEN;
 import static org.quark.dr.canapp.ElmThread.STATE_NONE;
+import static org.quark.dr.ecu.Ecu.hexStringToByteArray;
 
 public class ScreenActivity extends AppCompatActivity {
     private static final String TAG = "org.quark.dr.canapp";
@@ -53,10 +55,11 @@ public class ScreenActivity extends AppCompatActivity {
     private Ecu m_ecu;
     private Layout m_currentLayoutData;
     private Layout.ScreenData m_currentScreenData;
-    private ImageButton m_searchButton, m_reloadButton, m_screenButton;
+    private ImageButton m_searchButton, m_reloadButton, m_screenButton, m_dtcButton;
     private ImageView m_btIconStatus, m_btCommStatus;
     private TextView m_logView;
     private String m_currentScreenName, m_currentEcuName, m_ecuZipFileName, m_deviceAddressPref;
+    private String m_currentDtcRequestName, m_currentDtcRequestBytes;
     private boolean m_autoReload;
 
     private HashMap<String, EditText> m_editTextViews;
@@ -120,7 +123,17 @@ public class ScreenActivity extends AppCompatActivity {
         m_btIconStatus = findViewById(R.id.iconBt);
         m_screenButton = findViewById(R.id.screenButton);
         m_btCommStatus = findViewById(R.id.bt_comm);
+        m_dtcButton    = findViewById(R.id.dtcButton);
         m_reloadButton.setEnabled(false);
+
+        m_dtcButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (m_autoReload)
+                    stopAutoReload();
+                readDTC();
+            }
+        });
 
         m_reloadButton.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
@@ -432,6 +445,21 @@ public class ScreenActivity extends AppCompatActivity {
 //            response = "610F1F1F7F01";
 //            req = "210F";
         }
+
+        if (response.length() < 4){
+            return;
+        }
+
+        int responseHeader = Integer.parseInt(response.substring(0, 4), 16);
+        int requestHeader = Integer.parseInt(req.substring(0, 4), 16);
+
+        // Check response is ok
+        if (requestHeader + 0x4000 != responseHeader) {
+            return;
+        } else {
+
+        }
+
         try {
             for (String requestname : m_displaysRequestSet) {
                 Ecu.EcuRequest request = m_ecu.getRequest(requestname);
@@ -441,7 +469,7 @@ public class ScreenActivity extends AppCompatActivity {
                 }
 
                 if (request.sentbytes.equals(req)) {
-                    byte[] bytes = Ecu.hexStringToByteArray(response);
+                    byte[] bytes = hexStringToByteArray(response);
                     HashMap<String, Pair<String, String>> mapValues = m_ecu.getRequestValuesWithUnit(bytes, requestname);
 
                     for (String key : mapValues.keySet()) {
@@ -715,15 +743,19 @@ public class ScreenActivity extends AppCompatActivity {
     private void initELM() {
         if (mChatService != null) {
             mChatService.initElm();
-            initCan();
+            initBus();
         }
     }
 
-    private void initCan(){
+    private void initBus(){
         if (mChatService != null) {
             String txa = m_ecu.getTxId();
             String rxa = m_ecu.getRxId();
-            mChatService.initCan(rxa, txa);
+            if (m_ecu.getProtocol().equals("CAN")) {
+                mChatService.initCan(rxa, txa);
+            } else if (m_ecu.getProtocol().equals("KWP2000")){
+                mChatService.initKwp(m_ecu.getFunctionnalAddress(), m_ecu.getFastInit());
+            }
             updateDisplays();
         }
     }
@@ -777,13 +809,63 @@ public class ScreenActivity extends AppCompatActivity {
             m_logView.append("No ELM Response (" + result + ")\n");
             return;
         }
-        m_logView.append("ELM Response : " + results[1] + " to " + results[0] +"\n");
+
+        if (results[1].length() >= 6) {
+            String resultCode = results[1].substring(0, 6).toUpperCase();
+            if (resultCode.substring(0, 2).equals("7F")){
+                String nrcode = resultCode.substring(4, 6);
+                String translatedErrorCode = mChatService.getEcuErrorCode(nrcode);
+                if (translatedErrorCode != null){
+                    m_logView.append("Negative response : " + translatedErrorCode + " (" + resultCode + ")\n");
+                    return;
+                }
+
+            }
+        } else {
+            m_logView.append("ELM Response : " + results[1] + " to " + results[0] + "\n");
+        }
 
         if (results[1].isEmpty() || results[0].substring(0,2).toUpperCase().equals("AT")){
             return;
         }
 
+        if (results[0].equals(m_currentDtcRequestBytes)){
+            decodeDTC(results[1]);
+        }
+
         updateScreen(results[0], results[1]);
+    }
+
+    void readDTC(){
+        Ecu.EcuRequest dtcRequest = m_ecu.getRequest("ReadDTCInformation.ReportDTC");
+        if (dtcRequest == null)
+            dtcRequest = m_ecu.getRequest("ReadDTC");
+        if (dtcRequest == null){
+            Toast.makeText(getApplicationContext(), "No READ_DTC command", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        m_currentDtcRequestName = dtcRequest.name;
+        m_currentDtcRequestBytes = dtcRequest.sentbytes;
+        sendCmd(m_ecu.getDefaultSDS());
+        sendCmd(m_currentDtcRequestBytes);
+    }
+
+    void decodeDTC(String response){
+        List<List<String>> decodedDtcs = m_ecu.decodeDTC(m_currentDtcRequestName, response);
+
+        if (decodedDtcs.size() == 0){
+            Toast.makeText(getApplicationContext(), "ECU has 0 DTC stored", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        int i = 0;
+        for (List<String> stringList : decodedDtcs){
+            m_logView.append("DTC #" + i);
+            i++;
+            for (String dtcLine : stringList){
+                m_logView.append("   " + dtcLine);
+            }
+        }
     }
 
     private static class messageHandler extends Handler {

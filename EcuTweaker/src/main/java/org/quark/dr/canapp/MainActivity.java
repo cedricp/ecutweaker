@@ -30,6 +30,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.quark.dr.ecu.Ecu;
 import org.quark.dr.ecu.EcuDatabase;
 
 import java.util.ArrayList;
@@ -190,6 +191,20 @@ public class MainActivity extends AppCompatActivity {
         m_chatService.start();
     }
 
+    void initBus(String protocol){
+        if (m_chatService != null) {
+            String txa = m_ecuDatabase.getTxAddressById(m_currentEcuAddressId);
+            String rxa = m_ecuDatabase.getRxAddressById(m_currentEcuAddressId);
+            if (protocol.equals("CAN")) {
+                m_chatService.initCan(rxa, txa);
+            } else if (protocol.equals("KWP2000")){
+                String hexAddr = Ecu.padLeft(Integer.toHexString(m_currentEcuAddressId),
+                        2, "0");
+                m_chatService.initKwp(hexAddr, true);
+            }
+        }
+    }
+
     void scanBus(){
         if(m_chatService == null || m_chatService.getState() != STATE_CONNECTED){
             return;
@@ -198,11 +213,8 @@ public class MainActivity extends AppCompatActivity {
         if (m_currentEcuInfoList.isEmpty())
             return;
 
-        String txAddress = m_ecuDatabase.getTxAddressById(m_currentEcuAddressId);
-        String rxAddress = m_ecuDatabase.getRxAddressById(m_currentEcuAddressId);
-
         m_chatService.initElm();
-        m_chatService.initCan(rxAddress, txAddress);
+        initBus("CAN");
 
         sendCmd("10C0");
         sendCmd("2180");
@@ -454,21 +466,22 @@ public class MainActivity extends AppCompatActivity {
         String ecuRequest = results[0];
         String ecuResponse = results[1];
         if (ecuRequest.substring(0,4).equals("2180")){
-            if (ecuResponse.substring(0,4).equals("6180")){
+            if (ecuResponse.substring(0,4).equals("6180")) {
                 EcuDatabase.EcuInfo ecuInfo = m_ecuDatabase.identifyOldEcu(m_currentEcuAddressId, ecuResponse);
-                ArrayList<String> ecuNames = new ArrayList<>();
-                ecuNames.add(ecuInfo.ecuName);
-                Collections.sort(ecuNames);
-                ArrayAdapter<String> adapter;
-                boolean is_exact = ecuInfo.exact_match;
-                adapter=new ArrayAdapter<String>(this,
-                        android.R.layout.simple_list_item_1,
-                        ecuNames);
-                m_specificEcuListView.setAdapter(adapter);
-                if (!is_exact)
-                    m_specificEcuListView.setBackgroundColor(Color.RED);
-                else
-                    m_specificEcuListView.setBackgroundColor(Color.GREEN);
+                if (ecuInfo != null) {
+                    ArrayList<String> ecuNames = new ArrayList<>();
+                    ecuNames.add(ecuInfo.ecuName);
+                    Collections.sort(ecuNames);
+                    ArrayAdapter<String> adapter;
+                    adapter = new ArrayAdapter<String>(this,
+                            android.R.layout.simple_list_item_1,
+                            ecuNames);
+                    m_specificEcuListView.setAdapter(adapter);
+                    if (!ecuInfo.exact_match)
+                        m_specificEcuListView.setBackgroundColor(Color.RED);
+                    else
+                        m_specificEcuListView.setBackgroundColor(Color.GREEN);
+                }
             }
         }
     }

@@ -25,7 +25,7 @@ public class EcuDatabase {
 
     private HashMap<Integer, String> RXADDRMAP, TXADDRMAP;
 
-    private String RXAT =
+    private static final String RXAT =
             "01: 760, 02: 724, 04: 762, 06: 791, 07: 771, 08: 778, 09: 7EB, 0D: 775," +
             "0E: 76E, 0F: 770, 11: 7C9, 13: 732, 16: 18DAF271, 1A: 731, 1B: 7AC, 1C: 76B," +
             "1E: 768, 23: 773, 24: 77D, 25: 700, 26: 765, 27: 76D, 28: 7D7, 29: 764," +
@@ -40,7 +40,7 @@ public class EcuDatabase {
             "E3: 18DAF1E3, E4: 757, E6: 484, E7: 7EC, E8: 5C4, E9: 762, EA: 4B3, EB: 5B8," +
             "EC: 5B7, ED: 704, F7: 736, F8: 737, FA: 77B, FD: 76F, FE: 76C, FF: 7D0";
 
-    private String TXAT =
+    private static final String TXAT =
             "01: 740, 02: 704, 04: 742, 06: 790, 07: 751, 08: 758, 09: 7E3, 0D: 755," +
             "0E: 74E, 0F: 750, 11: 7C3, 13: 712, 15: 18DA15F1, 16: 18DA71F2, 18: 18DA18F1," +
             "1A: 711, 1B: 7A4, 1C: 74B, 1E: 748, 23: 753, 24: 75D, 25: 70C, 26: 745," +
@@ -122,7 +122,8 @@ public class EcuDatabase {
                 }
             }
         }
-        keptEcuInfo.exact_match = false;
+        if (keptEcuInfo != null)
+            keptEcuInfo.exact_match = false;
         return keptEcuInfo;
     }
 
@@ -156,7 +157,7 @@ public class EcuDatabase {
     }
 
     public EcuDatabase() {
-        buildAtMap();
+        buildMaps();
         m_ecuInfo = new HashMap<>();
         m_ecuAddressing = new HashMap<>();
         m_loaded = false;
@@ -331,11 +332,13 @@ public class EcuDatabase {
         return m_zipFileSystem.getZipFile(filePath);
     }
 
-    private void buildAtMap(){
+    private void buildMaps(){
         RXADDRMAP = new HashMap<>();
         TXADDRMAP = new HashMap<>();
+
         String[] RXS = RXAT.replace(" ", "").split(",");
         String[] TXS = TXAT.replace(" ", "").split(",");
+
         for (String rxs : RXS){
             String[] idToAddr = rxs.split(":");
             RXADDRMAP.put(Integer.parseInt(idToAddr[0], 16), idToAddr[1]);

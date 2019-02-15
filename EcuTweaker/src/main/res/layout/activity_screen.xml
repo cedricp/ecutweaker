@@ -37,6 +37,13 @@
                 android:layout_weight="1"
                 app:srcCompat="@drawable/ic_reload" />
 
+            <ImageButton
+                android:id="@+id/dtcButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:srcCompat="@drawable/ic_dtc" />
+
             <ImageView
                 android:id="@+id/iconBt"
                 android:layout_width="wrap_content"

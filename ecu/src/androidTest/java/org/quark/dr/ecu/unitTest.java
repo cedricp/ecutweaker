@@ -47,10 +47,10 @@ public class unitTest {
         InputStream is = this.getClass().getClassLoader().getResourceAsStream("test.json");
 
         Ecu ecu = new Ecu(is);
-        System.out.println(ecu.funcaddr);
-        System.out.println(ecu.protocol);
-        System.out.println(ecu.ecu_name);
-        System.out.println(ecu.funcname);
+//        System.out.println(ecu.funcaddr);
+//        System.out.println(ecu.protocol);
+//        System.out.println(ecu.ecu_name);
+//        System.out.println(ecu.funcname);
         // ECU Methods check
         byte[] testbyte = new byte[] {0x00, -1, 10};
         byte[] ucttest = new byte[] {0x61, 0x0A, 0x16, 0x32, 0x32, 0x02, 0x58, 0x00, (byte)0xB4, 0x3C,
@@ -111,5 +111,11 @@ public class unitTest {
 
     }
 
-
+    @Test
+    public void test_readDTC() {
+        InputStream is = this.getClass().getClassLoader().getResourceAsStream("acu.json");
+        Ecu ecu = new Ecu(is);
+        System.out.println("?? >> DTC TEST");
+        ecu.decodeDTC("ReadDTC", "5706903161900161901461900b61");
+    }
 }
