@@ -118,4 +118,24 @@ public class unitTest {
         System.out.println("?? >> DTC TEST");
         ecu.decodeDTC("ReadDTC", "5706903161900161901461900b61");
     }
+
+    @Test
+    public void test_Ident(){
+        EcuDatabase db = new EcuDatabase();
+        EcuDatabase.EcuIdentifierNew idn = db.new EcuIdentifierNew();
+        idn.diag_version = "9";
+        idn.version = "F00A161";
+        idn.soft_version = "SW09.C.04-B031-11.2-F04-07";
+        idn.supplier = "B517";
+        idn.addr = 41;
+        try {
+            db.loadDatabase("/data/data/ecu.zip", "/data");
+        } catch (EcuDatabase.DatabaseException e){
+            e.printStackTrace();
+        }
+        EcuDatabase.EcuInfo info = db.identifyNewEcu(idn);
+        System.out.println("?? " + info.ecuName + " " + info.exact_match);
+        info = db.identifyOldEcu(122, "61 80 82 00 44 66 27 44 32 31 33 82 00 38 71 38 00 A7 75 00 56 05 02 01 00 00");
+        System.out.println("?? " + info.ecuName + " " + info.exact_match);
+    }
 }

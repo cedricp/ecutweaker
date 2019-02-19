@@ -87,13 +87,15 @@ public class ScreenActivity extends AppCompatActivity {
     public static final String  DEVICE_NAME = "device_name";
     public static final String  TOAST       = "toast";
     private String              mConnectedDeviceName = null;
+    private float               mGlobalScale;
+    private long                mLastSDSTime;
 
     public float convertToPixel(float val){
-        return val / 6;
+        return (val / 8.0f) * mGlobalScale;
     }
 
     public float convertFontToPixel(int val){
-        return val * 1.2f;
+        return val * 1.0f * mGlobalScale;
     }
 
     @Override
@@ -105,6 +107,8 @@ public class ScreenActivity extends AppCompatActivity {
         String ecuFile = "";
         String ecuHref = "";
         m_autoReload = false;
+        mGlobalScale = 1.0f;
+        mLastSDSTime = 0;
 
         Bundle b = getIntent().getExtras();
         if (b != null) {
@@ -408,7 +412,11 @@ public class ScreenActivity extends AppCompatActivity {
             return;
         }
 
-        sendCmd(m_ecu.getDefaultSDS());
+        // If autoupdate, we don't want to send diag session every time
+        if (System.currentTimeMillis() - mLastSDSTime > 3000) {
+            sendCmd(m_ecu.getDefaultSDS());
+            mLastSDSTime = System.currentTimeMillis();
+        }
 
         // screen pre-send data
         for (Pair<Integer, String> pair : m_currentScreenData.getPreSendData()){

@@ -88,6 +88,18 @@ public class EcuDatabase {
         return list;
     }
 
+    public class EcuIdentifierNew {
+        public String supplier, version, soft_version, diag_version;
+        public int addr;
+        public void reInit(int addr){
+            this.addr = addr;
+            supplier = version = soft_version = diag_version = "";
+        }
+        public boolean isFullyFilled(){
+            return !supplier.isEmpty() && !version.isEmpty() && !soft_version.isEmpty() && !diag_version.isEmpty();
+        }
+    }
+
     @Nullable
     public EcuInfo identifyOldEcu(int addressId, String identRequest) {
         identRequest = identRequest.replace(" ", "");
@@ -113,9 +125,11 @@ public class EcuDatabase {
                         continue;
                     }
                     int intVersion = Integer.parseInt(version, 16);
-                    int currentDiff = Math.abs(Integer.parseInt(ecuIdent.version, 16) - intVersion);
-                    int oldDiff = Math.abs(Integer.parseInt(closestEcuIdent.version, 16) - intVersion);
-                    if ( currentDiff < oldDiff){
+                    int currentDiff = Math.abs(
+                            Integer.parseInt(ecuIdent.version, 16) - intVersion);
+                    int oldDiff = Math.abs(Integer.parseInt(
+                            closestEcuIdent.version, 16) - intVersion);
+                    if (currentDiff < oldDiff){
                         closestEcuIdent = ecuIdent;
                         keptEcuInfo = ecuInfo;
                     }
@@ -127,6 +141,27 @@ public class EcuDatabase {
         return keptEcuInfo;
     }
 
+    public EcuInfo identifyNewEcu(EcuIdentifierNew ecuIdentifer){
+        ArrayList<EcuInfo> ecuInfos = m_ecuInfo.get(ecuIdentifer.addr);
+        EcuInfo keptEcuInfo = null;
+        ArrayList<EcuInfo> keptEcus= new ArrayList<>();
+        for (EcuInfo ecuInfo : ecuInfos) {
+            for (EcuIdent ecuIdent : ecuInfo.ecuIdents) {
+                if (ecuIdent.supplier_code.equals(ecuIdentifer.supplier) &&
+                        ecuIdent.version.equals(ecuIdentifer.version)) {
+                    ecuInfo.exact_match = false;
+                    keptEcus.add(ecuInfo);
+                    keptEcuInfo = ecuInfo;
+                    if (ecuIdent.soft_version.equals(ecuIdentifer.soft_version)) {
+                        ecuInfo.exact_match = true;
+                        return ecuInfo;
+                    }
+                }
+            }
+        }
+        return keptEcuInfo;
+    }
+
     public ArrayList<String> getEcuByFunctionsAndType(String type) {
         Set<String> list = new HashSet<>();
         Iterator<ArrayList<EcuInfo>> ecuArrayIterator = m_ecuInfo.values().iterator();
@@ -134,7 +169,8 @@ public class EcuDatabase {
         while (ecuArrayIterator.hasNext()) {
             ArrayList<EcuInfo> ecuArray = ecuArrayIterator.next();
             for (EcuInfo ecuInfo : ecuArray) {
-                if ((ecuInfo.projects.contains(type) || type.isEmpty()) && m_ecuAddressing.containsKey(ecuInfo.addressId)) {
+                if ((ecuInfo.projects.contains(type) || type.isEmpty())
+                        && m_ecuAddressing.containsKey(ecuInfo.addressId)) {
                     list.add(m_ecuAddressing.get(ecuInfo.addressId));
                 }
             }

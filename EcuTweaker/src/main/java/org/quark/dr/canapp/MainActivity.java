@@ -20,7 +20,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -63,17 +62,19 @@ public class MainActivity extends AppCompatActivity {
 
     private EcuDatabase m_ecuDatabase;
     private TextView m_statusView;
-    private Button m_btButton, m_scanButton;
+    private Button m_btButton, m_scanButton, m_scanNewButton;
     private ImageButton m_chooseProjectButton;
     private ImageView m_btIconImage;
     private ListView m_ecuListView, m_specificEcuListView;
     private ArrayList<EcuDatabase.EcuInfo> m_currentEcuInfoList;
     private String m_ecuFilePath, m_btDeviceAddress, m_currentProject;
     private int m_currentEcuAddressId;
+    private TextView m_viewSupplier, m_viewDiagVersion, m_viewVersion, m_viewSoft;
 
     private ElmThread m_chatService;
     private Handler mHandler = null;
     private BluetoothAdapter mBluetoothAdapter = null;
+    private EcuDatabase.EcuIdentifierNew m_ecuIdentifierNew = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,13 +93,25 @@ public class MainActivity extends AppCompatActivity {
         m_ecuListView = findViewById(R.id.ecuListView);
         m_specificEcuListView = findViewById(R.id.deviceView);
         m_scanButton = findViewById(R.id.buttonScan);
+        m_scanNewButton = findViewById(R.id.buttonScanNew);
         m_chooseProjectButton = findViewById(R.id.projectButton);
         m_btIconImage = findViewById(R.id.btIcon);
+        m_viewDiagVersion = findViewById(R.id.textViewDiagversion);
+        m_viewSupplier = findViewById(R.id.textViewSupplier);
+        m_viewSoft = findViewById(R.id.textViewSoft);
+        m_viewVersion = findViewById(R.id.textViewVersion);
 
         m_scanButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 scanBus();
+            }
+        });
+
+        m_scanNewButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                scanBusNew();
             }
         });
 
@@ -143,6 +156,7 @@ public class MainActivity extends AppCompatActivity {
         m_btDeviceAddress = defaultPrefs.getString(PREF_DEVICE_ADDRESS, "");
 
         m_ecuDatabase = new EcuDatabase();
+        m_ecuIdentifierNew = m_ecuDatabase.new EcuIdentifierNew();
 
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.READ_EXTERNAL_STORAGE)
@@ -167,6 +181,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         m_scanButton.setEnabled(false);
+        m_scanNewButton.setEnabled(false);
         // Only for debug purpose
         //startScreen("/sdcard/ecu.zip", "UCH_84P2_85_V3.json");
     }
@@ -218,6 +233,26 @@ public class MainActivity extends AppCompatActivity {
 
         sendCmd("10C0");
         sendCmd("2180");
+    }
+
+    void scanBusNew(){
+        if(m_chatService == null || m_chatService.getState() != STATE_CONNECTED){
+            return;
+        }
+
+        if (m_currentEcuInfoList.isEmpty())
+            return;
+
+        m_ecuIdentifierNew.reInit(m_currentEcuAddressId);
+
+        m_chatService.initElm();
+        initBus("CAN");
+
+        sendCmd("1003");
+        sendCmd("22F1A0");
+        sendCmd("22F18A");
+        sendCmd("22F194");
+        sendCmd("22F195");
     }
 
     void ecuTypeSelected(String type, String project){
@@ -484,6 +519,30 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
+
+        if (ecuResponse.substring(0, 6).equals("62F1A0)")){
+            m_ecuIdentifierNew.diag_version = ecuResponse.substring(6);
+            m_viewDiagVersion.setText(m_ecuIdentifierNew.diag_version);
+
+        }
+        if (ecuResponse.substring(0, 6).equals("62F18A")){
+            m_ecuIdentifierNew.supplier = ecuResponse.substring(6);
+            m_viewSupplier.setText(m_ecuIdentifierNew.supplier);
+        }
+        if (ecuResponse.substring(0, 6).equals("62F194")){
+            m_ecuIdentifierNew.version = ecuResponse.substring(6);
+            m_viewSoft.setText(m_ecuIdentifierNew.version);
+        }
+        if (ecuResponse.substring(0, 6).equals("62F195")){
+            m_ecuIdentifierNew.soft_version = ecuResponse.substring(6);
+            m_viewVersion.setText(m_ecuIdentifierNew.soft_version);
+        }
+
+        // If we get all ECU info, search in DB
+        if (m_ecuIdentifierNew.isFullyFilled()){
+            m_ecuIdentifierNew.reInit(-1);
+            EcuDatabase.EcuInfo ecuInfo = m_ecuDatabase.identifyNewEcu(m_ecuIdentifierNew);
+        }
     }
 
     private static class messageHandler extends Handler {
@@ -533,6 +592,7 @@ public class MainActivity extends AppCompatActivity {
 
     void setConnected(boolean c){
         m_scanButton.setEnabled(c);
+        m_scanNewButton.setEnabled(c);
         if (c){
             m_btIconImage.setColorFilter(Color.GREEN);
         } else {
