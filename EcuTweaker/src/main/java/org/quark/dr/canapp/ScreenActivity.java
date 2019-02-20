@@ -179,10 +179,6 @@ public class ScreenActivity extends AppCompatActivity {
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        if (mBluetoothAdapter == null) {
-            Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_SHORT).show();
-        }
-
         mHandler = new messageHandler(this);
 
         m_scrollView = this.findViewById(R.id.scrollView);
@@ -214,7 +210,6 @@ public class ScreenActivity extends AppCompatActivity {
 
     void stopAutoReload(){
         m_autoReload = false;
-        m_reloadButton.setEnabled(false);
         m_reloadButton.clearColorFilter();
     }
 
@@ -253,6 +248,9 @@ public class ScreenActivity extends AppCompatActivity {
         m_buttonsCommand = new HashMap<>();
         m_requestsInputs = new HashMap<>();
         m_displaysRequestSet = new HashSet<>();
+
+        if (m_currentLayoutData == null)
+            return;
 
         m_currentScreenData = m_currentLayoutData.getScreen(screenName);
         if (m_currentScreenData == null)
@@ -495,7 +493,7 @@ public class ScreenActivity extends AppCompatActivity {
                 }
             }
         } catch (Exception e) {
-            m_logView.append(e.toString());
+            m_logView.append(e.toString() + "\n");
             e.printStackTrace();
         }
     }
@@ -625,20 +623,6 @@ public class ScreenActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-        if (mBluetoothAdapter == null)
-            return;
-        if (!mBluetoothAdapter.isEnabled()) {
-            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-            // Otherwise, setup the chat session
-        } else {
-            if (mChatService == null) setupChat();
-        }
-    }
-
-    @Override
     public void onDestroy()
     {
         Log.e(TAG, "+ ON DESTROY +");
@@ -685,7 +669,6 @@ public class ScreenActivity extends AppCompatActivity {
             }
         }
     }
-
 
     private void setStatus(CharSequence status) {
         m_logView.append(status + "\n");
@@ -745,18 +728,18 @@ public class ScreenActivity extends AppCompatActivity {
     }
 
     private boolean isChatConnected(){
-        return (mChatService != null && mChatService.getState() == STATE_CONNECTED);
+        return (mBluetoothAdapter != null && mChatService != null && mChatService.getState() == STATE_CONNECTED);
     }
 
     private void initELM() {
-        if (mChatService != null) {
+        if (isChatConnected()) {
             mChatService.initElm();
             initBus();
         }
     }
 
     private void initBus(){
-        if (mChatService != null) {
+        if (isChatConnected()) {
             String txa = m_ecu.getTxId();
             String rxa = m_ecu.getRxId();
             if (m_ecu.getProtocol().equals("CAN")) {
@@ -770,7 +753,7 @@ public class ScreenActivity extends AppCompatActivity {
 
     private void sendCmd(String cmd) {
         // Check that we're actually connected before trying anything
-        if (mBluetoothAdapter == null || !isChatConnected()) {
+        if (!isChatConnected()) {
             m_logView.append("Not sent (Bluetooth not connected) : " + cmd + "\n");
             return;
         }
@@ -780,11 +763,6 @@ public class ScreenActivity extends AppCompatActivity {
     }
 
     private void sendDelay(int delay) {
-        // Check that we're actually connected before trying anything
-        if (mBluetoothAdapter == null) {
-            m_logView.append("Trying to send command without BT connection\n");
-            return;
-        }
         if (!isChatConnected()) {
             m_logView.append("Trying to send command without chat session\n");
             return;
@@ -795,6 +773,8 @@ public class ScreenActivity extends AppCompatActivity {
     }
 
     private void setElMWorking(boolean isQueueEmpty){
+        if (m_currentScreenData == null)
+            return;
         if (!isQueueEmpty) {
             m_btCommStatus.setColorFilter(Color.GREEN);
             for (Button button : m_buttonsViews.values()){
@@ -813,7 +793,7 @@ public class ScreenActivity extends AppCompatActivity {
 
     void handleElmResult(String result, int txa){
         String[] results = result.split(";");
-        if (results.length < 2){
+        if (results.length < 2 || results[0] == null || results[1] == null){
             m_logView.append("No ELM Response (" + result + ")\n");
             return;
         }
@@ -868,10 +848,10 @@ public class ScreenActivity extends AppCompatActivity {
 
         int i = 0;
         for (List<String> stringList : decodedDtcs){
-            m_logView.append("DTC #" + i);
+            m_logView.append("DTC #" + i + "\n");
             i++;
             for (String dtcLine : stringList){
-                m_logView.append("   " + dtcLine);
+                m_logView.append("   " + dtcLine + "\n");
             }
         }
     }
@@ -888,8 +868,12 @@ public class ScreenActivity extends AppCompatActivity {
                     Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
                     switch (msg.arg1) {
                         case STATE_CONNECTED:
-                            activity.initELM();
-                            activity.setConnected(true);
+                            try {
+                                activity.initELM();
+                                activity.setConnected(true);
+                            } catch (Exception e) {
+                                activity.m_logView.append("Java exception : " + e.toString() + "\n");
+                            }
                             break;
                         case STATE_CONNECTING:
                             activity.setStatus(activity.getString(R.string.title_connecting));
@@ -904,14 +888,18 @@ public class ScreenActivity extends AppCompatActivity {
                     }
                     break;
                 case MESSAGE_READ:
-                    byte[] m = (byte[]) msg.obj;
-                    String readMessage = new String(m, 0, msg.arg1);
-                    int txa = msg.arg2;
-                    activity.handleElmResult(readMessage, txa);
+                    try {
+                        byte[] m = (byte[]) msg.obj;
+                        String readMessage = new String(m, 0, msg.arg1);
+                        int txa = msg.arg2;
+                        activity.handleElmResult(readMessage, txa);
+                    } catch (Exception e) {
+                        activity.m_logView.append("Java exception : " + e.toString() + "\n");
+                    }
                     break;
                 case MESSAGE_DEVICE_NAME:
-                    activity.mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
-                    activity.m_logView.append("New device : " + activity.mConnectedDeviceName + "\n");
+                    //activity.mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
+                    //activity.m_logView.append("New device : " + activity.mConnectedDeviceName + "\n");
                     break;
                 case MESSAGE_TOAST:
                     Toast.makeText(activity.getApplicationContext(), msg.getData().getString(TOAST), Toast.LENGTH_SHORT).show();

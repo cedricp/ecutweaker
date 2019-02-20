@@ -586,7 +586,7 @@ public class ElmThread {
             }
             String result;
             if (error){
-                result = "ERROR : NON HEXA response";
+                result = "ERROR : NON HEXA response : " + message;
             } else {
                 // Decode received ISO_TP data
                 IsotpDecode isotpdec = new IsotpDecode(responses);

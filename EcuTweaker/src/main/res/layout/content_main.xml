@@ -11,7 +11,10 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout_editor_absoluteX="0dp">
 
         <TextView
             android:id="@+id/statusView"
@@ -20,6 +23,11 @@
             android:gravity="center_vertical|center_horizontal"
             android:text="ECU TWEAKER"
             android:textSize="24sp" />
+
+        <TextView
+            android:id="@+id/logView"
+            android:layout_width="match_parent"
+            android:layout_height="60dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -70,7 +78,7 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:baselineAligned="false"
-            tools:layout_editor_absoluteY="128dp" >
+            tools:layout_editor_absoluteY="128dp">
 
         </ListView>
 
@@ -93,7 +101,16 @@
                 android:layout_height="40dp"
                 android:layout_weight="1"
                 android:text="AUTO IDENTIFY NEW" />
+
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0"
+            android:gravity="center_vertical|center_horizontal"
+            android:text="Indentification result" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -104,6 +121,14 @@
             tools:layout_editor_absoluteY="505dp">
 
             <TextView
+                android:id="@+id/textViewDiagversion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical|center_horizontal"
+                android:text="----" />
+
+            <TextView
                 android:id="@+id/textViewSupplier"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -112,9 +137,9 @@
                 android:text="----" />
 
             <TextView
-                android:id="@+id/textViewDiagversion"
+                android:id="@+id/textViewVersion"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:gravity="center_vertical|center_horizontal"
                 android:text="----" />
@@ -127,13 +152,6 @@
                 android:gravity="center_vertical|center_horizontal"
                 android:text="----" />
 
-            <TextView
-                android:id="@+id/textViewVersion"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center_vertical|center_horizontal"
-                android:text="----" />
         </LinearLayout>
 
     </LinearLayout>

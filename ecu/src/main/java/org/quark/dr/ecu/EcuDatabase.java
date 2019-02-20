@@ -91,6 +91,9 @@ public class EcuDatabase {
     public class EcuIdentifierNew {
         public String supplier, version, soft_version, diag_version;
         public int addr;
+        public EcuIdentifierNew() {
+            reInit(-1);
+        }
         public void reInit(int addr){
             this.addr = addr;
             supplier = version = soft_version = diag_version = "";
@@ -101,16 +104,10 @@ public class EcuDatabase {
     }
 
     @Nullable
-    public EcuInfo identifyOldEcu(int addressId, String identRequest) {
-        identRequest = identRequest.replace(" ", "");
-        if (identRequest.length() < 40)
-            return null;
-
-        String supplier = new String(Ecu.hexStringToByteArray(identRequest.substring(16, 22)));
-        String soft_version = identRequest.substring(32, 36);
-        String version = identRequest.substring(36, 40);
-        int diag_version = Integer.parseInt(identRequest.substring(14, 16), 16);
+    public EcuInfo identifyOldEcu(int addressId, String supplier, String soft_version, String version, int diag_version) {
         ArrayList<EcuInfo> ecuInfos = m_ecuInfo.get(addressId);
+        if (ecuInfos == null)
+            return null;
         EcuIdent closestEcuIdent = null;
         EcuInfo keptEcuInfo = null;
         for (EcuInfo ecuInfo : ecuInfos){

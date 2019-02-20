@@ -18,7 +18,9 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -53,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
     final static int PERMISSIONS_ACCESS_EXTERNAL_STORAGE = 0;
     // Intent request codes
     private static final int    REQUEST_CONNECT_DEVICE = 1;
+    private static final int    REQUEST_SCREEN         = 2;
     private static final int    REQUEST_ENABLE_BT      = 3;
     private static final String DEFAULT_PREF_TAG = "default";
 
@@ -69,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<EcuDatabase.EcuInfo> m_currentEcuInfoList;
     private String m_ecuFilePath, m_btDeviceAddress, m_currentProject;
     private int m_currentEcuAddressId;
-    private TextView m_viewSupplier, m_viewDiagVersion, m_viewVersion, m_viewSoft;
+    private TextView m_viewSupplier, m_viewDiagVersion, m_viewVersion, m_viewSoft, m_logView;
 
     private ElmThread m_chatService;
     private Handler mHandler = null;
@@ -100,6 +103,11 @@ public class MainActivity extends AppCompatActivity {
         m_viewSupplier = findViewById(R.id.textViewSupplier);
         m_viewSoft = findViewById(R.id.textViewSoft);
         m_viewVersion = findViewById(R.id.textViewVersion);
+        m_logView = findViewById(R.id.logView);
+
+        m_logView.setGravity(Gravity.BOTTOM);
+        m_logView.setMovementMethod(new ScrollingMovementMethod());
+        m_logView.setBackgroundResource(R.drawable.edittextroundgreen);
 
         m_scanButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -168,10 +176,9 @@ public class MainActivity extends AppCompatActivity {
 
         if (mBluetoothAdapter != null) {
             if (!mBluetoothAdapter.isEnabled()){
+                Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_LONG).show();
                 Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-            } else {
-                Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_LONG).show();
             }
 
             if(mBluetoothAdapter.isEnabled() && !m_btDeviceAddress.isEmpty()) {
@@ -221,11 +228,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void scanBus(){
-        if(m_chatService == null || m_chatService.getState() != STATE_CONNECTED){
+        if(!isChatConnected()){
             return;
         }
 
-        if (m_currentEcuInfoList.isEmpty())
+        if (m_currentEcuInfoList == null || m_currentEcuInfoList.isEmpty())
             return;
 
         m_chatService.initElm();
@@ -240,7 +247,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        if (m_currentEcuInfoList.isEmpty())
+        if (m_currentEcuInfoList == null || m_currentEcuInfoList.isEmpty())
             return;
 
         m_ecuIdentifierNew.reInit(m_currentEcuAddressId);
@@ -312,7 +319,7 @@ public class MainActivity extends AppCompatActivity {
             b.putString("ecuRef", ecuHREFName);
             b.putString("deviceAddress", m_btDeviceAddress);
             serverIntent.putExtras(b);
-            startActivity(serverIntent);
+            startActivityForResult(serverIntent, REQUEST_SCREEN);
         } catch (android.content.ActivityNotFoundException e) {
             Log.e(TAG, "+++ ActivityNotFoundException +++");
         }
@@ -401,6 +408,12 @@ public class MainActivity extends AppCompatActivity {
                     // User did not enable Bluetooth or an error occurred
                     Log.d(TAG, "BT not enabled");
                 }
+                break;
+            case REQUEST_SCREEN:
+                setConnected(false);
+                if (!m_btDeviceAddress.isEmpty())
+                connectDevice(m_btDeviceAddress);
+                break;
         }
     }
 
@@ -415,7 +428,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void updateEcuTypeListView(String ecuFile, String project){
-        //m_ecuDatabase.identifyOldEcu(122, "61 80 82 00 44 66 27 44 32 31 33 82 00 38 71 38 00 A7 75 00 56 05 02 01 00 00");
         if (ecuFile.isEmpty()){
             m_statusView.setText("DATABASE NOT FOUND");
             return;
@@ -498,44 +510,67 @@ public class MainActivity extends AppCompatActivity {
         if (results[1].isEmpty() || results[0].substring(0,2).toUpperCase().equals("AT")){
             return;
         }
-        String ecuRequest = results[0];
-        String ecuResponse = results[1];
-        if (ecuRequest.substring(0,4).equals("2180")){
-            if (ecuResponse.substring(0,4).equals("6180")) {
-                EcuDatabase.EcuInfo ecuInfo = m_ecuDatabase.identifyOldEcu(m_currentEcuAddressId, ecuResponse);
-                if (ecuInfo != null) {
-                    ArrayList<String> ecuNames = new ArrayList<>();
-                    ecuNames.add(ecuInfo.ecuName);
-                    Collections.sort(ecuNames);
-                    ArrayAdapter<String> adapter;
-                    adapter = new ArrayAdapter<String>(this,
-                            android.R.layout.simple_list_item_1,
-                            ecuNames);
-                    m_specificEcuListView.setAdapter(adapter);
-                    if (!ecuInfo.exact_match)
-                        m_specificEcuListView.setBackgroundColor(Color.RED);
-                    else
-                        m_specificEcuListView.setBackgroundColor(Color.GREEN);
+
+        String ecuRequest = results[0].replace(" ", "");
+        String ecuResponse = results[1].replace(" ", "");
+
+        m_logView.append("> " + results[0] + " : " + results[1] + "\n");
+
+        if (ecuResponse.length() > 39 && ecuResponse.substring(0,4).equals("6180")) {
+            String supplier = new String(Ecu.hexStringToByteArray(ecuResponse.substring(16, 22)));
+            String soft_version = ecuResponse.substring(32, 36);
+            String version = ecuResponse.substring(36, 40);
+            String diag_version_string = ecuResponse.substring(14, 16);
+            int diag_version = Integer.parseInt(diag_version_string, 16);
+            m_viewDiagVersion.setText(diag_version_string);
+            m_viewSupplier.setText(supplier);
+            m_viewSoft.setText(version);
+            m_viewVersion.setText(soft_version);
+            m_logView.append("Found ECU : Supplier " + supplier + " Diagnostic version : "
+                    + diag_version_string + " Version : " + version
+                    + " Soft version : " + soft_version + "\n");
+
+            EcuDatabase.EcuInfo ecuInfo = m_ecuDatabase.identifyOldEcu(m_currentEcuAddressId,
+                    supplier, soft_version, version, diag_version);
+
+            if (ecuInfo != null) {
+                ArrayList<String> ecuNames = new ArrayList<>();
+                ecuNames.add(ecuInfo.ecuName);
+                Collections.sort(ecuNames);
+                ArrayAdapter<String> adapter;
+                adapter = new ArrayAdapter<String>(this,
+                        android.R.layout.simple_list_item_1,
+                        ecuNames);
+                m_specificEcuListView.setAdapter(adapter);
+                if (!ecuInfo.exact_match) {
+                    m_specificEcuListView.setBackgroundColor(Color.RED);
+                    m_logView.append("ECU perfectly match file " + ecuInfo.ecuName + "\n");
+                } else {
+                    m_specificEcuListView.setBackgroundColor(Color.GREEN);
+                    m_logView.append("ECU partially match file (use with caution) "
+                            + ecuInfo.ecuName + "\n");
                 }
             }
         }
 
-        if (ecuResponse.substring(0, 6).equals("62F1A0)")){
-            m_ecuIdentifierNew.diag_version = ecuResponse.substring(6);
-            m_viewDiagVersion.setText(m_ecuIdentifierNew.diag_version);
+        if (ecuResponse.length() > 5) {
+            if (ecuResponse.substring(0, 6).equals("62F1A0)")) {
+                m_ecuIdentifierNew.diag_version = ecuResponse.substring(6);
+                m_viewDiagVersion.setText(m_ecuIdentifierNew.diag_version);
 
-        }
-        if (ecuResponse.substring(0, 6).equals("62F18A")){
-            m_ecuIdentifierNew.supplier = ecuResponse.substring(6);
-            m_viewSupplier.setText(m_ecuIdentifierNew.supplier);
-        }
-        if (ecuResponse.substring(0, 6).equals("62F194")){
-            m_ecuIdentifierNew.version = ecuResponse.substring(6);
-            m_viewSoft.setText(m_ecuIdentifierNew.version);
-        }
-        if (ecuResponse.substring(0, 6).equals("62F195")){
-            m_ecuIdentifierNew.soft_version = ecuResponse.substring(6);
-            m_viewVersion.setText(m_ecuIdentifierNew.soft_version);
+            }
+            if (ecuResponse.substring(0, 6).equals("62F18A")) {
+                m_ecuIdentifierNew.supplier = ecuResponse.substring(6);
+                m_viewSupplier.setText(m_ecuIdentifierNew.supplier);
+            }
+            if (ecuResponse.substring(0, 6).equals("62F194")) {
+                m_ecuIdentifierNew.version = ecuResponse.substring(6);
+                m_viewSoft.setText(m_ecuIdentifierNew.version);
+            }
+            if (ecuResponse.substring(0, 6).equals("62F195")) {
+                m_ecuIdentifierNew.soft_version = ecuResponse.substring(6);
+                m_viewVersion.setText(m_ecuIdentifierNew.soft_version);
+            }
         }
 
         // If we get all ECU info, search in DB
@@ -575,7 +610,16 @@ public class MainActivity extends AppCompatActivity {
                     byte[] m = (byte[]) msg.obj;
                     String readMessage = new String(m, 0, msg.arg1);
                     int txa = msg.arg2;
-                    activity.handleElmResult(readMessage, txa);
+                    try {
+                        activity.handleElmResult(readMessage, txa);
+                    } catch (Exception e){
+                        AlertDialog.Builder dlgAlert  = new AlertDialog.Builder(activity);
+                        dlgAlert.setMessage(e.getMessage());
+                        dlgAlert.setTitle("Exception caught");
+                        dlgAlert.setPositiveButton("OK", null);
+                        dlgAlert.create().show();
+                        e.printStackTrace();
+                    }
                     break;
                 case MESSAGE_DEVICE_NAME:
 
@@ -602,7 +646,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void sendCmd(String cmd) {
         // Check that we're actually connected before trying anything
-        if (mBluetoothAdapter == null || !isChatConnected()) {
+        if (!isChatConnected()) {
             return;
         }
 
@@ -612,9 +656,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void sendDelay(int delay) {
         // Check that we're actually connected before trying anything
-        if (mBluetoothAdapter == null) {
-            return;
-        }
         if (!isChatConnected()) {
             return;
         }
@@ -624,6 +665,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean isChatConnected(){
-        return (m_chatService != null && m_chatService.getState() == STATE_CONNECTED);
+        return (mBluetoothAdapter != null && m_chatService != null && m_chatService.getState() == STATE_CONNECTED);
     }
 }

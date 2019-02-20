@@ -135,7 +135,7 @@ public class unitTest {
         }
         EcuDatabase.EcuInfo info = db.identifyNewEcu(idn);
         System.out.println("?? " + info.ecuName + " " + info.exact_match);
-        info = db.identifyOldEcu(122, "61 80 82 00 44 66 27 44 32 31 33 82 00 38 71 38 00 A7 75 00 56 05 02 01 00 00");
+        //info = db.identifyOldEcu(122, "61 80 82 00 44 66 27 44 32 31 33 82 00 38 71 38 00 A7 75 00 56 05 02 01 00 00");
         System.out.println("?? " + info.ecuName + " " + info.exact_match);
     }
 }
