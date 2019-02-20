@@ -389,4 +389,8 @@ public class EcuDatabase {
     public String getTxAddressById(int id){
         return TXADDRMAP.get(id);
     }
+
+    public ZipFastFileSystem getZipFileSystem(){
+        return m_zipFileSystem;
+    }
 }

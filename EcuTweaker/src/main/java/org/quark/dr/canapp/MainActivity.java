@@ -516,6 +516,9 @@ public class MainActivity extends AppCompatActivity {
 
         m_logView.append("> " + results[0] + " : " + results[1] + "\n");
 
+        /*
+         * Old method auto identification
+         */
         if (ecuResponse.length() > 39 && ecuResponse.substring(0,4).equals("6180")) {
             String supplier = new String(Ecu.hexStringToByteArray(ecuResponse.substring(16, 22)));
             String soft_version = ecuResponse.substring(32, 36);
@@ -544,15 +547,18 @@ public class MainActivity extends AppCompatActivity {
                 m_specificEcuListView.setAdapter(adapter);
                 if (!ecuInfo.exact_match) {
                     m_specificEcuListView.setBackgroundColor(Color.RED);
-                    m_logView.append("ECU perfectly match file " + ecuInfo.ecuName + "\n");
-                } else {
-                    m_specificEcuListView.setBackgroundColor(Color.GREEN);
                     m_logView.append("ECU partially match file (use with caution) "
                             + ecuInfo.ecuName + "\n");
+                } else {
+                    m_specificEcuListView.setBackgroundColor(Color.GREEN);
+                    m_logView.append("ECU perfectly match file " + ecuInfo.ecuName + "\n");
                 }
             }
         }
 
+        /*
+         * New method auto identification
+         */
         if (ecuResponse.length() > 5) {
             if (ecuResponse.substring(0, 6).equals("62F1A0)")) {
                 m_ecuIdentifierNew.diag_version = ecuResponse.substring(6);

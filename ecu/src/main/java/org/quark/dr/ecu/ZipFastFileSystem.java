@@ -118,6 +118,9 @@ public class ZipFastFileSystem {
         return false;
     }
 
+    public boolean fileExists(String filename){
+        return m_directoryEntries.containsKey(filename);
+    }
 
     public String getZipFile(String filename) {
         try {

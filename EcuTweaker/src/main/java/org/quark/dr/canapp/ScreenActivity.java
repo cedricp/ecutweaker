@@ -6,11 +6,14 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.text.method.ScrollingMovementMethod;
+import android.util.DisplayMetrics;
 import android.util.Pair;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -24,6 +27,7 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.Spinner;
@@ -61,6 +65,7 @@ public class ScreenActivity extends AppCompatActivity {
     private String m_currentScreenName, m_currentEcuName, m_ecuZipFileName, m_deviceAddressPref;
     private String m_currentDtcRequestName, m_currentDtcRequestBytes;
     private boolean m_autoReload;
+    private EcuDatabase m_ecudb;
 
     private HashMap<String, EditText> m_editTextViews;
     private HashMap<String, EditText> m_displayViews;
@@ -216,12 +221,12 @@ public class ScreenActivity extends AppCompatActivity {
     void openEcu(String ecuFile, String ecuName){
         String layoutFileName = ecuName + ".layout";
 
-        EcuDatabase ecudb = new EcuDatabase();
+        m_ecudb = new EcuDatabase();
         String appDir = getApplicationContext().getFilesDir().getAbsolutePath();
         try {
-            ecudb.loadDatabase(ecuFile, appDir);
-            String ecuJson = ecudb.getZipFile(ecuName);
-            String layoutJson = ecudb.getZipFile(layoutFileName);
+            m_ecudb.loadDatabase(ecuFile, appDir);
+            String ecuJson = m_ecudb.getZipFile(ecuName);
+            String layoutJson = m_ecudb.getZipFile(layoutFileName);
 
             m_ecu = new Ecu(ecuJson);
             m_currentLayoutData = new Layout(layoutJson);
@@ -265,21 +270,52 @@ public class ScreenActivity extends AppCompatActivity {
         Set<String> labels = m_currentScreenData.getLabels();
         for (String label : labels) {
             Layout.LabelData labelData = m_currentScreenData.getLabelData(label);
-            TextView textView = new TextView(this);
-            textView.setX(convertToPixel(labelData.rect.x));
-            textView.setY(convertToPixel(labelData.rect.y));
-            textView.setWidth((int) convertToPixel(labelData.rect.w));
-            textView.setHeight((int) convertToPixel(labelData.rect.h));
-            textView.setText(labelData.text);
-            textView.setBackgroundColor(labelData.color.get());
-            textView.setTextColor(labelData.font.color.get());
-            textView.setTextSize(convertFontToPixel(labelData.font.size));
-            if (labelData.alignment == 2){
-                textView.setGravity(Gravity.CENTER_HORIZONTAL);
-            } else if (labelData.alignment == 1){
-                textView.setGravity(Gravity.RIGHT);
+            if (labelData.text.startsWith("::pic:")){
+                String gifName = labelData.text;
+                ImageView imageView = new ImageView(this);
+
+                gifName = gifName.replace("::pic:", "")
+                        .replace("\\", "/");
+                String filenameu = "graphics/" + gifName + ".GIF";
+                String filenamel = "graphics/" + gifName + ".gif";
+                byte[] imageBytes = null;
+                if (m_ecudb.getZipFileSystem().fileExists(filenameu)){
+                    imageBytes = m_ecudb.getZipFileSystem().getZipFileAsBytes(filenameu);
+                } else if (m_ecudb.getZipFileSystem().fileExists(filenamel)){
+                    imageBytes = m_ecudb.getZipFileSystem().getZipFileAsBytes(filenamel);
+                }
+                if (imageBytes != null) {
+                    Bitmap bm = BitmapFactory.decodeByteArray(imageBytes, 0,
+                            imageBytes.length);
+                    DisplayMetrics dm = new DisplayMetrics();
+                    getWindowManager().getDefaultDisplay().getMetrics(dm);
+                    imageView.setX(convertToPixel(labelData.rect.x));
+                    imageView.setY(convertToPixel(labelData.rect.y));
+                    int w = (int) convertToPixel(labelData.rect.w);
+                    int h = (int) convertToPixel(labelData.rect.h);
+                    LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(w, h);
+                    imageView.setLayoutParams(parms);
+                    imageView.setScaleType(ImageView.ScaleType.FIT_XY);
+                    imageView.setImageBitmap(bm);
+                    m_layoutView.addView(imageView);
+                }
+            } else {
+                TextView textView = new TextView(this);
+                textView.setX(convertToPixel(labelData.rect.x));
+                textView.setY(convertToPixel(labelData.rect.y));
+                textView.setWidth((int) convertToPixel(labelData.rect.w));
+                textView.setHeight((int) convertToPixel(labelData.rect.h));
+                textView.setText(labelData.text);
+                textView.setBackgroundColor(labelData.color.get());
+                textView.setTextColor(labelData.font.color.get());
+                textView.setTextSize(convertFontToPixel(labelData.font.size));
+                if (labelData.alignment == 2) {
+                    textView.setGravity(Gravity.CENTER_HORIZONTAL);
+                } else if (labelData.alignment == 1) {
+                    textView.setGravity(Gravity.RIGHT);
+                }
+                m_layoutView.addView(textView);
             }
-            m_layoutView.addView(textView);
         }
 
         Set<String> displays = m_currentScreenData.getDisplays();
