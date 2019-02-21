@@ -10,29 +10,30 @@
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/activity_screen"
+        android:label="@string/application_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".DeviceListActivity"
-            android:label="@string/activity_screen"></activity>
-        <activity
-            android:name=".ScreenActivity"
-            android:label="@string/activity_screen"
-            android:launchMode="singleInstance"
-            android:windowSoftInputMode="adjustPan"
-            android:theme="@style/AppTheme.NoActionBar">
-        </activity>
-        <activity
             android:name=".MainActivity"
             android:label="@string/title_activity_main"
+            android:launchMode="singleInstance"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-    </application>
+        <activity
+            android:name=".DeviceListActivity"
+            android:label="@string/activity_screen">
 
+        </activity>
+        <activity
+            android:name=".ScreenActivity"
+            android:label="@string/activity_screen"
+            android:windowSoftInputMode="adjustPan"
+            android:theme="@style/AppTheme.NoActionBar">
+        </activity>
+    </application>
 </manifest>

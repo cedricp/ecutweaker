@@ -182,6 +182,24 @@ public class ScreenActivity extends AppCompatActivity {
             }
         });
 
+        Button zoomInButton = findViewById(R.id.zoom_in);
+        zoomInButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mGlobalScale += 0.1f;
+                drawScreen(m_currentScreenName);
+            }
+        });
+
+        Button zoomOutButton = findViewById(R.id.zoom_out);
+        zoomOutButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mGlobalScale -= 0.1f;
+                drawScreen(m_currentScreenName);
+            }
+        });
+
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         mHandler = new messageHandler(this);
@@ -272,23 +290,23 @@ public class ScreenActivity extends AppCompatActivity {
             Layout.LabelData labelData = m_currentScreenData.getLabelData(label);
             if (labelData.text.startsWith("::pic:")){
                 String gifName = labelData.text;
-                ImageView imageView = new ImageView(this);
 
                 gifName = gifName.replace("::pic:", "")
                         .replace("\\", "/");
                 String filenameu = "graphics/" + gifName + ".GIF";
                 String filenamel = "graphics/" + gifName + ".gif";
+
                 byte[] imageBytes = null;
                 if (m_ecudb.getZipFileSystem().fileExists(filenameu)){
                     imageBytes = m_ecudb.getZipFileSystem().getZipFileAsBytes(filenameu);
                 } else if (m_ecudb.getZipFileSystem().fileExists(filenamel)){
                     imageBytes = m_ecudb.getZipFileSystem().getZipFileAsBytes(filenamel);
                 }
+
                 if (imageBytes != null) {
+                    ImageView imageView = new ImageView(this);
                     Bitmap bm = BitmapFactory.decodeByteArray(imageBytes, 0,
                             imageBytes.length);
-                    DisplayMetrics dm = new DisplayMetrics();
-                    getWindowManager().getDefaultDisplay().getMetrics(dm);
                     imageView.setX(convertToPixel(labelData.rect.x));
                     imageView.setY(convertToPixel(labelData.rect.y));
                     int w = (int) convertToPixel(labelData.rect.w);
@@ -433,6 +451,7 @@ public class ScreenActivity extends AppCompatActivity {
         }
 
         m_scrollView.requestLayout();
+        updateDisplays();
     }
 
     void updateDisplays(){
@@ -480,12 +499,12 @@ public class ScreenActivity extends AppCompatActivity {
     private void updateScreen(String req, String response){
         if (req.isEmpty() && response.isEmpty()) {
             // Test data
-            response = "61112110010104001400000000DCE9";
-            req = "2111";
+            //response = "61112110010104001400000000DCE9";
+            //req = "2111";
 //            response = "610A163232025800B43C3C1E3C0A0A0A0A012C5C6167B5BBC10A5C";
 //            req = "210A";
-//            response = "610F1F1F7F01";
-//            req = "210F";
+//            response = "630105060708091011121314";
+//            req = "23010000ED06";
         }
 
         if (response.length() < 4){
@@ -497,9 +516,8 @@ public class ScreenActivity extends AppCompatActivity {
 
         // Check response is ok
         if (requestHeader + 0x4000 != responseHeader) {
+            m_logView.append("Bad response (" + responseHeader + ") to request : " + requestHeader);
             return;
-        } else {
-
         }
 
         try {
@@ -663,6 +681,14 @@ public class ScreenActivity extends AppCompatActivity {
     {
         Log.e(TAG, "+ ON DESTROY +");
         super.onDestroy();
+        if (mChatService != null)
+            mChatService.stop();
+    }
+
+    @Override
+    public void onStop()
+    {
+        super.onStop();
         if (mChatService != null)
             mChatService.stop();
     }
@@ -834,27 +860,26 @@ public class ScreenActivity extends AppCompatActivity {
             return;
         }
 
-        if (results[1].length() >= 6) {
-            String resultCode = results[1].substring(0, 6).toUpperCase();
-            if (resultCode.substring(0, 2).equals("7F")){
-                String nrcode = resultCode.substring(4, 6);
-                String translatedErrorCode = mChatService.getEcuErrorCode(nrcode);
-                if (translatedErrorCode != null){
-                    m_logView.append("Negative response : " + translatedErrorCode + " (" + resultCode + ")\n");
-                    return;
-                }
+        if (results[1].isEmpty() || results[0].substring(0,2).toUpperCase().equals("AT")){
+            // Don't worry about ELM configuration
+            return;
+        }
 
+        if (results[1].length() >= 6 && results[1].substring(0, 2).equals("7F")) {
+            String resultCode = results[1].substring(0, 6).toUpperCase();
+            String nrcode = resultCode.substring(4, 6);
+            String translatedErrorCode = mChatService.getEcuErrorCode(nrcode);
+            if (translatedErrorCode != null){
+                m_logView.append("Negative response : " + translatedErrorCode + " (" + resultCode + ")\n");
+                return;
             }
         } else {
             m_logView.append("ELM Response : " + results[1] + " to " + results[0] + "\n");
         }
 
-        if (results[1].isEmpty() || results[0].substring(0,2).toUpperCase().equals("AT")){
-            return;
-        }
-
         if (results[0].equals(m_currentDtcRequestBytes)){
             decodeDTC(results[1]);
+            return;
         }
 
         updateScreen(results[0], results[1]);
@@ -878,13 +903,13 @@ public class ScreenActivity extends AppCompatActivity {
         List<List<String>> decodedDtcs = m_ecu.decodeDTC(m_currentDtcRequestName, response);
 
         if (decodedDtcs.size() == 0){
-            Toast.makeText(getApplicationContext(), "ECU has 0 DTC stored", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "ECU has no DTC stored", Toast.LENGTH_SHORT).show();
             return;
         }
 
         int i = 0;
         for (List<String> stringList : decodedDtcs){
-            m_logView.append("DTC #" + i + "\n");
+            m_logView.append("DTC #" + (i + 1) + "\n");
             i++;
             for (String dtcLine : stringList){
                 m_logView.append("   " + dtcLine + "\n");

@@ -182,7 +182,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             if(mBluetoothAdapter.isEnabled() && !m_btDeviceAddress.isEmpty()) {
-                setupChat();
+                setupChat(false);
                 connectDevice(m_btDeviceAddress);
             }
         }
@@ -204,7 +204,11 @@ public class MainActivity extends AppCompatActivity {
         m_chatService.connect(device);
     }
 
-    private void setupChat() {
+    private void setupChat(boolean force) {
+        if (force && m_chatService != null){
+            m_chatService.stop();
+        }
+
         Log.d(TAG, "setupChat()");
         // Initialize the BluetoothChatService to perform bluetooth connections
         if (m_chatService != null)
@@ -364,8 +368,17 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onDestroy()
     {
-        Log.e(TAG, "+ ON DESTROY +");
+        Log.d(TAG, "+ ON DESTROY +");
         super.onDestroy();
+        if (m_chatService != null)
+            m_chatService.stop();
+    }
+
+    @Override
+    public void onStop()
+    {
+        Log.d(TAG, "+ ON STOP +");
+        super.onStop();
         if (m_chatService != null)
             m_chatService.stop();
     }
@@ -380,7 +393,7 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
             // Otherwise, setup the chat session
         } else {
-            if (m_chatService == null) setupChat();
+            setupChat(false);
         }
     }
 
@@ -403,7 +416,7 @@ public class MainActivity extends AppCompatActivity {
             case REQUEST_ENABLE_BT:
                 // When the request to enable Bluetooth returns
                 if (resultCode == Activity.RESULT_OK) {
-                    setupChat();
+                    setupChat(false);
                 } else {
                     // User did not enable Bluetooth or an error occurred
                     Log.d(TAG, "BT not enabled");
@@ -411,8 +424,10 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case REQUEST_SCREEN:
                 setConnected(false);
-                if (!m_btDeviceAddress.isEmpty())
-                connectDevice(m_btDeviceAddress);
+                if (!m_btDeviceAddress.isEmpty()) {
+                    setupChat(true);
+                    connectDevice(m_btDeviceAddress);
+                }
                 break;
         }
     }
@@ -582,7 +597,25 @@ public class MainActivity extends AppCompatActivity {
         // If we get all ECU info, search in DB
         if (m_ecuIdentifierNew.isFullyFilled()){
             m_ecuIdentifierNew.reInit(-1);
-            EcuDatabase.EcuInfo ecuInfo = m_ecuDatabase.identifyNewEcu(m_ecuIdentifierNew);
+            ArrayList<EcuDatabase.EcuInfo> ecuInfos = m_ecuDatabase.identifyNewEcu(m_ecuIdentifierNew);
+            ArrayList<String> ecuNames = new ArrayList<>();
+            boolean isExact = false;
+            for (EcuDatabase.EcuInfo ecuInfo : ecuInfos) {
+                ecuNames.add(ecuInfo.ecuName);
+                if (ecuInfo.exact_match)
+                    isExact = true;
+            }
+            Collections.sort(ecuNames);
+            ArrayAdapter<String> adapter;
+            adapter = new ArrayAdapter<String>(this,
+                    android.R.layout.simple_list_item_1,
+                    ecuNames);
+            m_specificEcuListView.setAdapter(adapter);
+            if (isExact){
+                m_specificEcuListView.setBackgroundColor(Color.GREEN);
+            } else {
+                m_specificEcuListView.setBackgroundColor(Color.RED);
+            }
         }
     }
 

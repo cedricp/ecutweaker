@@ -101,6 +101,8 @@ public class ZipFastFileSystem {
             ZipEntry ze;
             long pos = 0;
             while ((ze = zis.getNextEntry()) != null) {
+                if(ze.isDirectory())
+                    continue;
                 String filename = ze.getName();
                 long offset = 30 + ze.getName().length() + (ze.getExtra() != null ? ze.getExtra().length : 0);
                 pos += offset;

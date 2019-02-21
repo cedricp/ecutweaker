@@ -1,6 +1,7 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="activity_screen">CanAppScreen</string>
     <string name="action_settings">Settings</string>
+    <string name="application_name">Ecu Tweaker</string>
     <string name="font">ds_digii</string>
 
     <!-- BluetoothChat -->

@@ -138,9 +138,8 @@ public class EcuDatabase {
         return keptEcuInfo;
     }
 
-    public EcuInfo identifyNewEcu(EcuIdentifierNew ecuIdentifer){
+    public ArrayList<EcuInfo> identifyNewEcu(EcuIdentifierNew ecuIdentifer){
         ArrayList<EcuInfo> ecuInfos = m_ecuInfo.get(ecuIdentifer.addr);
-        EcuInfo keptEcuInfo = null;
         ArrayList<EcuInfo> keptEcus= new ArrayList<>();
         for (EcuInfo ecuInfo : ecuInfos) {
             for (EcuIdent ecuIdent : ecuInfo.ecuIdents) {
@@ -148,15 +147,16 @@ public class EcuDatabase {
                         ecuIdent.version.equals(ecuIdentifer.version)) {
                     ecuInfo.exact_match = false;
                     keptEcus.add(ecuInfo);
-                    keptEcuInfo = ecuInfo;
                     if (ecuIdent.soft_version.equals(ecuIdentifer.soft_version)) {
                         ecuInfo.exact_match = true;
-                        return ecuInfo;
+                        keptEcus.clear();
+                        keptEcus.add(ecuInfo);
+                        return keptEcus;
                     }
                 }
             }
         }
-        return keptEcuInfo;
+        return keptEcus;
     }
 
     public ArrayList<String> getEcuByFunctionsAndType(String type) {

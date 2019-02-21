@@ -63,16 +63,31 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/logView"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
                 android:enabled="true"
                 android:isScrollContainer="false"
                 android:keepScreenOn="false"
                 android:scrollbars="vertical" />
+
+            <Button
+                android:id="@+id/zoom_in"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_weight="0"
+                android:text="+" />
+
+            <Button
+                android:id="@+id/zoom_out"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_weight="0"
+                android:text="-" />
         </LinearLayout>
 
         <org.quark.dr.canapp.FixedHorizontalScrollView

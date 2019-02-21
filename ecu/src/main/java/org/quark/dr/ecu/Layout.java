@@ -317,7 +317,6 @@ public class Layout {
                     JSONObject sobj = scr_object.getJSONObject(key);
                     ScreenData sdata = new ScreenData(key, sobj);
                     m_screens.put(key, sdata);
-                    System.out.println("Adding screen " + key);
                 }
             }
         }  catch (Exception e) {
