@@ -379,6 +379,7 @@ public class MainActivity extends AppCompatActivity {
     {
         Log.d(TAG, "+ ON DESTROY +");
         super.onDestroy();
+        stopConnectionTimer();
         if (m_chatService != null)
             m_chatService.stop();
     }
@@ -388,6 +389,7 @@ public class MainActivity extends AppCompatActivity {
     {
         Log.d(TAG, "+ ON STOP +");
         super.onStop();
+        stopConnectionTimer();
         if (m_chatService != null)
             m_chatService.stop();
     }

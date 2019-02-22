@@ -741,6 +741,7 @@ public class ScreenActivity extends AppCompatActivity {
     public void onStop()
     {
         super.onStop();
+
         if (mChatService != null)
             mChatService.stop();
     }
@@ -901,6 +902,7 @@ public class ScreenActivity extends AppCompatActivity {
         if (results[0].length() >= 2 && results[0].substring(0, 2).equals("14")){
             if (results[1].length() >= 2 && results[1].substring(0, 2).equals("54")){
                 m_logView.append("Clear DTC succeeded\n");
+                return;
             }
         }
 
@@ -944,12 +946,13 @@ public class ScreenActivity extends AppCompatActivity {
             clearDTCRequest = m_ecu.getRequest("ClearDTC");
         if (clearDTCRequest == null)
             clearDTCRequest = m_ecu.getRequest("Clear Diagnostic Information");
-        if (clearDTCRequest == null){
-            Toast.makeText(getApplicationContext(), "No CLEAR DTC command", Toast.LENGTH_SHORT).show();
-            return;
+        if (clearDTCRequest != null){
+            m_clearDTCCommand = clearDTCRequest.sentbytes;
+        } else {
+            m_clearDTCCommand = "14FF00";
         }
 
-        m_clearDTCCommand = clearDTCRequest.sentbytes;
+
         DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
