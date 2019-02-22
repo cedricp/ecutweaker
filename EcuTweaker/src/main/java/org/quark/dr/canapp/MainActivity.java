@@ -17,7 +17,6 @@ import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Gravity;
@@ -29,14 +28,14 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
-
 import org.quark.dr.ecu.Ecu;
 import org.quark.dr.ecu.EcuDatabase;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static org.quark.dr.canapp.ElmThread.STATE_CONNECTED;
 import static org.quark.dr.canapp.ElmThread.STATE_CONNECTING;
@@ -76,16 +75,17 @@ public class MainActivity extends AppCompatActivity {
 
     private ElmThread m_chatService;
     private Handler mHandler = null;
-    private BluetoothAdapter mBluetoothAdapter = null;
     private EcuDatabase.EcuIdentifierNew m_ecuIdentifierNew = null;
+    private Timer mConnectionTimer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        initialize();
+    }
+
+    private void initialize(){
         m_currentProject = "";
         m_currentEcuAddressId = -1;
 
@@ -174,33 +174,39 @@ public class MainActivity extends AppCompatActivity {
             askPermission();
         }
 
-        if (mBluetoothAdapter != null) {
-            if (!mBluetoothAdapter.isEnabled()){
-                Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_LONG).show();
-                Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-            }
+        startConnectionTimer();
 
-            if(mBluetoothAdapter.isEnabled() && !m_btDeviceAddress.isEmpty()) {
-                setupChat(false);
-                connectDevice(m_btDeviceAddress);
-            }
-        }
-
-        m_scanButton.setEnabled(false);
-        m_scanNewButton.setEnabled(false);
         // Only for debug purpose
         //startScreen("/sdcard/ecu.zip", "UCH_84P2_85_V3.json");
     }
 
-    private void connectDevice(String address) {
-        if (mBluetoothAdapter == null || m_chatService == null)
-            return;
+    private void startConnectionTimer(){
+        TimerTask timertask = new TimerTask() {
+            @Override
+            public void run() {
+                if(!isChatConnected())
+                    connectDevice();
+            }
+        };
 
+        mConnectionTimer = new Timer();
+        mConnectionTimer.schedule(timertask, 1000, 3000);
+    }
+
+    private void stopConnectionTimer(){
+        mConnectionTimer.cancel();
+    }
+
+    private void connectDevice() {
         // address is the device MAC address
         // Get the BluetoothDevice object
-        BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+        BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (btAdapter == null || m_btDeviceAddress.isEmpty())
+            return;
+
+        BluetoothDevice device = btAdapter.getRemoteDevice(m_btDeviceAddress);
         // Attempt to connect to the device
+        setupChat(true);
         m_chatService.connect(device);
     }
 
@@ -316,6 +322,9 @@ public class MainActivity extends AppCompatActivity {
     void startScreen(String ecuFile, String ecuHREFName){
         if (m_chatService != null)
             m_chatService.stop();
+
+        stopConnectionTimer();
+
         try {
             Intent serverIntent = new Intent(this, ScreenActivity.class);
             Bundle b = new Bundle();
@@ -385,16 +394,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onStart() {
+        Log.d(TAG, "+ ON START +");
         super.onStart();
-        if (mBluetoothAdapter == null)
-            return;
-        if (!mBluetoothAdapter.isEnabled()) {
-            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-            // Otherwise, setup the chat session
-        } else {
-            setupChat(false);
-        }
+
+        connectDevice();
+
     }
 
     @Override
@@ -410,13 +414,13 @@ public class MainActivity extends AppCompatActivity {
                     edit.putString(PREF_DEVICE_ADDRESS, address);
                     edit.commit();
                     m_btDeviceAddress = address;
-                    connectDevice(address);
+                    connectDevice();
                 }
                 break;
             case REQUEST_ENABLE_BT:
                 // When the request to enable Bluetooth returns
                 if (resultCode == Activity.RESULT_OK) {
-                    setupChat(false);
+                    connectDevice();
                 } else {
                     // User did not enable Bluetooth or an error occurred
                     Log.d(TAG, "BT not enabled");
@@ -424,10 +428,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case REQUEST_SCREEN:
                 setConnected(false);
-                if (!m_btDeviceAddress.isEmpty()) {
-                    setupChat(true);
-                    connectDevice(m_btDeviceAddress);
-                }
+                startConnectionTimer();
                 break;
         }
     }
@@ -664,7 +665,8 @@ public class MainActivity extends AppCompatActivity {
 
                     break;
                 case MESSAGE_TOAST:
-                    Toast.makeText(activity.getApplicationContext(), msg.getData().getString(TOAST), Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(activity.getApplicationContext(), msg.getData().getString(TOAST), Toast.LENGTH_SHORT).show();
+                    activity.m_logView.append("Bluetooth manager message : " + msg.getData().getString(TOAST) + "\n");
                     break;
                 case MESSAGE_QUEUE_STATE:
                     int queue_len = msg.arg1;
@@ -704,6 +706,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean isChatConnected(){
-        return (mBluetoothAdapter != null && m_chatService != null && m_chatService.getState() == STATE_CONNECTED);
+        return (m_chatService != null && m_chatService.getState() == STATE_CONNECTED);
     }
 }

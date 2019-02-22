@@ -557,6 +557,7 @@ public class ElmThread {
             ArrayList<String> raw_command = isotpm.getFormattedArray();
             ArrayList<String> responses = new ArrayList<>();
             boolean error = false;
+            String errorMsg = "";
 
             // Send data
             for (String frame: raw_command) {
@@ -580,13 +581,14 @@ public class ElmThread {
                             continue;
                         responses.add(s);
                     } else {
+                        errorMsg += frsp;
                         error = true;
                     }
                 }
             }
             String result;
             if (error){
-                result = "ERROR : NON HEXA response : " + message;
+                result = "ERROR : " + errorMsg;
             } else {
                 // Decode received ISO_TP data
                 IsotpDecode isotpdec = new IsotpDecode(responses);

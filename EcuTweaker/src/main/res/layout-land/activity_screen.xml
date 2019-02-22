@@ -46,18 +46,18 @@
                 app:srcCompat="@drawable/ic_reload" />
 
             <ImageButton
-                android:id="@+id/buttonSearch"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                app:srcCompat="@drawable/ic_bt_search" />
-
-            <ImageButton
                 android:id="@+id/dtcButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                app:srcCompat="@drawable/ic_dtc"/>
+                app:srcCompat="@drawable/ic_dtc_clear" />
+
+            <ImageButton
+                android:id="@+id/dtcClearButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:srcCompat="@drawable/ic_dtc" />
 
         </LinearLayout>
 

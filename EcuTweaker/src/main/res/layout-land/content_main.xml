@@ -27,11 +27,12 @@
         <TextView
             android:id="@+id/logView"
             android:layout_width="match_parent"
-            android:layout_height="60dp" />
+            android:layout_height="40dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="40dp"
+            android:layout_weight="0"
             android:orientation="horizontal">
 
             <Button
@@ -59,29 +60,26 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="horizontal">
 
             <ListView
                 android:id="@+id/ecuListView"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_weight="1">
-
             </ListView>
 
             <View
-                android:id="@+id/divider"
-                android:layout_width="match_parent"
-                android:layout_height="5dp"
-                android:background="?android:attr/listDivider"
-                android:visibility="visible" />
-
+                android:id="@+id/divider2"
+                android:layout_width="4dp"
+                android:layout_height="match_parent"
+                android:background="?android:attr/listDivider" />
             <ListView
                 android:id="@+id/deviceView"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:baselineAligned="false"
                 tools:layout_editor_absoluteY="128dp">

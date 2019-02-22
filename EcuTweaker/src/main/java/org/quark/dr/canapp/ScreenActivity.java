@@ -13,7 +13,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.text.method.ScrollingMovementMethod;
-import android.util.DisplayMetrics;
 import android.util.Pair;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -59,23 +58,22 @@ public class ScreenActivity extends AppCompatActivity {
     private Ecu m_ecu;
     private Layout m_currentLayoutData;
     private Layout.ScreenData m_currentScreenData;
-    private ImageButton m_searchButton, m_reloadButton, m_screenButton, m_dtcButton;
+    private ImageButton m_reloadButton, m_screenButton, m_dtcButton, m_dtcClearButton;
     private ImageView m_btIconStatus, m_btCommStatus;
     private TextView m_logView;
-    private String m_currentScreenName, m_currentEcuName, m_ecuZipFileName, m_deviceAddressPref;
-    private String m_currentDtcRequestName, m_currentDtcRequestBytes;
+    private String m_currentScreenName, m_currentEcuName, m_deviceAddressPref;
+    private String m_currentDtcRequestName, m_currentDtcRequestBytes, m_clearDTCCommand;
     private boolean m_autoReload;
-    private EcuDatabase m_ecudb;
+    private EcuDatabase m_ecuDatabase;
 
     private HashMap<String, EditText> m_editTextViews;
     private HashMap<String, EditText> m_displayViews;
     private HashMap<String, Spinner> m_spinnerViews;
-    private HashMap<String, Button> m_buttonsViews;
-    private HashMap<Button, String> m_buttonsCommand;
+    private HashMap<String, View> m_buttonsViews;
+    private HashMap<View, String> m_buttonsCommand;
     private HashMap<String, ArrayList<Layout.InputData>> m_requestsInputs;
     private Set<String> m_displaysRequestSet;
 
-    private BluetoothAdapter mBluetoothAdapter = null;
     private ElmThread mChatService = null;
     private Handler mHandler = null;
 
@@ -105,14 +103,22 @@ public class ScreenActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_screen);
+        initialize(savedInstanceState);
+    }
 
+//    @Override
+//    protected void onRestoreInstanceState(final Bundle savedInstanceState) {
+//        super.onRestoreInstanceState(savedInstanceState);
+//        initialize(savedInstanceState);
+//    }
+
+    private void initialize(Bundle savedInstanceState) {
         String ecuFile = "";
         String ecuHref = "";
         m_autoReload = false;
-        mGlobalScale = 1.0f;
+        mGlobalScale = 1.3f;
         mLastSDSTime = 0;
 
         Bundle b = getIntent().getExtras();
@@ -126,14 +132,12 @@ public class ScreenActivity extends AppCompatActivity {
             ecuFile = savedInstanceState.getString("ecu_name");
         }
 
-        m_ecuZipFileName = ecuFile;
-        m_searchButton = findViewById(R.id.buttonSearch);
         m_reloadButton = findViewById(R.id.reloadButton);
         m_btIconStatus = findViewById(R.id.iconBt);
         m_screenButton = findViewById(R.id.screenButton);
         m_btCommStatus = findViewById(R.id.bt_comm);
         m_dtcButton    = findViewById(R.id.dtcButton);
-        m_reloadButton.setEnabled(false);
+        m_dtcClearButton = findViewById(R.id.dtcClearButton);
 
         m_dtcButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -144,9 +148,22 @@ public class ScreenActivity extends AppCompatActivity {
             }
         });
 
+        m_dtcClearButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (m_autoReload)
+                    stopAutoReload();
+                clearDTC();
+            }
+        });
+
         m_reloadButton.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
+                if (!isChatConnected()){
+                    connectDevice();
+                    return true;
+                }
                 m_autoReload = !m_autoReload;
                 if (m_autoReload){
                     m_reloadButton.setColorFilter(Color.GREEN);
@@ -160,17 +177,14 @@ public class ScreenActivity extends AppCompatActivity {
 
         m_reloadButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+                if (!isChatConnected()){
+                    connectDevice();
+                    return;
+                }
+
                 if (m_autoReload)
                     stopAutoReload();
                 updateDisplays();
-            }
-        });
-
-        m_searchButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (m_autoReload)
-                    stopAutoReload();
-                connectElm();
             }
         });
 
@@ -196,11 +210,11 @@ public class ScreenActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 mGlobalScale -= 0.1f;
+                if (mGlobalScale < 0.3f)
+                    mGlobalScale = 0.3f;
                 drawScreen(m_currentScreenName);
             }
         });
-
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         mHandler = new messageHandler(this);
 
@@ -216,16 +230,11 @@ public class ScreenActivity extends AppCompatActivity {
             openEcu(ecuFile, ecuHref);
         }
 
-        if(mBluetoothAdapter != null && mBluetoothAdapter.isEnabled()) {
-            if (m_deviceAddressPref != null && !m_deviceAddressPref.isEmpty()) {
-                setupChat();
-                connectDevice(m_deviceAddressPref);
-            }
-        }
+        connectDevice();
 
         if (savedInstanceState != null && savedInstanceState.containsKey("screen_name")){
-            drawScreen(savedInstanceState.getString("screen_name"));
-            System.out.println("?? OnCreate method");
+            m_currentScreenName = savedInstanceState.getString("screen_name");
+            drawScreen(m_currentScreenName);
         } else {
             chooseCategory();
         }
@@ -239,12 +248,12 @@ public class ScreenActivity extends AppCompatActivity {
     void openEcu(String ecuFile, String ecuName){
         String layoutFileName = ecuName + ".layout";
 
-        m_ecudb = new EcuDatabase();
+        m_ecuDatabase = new EcuDatabase();
         String appDir = getApplicationContext().getFilesDir().getAbsolutePath();
         try {
-            m_ecudb.loadDatabase(ecuFile, appDir);
-            String ecuJson = m_ecudb.getZipFile(ecuName);
-            String layoutJson = m_ecudb.getZipFile(layoutFileName);
+            m_ecuDatabase.loadDatabase(ecuFile, appDir);
+            String ecuJson = m_ecuDatabase.getZipFile(ecuName);
+            String layoutJson = m_ecuDatabase.getZipFile(layoutFileName);
 
             m_ecu = new Ecu(ecuJson);
             m_currentLayoutData = new Layout(layoutJson);
@@ -281,26 +290,27 @@ public class ScreenActivity extends AppCompatActivity {
 
         m_layoutView.removeAllViews();
         m_layoutView.setLayoutParams(new FrameLayout.LayoutParams(
-                (int) convertToPixel(m_currentScreenData.m_width + 50),
-                (int) convertToPixel(m_currentScreenData.m_height) + 50));
+                (int) convertToPixel(m_currentScreenData.m_width) + 80,
+                (int) convertToPixel(m_currentScreenData.m_height) + 80));
         m_layoutView.setBackgroundColor(m_currentScreenData.m_color.get());
 
         Set<String> labels = m_currentScreenData.getLabels();
         for (String label : labels) {
             Layout.LabelData labelData = m_currentScreenData.getLabelData(label);
-            if (labelData.text.startsWith("::pic:")){
+            if (labelData.text.toUpperCase().startsWith("::PIC:")){
                 String gifName = labelData.text;
 
                 gifName = gifName.replace("::pic:", "")
+                        .replace("::PIC:", "")
                         .replace("\\", "/");
                 String filenameu = "graphics/" + gifName + ".GIF";
                 String filenamel = "graphics/" + gifName + ".gif";
 
                 byte[] imageBytes = null;
-                if (m_ecudb.getZipFileSystem().fileExists(filenameu)){
-                    imageBytes = m_ecudb.getZipFileSystem().getZipFileAsBytes(filenameu);
-                } else if (m_ecudb.getZipFileSystem().fileExists(filenamel)){
-                    imageBytes = m_ecudb.getZipFileSystem().getZipFileAsBytes(filenamel);
+                if (m_ecuDatabase.getZipFileSystem().fileExists(filenameu)){
+                    imageBytes = m_ecuDatabase.getZipFileSystem().getZipFileAsBytes(filenameu);
+                } else if (m_ecuDatabase.getZipFileSystem().fileExists(filenamel)){
+                    imageBytes = m_ecuDatabase.getZipFileSystem().getZipFileAsBytes(filenamel);
                 }
 
                 if (imageBytes != null) {
@@ -360,7 +370,7 @@ public class ScreenActivity extends AppCompatActivity {
             textEdit.setHeight((int) convertToPixel(displaydata.rect.h));
             textEdit.setTextSize(convertFontToPixel(displaydata.font.size));
             textEdit.setEnabled(false);
-            textEdit.setText("NO DATA");
+            textEdit.setText("---");
             textEdit.setPadding(3,3,3,3);
             textEdit.setBackgroundColor(displaydata.color.get());
             textEdit.setTextColor(displaydata.font.color.get());
@@ -434,20 +444,58 @@ public class ScreenActivity extends AppCompatActivity {
         Set<String> buttons = m_currentScreenData.getButtons();
         for (String button : buttons) {
             Layout.ButtonData buttondata = m_currentScreenData.getButtonData(button);
-            Button buttonView = new Button(this);
-            buttonView.setX(convertToPixel(buttondata.rect.x));
-            buttonView.setY(convertToPixel(buttondata.rect.y) - 15);
-            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
-                    (int) convertToPixel(buttondata.rect.w),
-                    (int) convertToPixel(buttondata.rect.h) + 15);
-            buttonView.setLayoutParams(params);
-            buttonView.setPadding(0, 0, 0, 0);
-            buttonView.setText(buttondata.text);
-            buttonView.setTextSize(convertFontToPixel(buttondata.font.size));
-            buttonView.setOnClickListener(buttonClickListener);
-            m_buttonsCommand.put(buttonView, buttondata.uniqueName);
-            m_layoutView.addView(buttonView);
-            m_buttonsViews.put(buttondata.uniqueName, buttonView);
+            if (buttondata.text.toUpperCase().startsWith("::BTN:")){
+                String gifName = buttondata.text;
+
+                gifName = gifName.replace("::BTN:|", "")
+                        .replace("::btn:|", "")
+                        .replace("\\", "/");
+                String filenameu = "graphics/" + gifName + ".GIF";
+                String filenamel = "graphics/" + gifName + ".gif";
+
+                byte[] imageBytes = null;
+                if (m_ecuDatabase.getZipFileSystem().fileExists(filenameu)) {
+                    imageBytes = m_ecuDatabase.getZipFileSystem().getZipFileAsBytes(filenameu);
+                } else if (m_ecuDatabase.getZipFileSystem().fileExists(filenamel)) {
+                    imageBytes = m_ecuDatabase.getZipFileSystem().getZipFileAsBytes(filenamel);
+                } else {
+                    System.out.println("++ Not found " + filenameu);
+                }
+
+                if (imageBytes != null) {
+                    ImageButton buttonImageView = new ImageButton(this);
+                    Bitmap bm = BitmapFactory.decodeByteArray(imageBytes, 0,
+                            imageBytes.length);
+                    buttonImageView.setX(convertToPixel(buttondata.rect.x));
+                    buttonImageView.setY(convertToPixel(buttondata.rect.y));
+                    int w = (int) convertToPixel(buttondata.rect.w);
+                    int h = (int) convertToPixel(buttondata.rect.h);
+                    LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(w, h);
+                    buttonImageView.setLayoutParams(parms);
+                    buttonImageView.setScaleType(ImageView.ScaleType.FIT_XY);
+                    buttonImageView.setImageBitmap(bm);
+                    buttonImageView.setOnClickListener(buttonClickListener);
+                    m_buttonsCommand.put(buttonImageView, buttondata.uniqueName);
+                    m_layoutView.addView(buttonImageView);
+                    m_buttonsViews.put(buttondata.uniqueName, buttonImageView);
+                }
+            } else {
+
+                Button buttonView = new Button(this);
+                buttonView.setX(convertToPixel(buttondata.rect.x));
+                buttonView.setY(convertToPixel(buttondata.rect.y) - 15);
+                RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
+                        (int) convertToPixel(buttondata.rect.w),
+                        (int) convertToPixel(buttondata.rect.h) + 15);
+                buttonView.setLayoutParams(params);
+                buttonView.setPadding(0, 0, 0, 0);
+                buttonView.setText(buttondata.text);
+                buttonView.setTextSize(convertFontToPixel(buttondata.font.size));
+                buttonView.setOnClickListener(buttonClickListener);
+                m_buttonsCommand.put(buttonView, buttondata.uniqueName);
+                m_layoutView.addView(buttonView);
+                m_buttonsViews.put(buttondata.uniqueName, buttonView);
+            }
         }
 
         m_scrollView.requestLayout();
@@ -507,15 +555,19 @@ public class ScreenActivity extends AppCompatActivity {
 //            req = "23010000ED06";
         }
 
+        if (!isChatConnected()){
+            connectDevice();
+        }
+
         if (response.length() < 4){
             return;
         }
 
-        int responseHeader = Integer.parseInt(response.substring(0, 4), 16);
-        int requestHeader = Integer.parseInt(req.substring(0, 4), 16);
+        int responseHeader = Integer.parseInt(response.substring(0, 2), 16);
+        int requestHeader = Integer.parseInt(req.substring(0, 2), 16);
 
         // Check response is ok
-        if (requestHeader + 0x4000 != responseHeader) {
+        if (requestHeader + 0x40 != responseHeader) {
             m_logView.append("Bad response (" + responseHeader + ") to request : " + requestHeader);
             return;
         }
@@ -661,7 +713,7 @@ public class ScreenActivity extends AppCompatActivity {
                 if (resultCode == Activity.RESULT_OK) {
                     String address = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
                     Log.d(TAG, "onActivityResult " + address);
-                    connectDevice(address);
+                    connectDevice();
                 }
                 break;
             case REQUEST_ENABLE_BT:
@@ -693,43 +745,12 @@ public class ScreenActivity extends AppCompatActivity {
             mChatService.stop();
     }
 
-
     private void setupChat() {
         Log.d(TAG, "setupChat()");
         if (mChatService != null)
             mChatService.stop();
         // Initialize the BluetoothChatService to perform bluetooth connections
         mChatService = new ElmThread(mHandler);
-    }
-
-    private void connectDevice(String address) {
-        if (mBluetoothAdapter == null || mChatService == null)
-            return;
-
-        // address is the device MAC address
-        // Get the BluetoothDevice object
-        BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
-        // Attempt to connect to the device
-        mChatService.connect(device);
-    }
-
-    public void connectElm(){
-        // Get local Bluetooth adapter
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
-        // If the adapter is null, then Bluetooth is not supported
-        if (mBluetoothAdapter == null) {
-            return;
-        }
-
-        if (mBluetoothAdapter.isEnabled()) {
-            try {
-                Intent serverIntent = new Intent(this, DeviceListActivity.class);
-                startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
-            } catch (android.content.ActivityNotFoundException e) {
-                Log.e(TAG, "+++ ActivityNotFoundException +++");
-            }
-        }
     }
 
     private void setStatus(CharSequence status) {
@@ -740,11 +761,9 @@ public class ScreenActivity extends AppCompatActivity {
         if (c) {
             m_btIconStatus.setImageResource(R.drawable.ic_bt_connected);
             m_btIconStatus.setColorFilter(Color.GREEN);
-            m_reloadButton.setEnabled(true);
         } else {
             m_btIconStatus.setImageResource(R.drawable.ic_bt_disconnected);
             m_btIconStatus.clearColorFilter();
-            m_reloadButton.setEnabled(false);
         }
     }
 
@@ -789,8 +808,22 @@ public class ScreenActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    private void connectDevice() {
+        BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (btAdapter == null || m_deviceAddressPref.isEmpty())
+            return;
+
+        setupChat();
+
+        // address is the device MAC address
+        // Get the BluetoothDevice object
+        BluetoothDevice device = btAdapter.getRemoteDevice(m_deviceAddressPref);
+        // Attempt to connect to the device
+        mChatService.connect(device);
+    }
+
     private boolean isChatConnected(){
-        return (mBluetoothAdapter != null && mChatService != null && mChatService.getState() == STATE_CONNECTED);
+        return (mChatService != null && mChatService.getState() == STATE_CONNECTED);
     }
 
     private void initELM() {
@@ -839,12 +872,12 @@ public class ScreenActivity extends AppCompatActivity {
             return;
         if (!isQueueEmpty) {
             m_btCommStatus.setColorFilter(Color.GREEN);
-            for (Button button : m_buttonsViews.values()){
+            for (View button : m_buttonsViews.values()){
                 button.setEnabled(false);
             }
         } else {
             m_btCommStatus.clearColorFilter();
-            for (Button button : m_buttonsViews.values()){
+            for (View button : m_buttonsViews.values()){
                 button.setEnabled(true);
             }
         }
@@ -863,6 +896,12 @@ public class ScreenActivity extends AppCompatActivity {
         if (results[1].isEmpty() || results[0].substring(0,2).toUpperCase().equals("AT")){
             // Don't worry about ELM configuration
             return;
+        }
+
+        if (results[0].length() >= 2 && results[0].substring(0, 2).equals("14")){
+            if (results[1].length() >= 2 && results[1].substring(0, 2).equals("54")){
+                m_logView.append("Clear DTC succeeded\n");
+            }
         }
 
         if (results[1].length() >= 6 && results[1].substring(0, 2).equals("7F")) {
@@ -897,6 +936,41 @@ public class ScreenActivity extends AppCompatActivity {
         m_currentDtcRequestBytes = dtcRequest.sentbytes;
         sendCmd(m_ecu.getDefaultSDS());
         sendCmd(m_currentDtcRequestBytes);
+    }
+
+    void clearDTC(){
+        Ecu.EcuRequest clearDTCRequest = m_ecu.getRequest("ClearDiagnosticInformation.All");
+        if (clearDTCRequest == null)
+            clearDTCRequest = m_ecu.getRequest("ClearDTC");
+        if (clearDTCRequest == null)
+            clearDTCRequest = m_ecu.getRequest("Clear Diagnostic Information");
+        if (clearDTCRequest == null){
+            Toast.makeText(getApplicationContext(), "No CLEAR DTC command", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        m_clearDTCCommand = clearDTCRequest.sentbytes;
+        DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which){
+                    case DialogInterface.BUTTON_POSITIVE:
+                        sendCmd("AT ST FF");
+                        sendCmd(m_ecu.getDefaultSDS());
+                        sendCmd(m_clearDTCCommand);
+                        sendCmd("AT ST 00");
+                        break;
+
+                    case DialogInterface.BUTTON_NEGATIVE:
+                        return;
+                }
+            }
+        };
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Clear all DTC ?").setPositiveButton("Yes", dialogClickListener)
+                .setNegativeButton("No", dialogClickListener).show();
+
     }
 
     void decodeDTC(String response){
@@ -959,8 +1033,8 @@ public class ScreenActivity extends AppCompatActivity {
                     }
                     break;
                 case MESSAGE_DEVICE_NAME:
-                    //activity.mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
-                    //activity.m_logView.append("New device : " + activity.mConnectedDeviceName + "\n");
+                    activity.mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
+                    activity.m_logView.append("New device : " + activity.mConnectedDeviceName + "\n");
                     break;
                 case MESSAGE_TOAST:
                     Toast.makeText(activity.getApplicationContext(), msg.getData().getString(TOAST), Toast.LENGTH_SHORT).show();

@@ -125,27 +125,12 @@ public class ZipFastFileSystem {
     }
 
     public String getZipFile(String filename) {
+        byte[] array = getZipFileAsBytes(filename);
         try {
-            long pos = m_directoryEntries.get(filename).pos;
-            long compressedSize = m_directoryEntries.get(filename).compressedSize;
-            long realSize = m_directoryEntries.get(filename).uncompressedSize;
-            byte[] array = new byte[(int)compressedSize];
-            FileInputStream zip_is = new FileInputStream(m_zipFilePath);
-            zip_is.getChannel().position(pos);
-            zip_is.read(array, 0, (int)compressedSize);
-            Inflater inflater = new Inflater(true);
-            inflater.setInput(array, 0, (int)compressedSize);
-            byte[] result = new byte[(int)realSize];
-            int resultLength = inflater.inflate(result);
-            inflater.end();
-            return new String(result, 0, resultLength, "UTF-8");
-        } catch(IOException e) {
-            e.printStackTrace();
-            return null;
-        } catch (DataFormatException e){
-            e.printStackTrace();
+            return new String(array, 0, array.length, "UTF-8");
+        } catch (Exception e){
+            return "";
         }
-        return "";
     }
 
     public byte[] getZipFileAsBytes(String filename) {
