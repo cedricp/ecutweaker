@@ -174,8 +174,6 @@ public class MainActivity extends AppCompatActivity {
             askPermission();
         }
 
-        startConnectionTimer();
-
         // Only for debug purpose
         //startScreen("/sdcard/ecu.zip", "UCH_84P2_85_V3.json");
     }
@@ -201,6 +199,13 @@ public class MainActivity extends AppCompatActivity {
         // address is the device MAC address
         // Get the BluetoothDevice object
         BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+
+        if (!btAdapter.isEnabled()){
+            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+            return;
+        }
+
         if (btAdapter == null || m_btDeviceAddress.isEmpty())
             return;
 
@@ -398,9 +403,7 @@ public class MainActivity extends AppCompatActivity {
     public void onStart() {
         Log.d(TAG, "+ ON START +");
         super.onStart();
-
-        connectDevice();
-
+        startConnectionTimer();
     }
 
     @Override
