@@ -20,11 +20,17 @@
         <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="AppThemeDark.NoActionBar">
+    <style name="AppThemeDark.NoActionBar" parent="Theme.AppCompat.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:colorBackground">@color/background_material_light</item>
         <item name="android:textColorPrimary">@android:color/holo_orange_dark</item>
+        <item name="android:textColorSecondary">@android:color/darker_gray</item>
+        <item name="colorPrimaryDark">@android:color/holo_blue_dark</item>
+        <item name="colorPrimary">@color/darkColorPrimaryDark</item>
+        <item name="android:colorForeground">@color/colorAccent</item>
+        <item name="android:textColorSecondaryInverse">@color/darkColorPrimary</item>
+        <item name="android:windowBackground">@android:color/background_dark</item>
     </style>
 
 

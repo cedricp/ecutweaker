@@ -33,7 +33,7 @@ public class CustomAdapter extends ArrayAdapter<String> {
 
         TextView tv = convertView.findViewById(android.R.id.text1);
         tv.setText(items[position]);
-        tv.setTextColor(color);
+        //tv.setTextColor(color);
         tv.setTextSize(textSize);
         return convertView;
     }

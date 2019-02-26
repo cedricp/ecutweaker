@@ -364,6 +364,7 @@ public class ScreenActivity extends AppCompatActivity {
             }
 
             EditText textEdit = new EditText(this);
+            textEdit.setBackgroundResource(R.drawable.edittextroundgreen);
             textEdit.setX(convertToPixel(displaydata.rect.x + displaydata.width));
             textEdit.setY(convertToPixel(displaydata.rect.y));
             textEdit.setWidth((int) convertToPixel(displaydata.rect.w - displaydata.width));
@@ -374,7 +375,6 @@ public class ScreenActivity extends AppCompatActivity {
             textEdit.setPadding(3,3,3,3);
             textEdit.setBackgroundColor(displaydata.color.get());
             textEdit.setTextColor(displaydata.font.color.get());
-            textEdit.setBackgroundResource(R.drawable.edittextroundgreen);
             textEdit.setFocusable(false);
             m_displayViews.put(displaydata.text, textEdit);
             m_layoutView.addView(textEdit);

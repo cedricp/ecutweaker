@@ -194,12 +194,22 @@ public class ElmThread {
         // Cancel the thread that completed the connection
         if (mConnectThread != null) {
             mConnectThread.cancel();
+            try {
+                mConnectThread.join();
+            } catch (InterruptedException e) {
+
+            }
             mConnectThread = null;
         }
 
         // Cancel any thread currently running a connection
         if (mConnectedThread != null) {
             mConnectedThread.cancel();
+            try {
+                mConnectedThread.join();
+            }  catch (InterruptedException e) {
+
+            }
             mConnectedThread = null;
         }
 
@@ -224,23 +234,12 @@ public class ElmThread {
         if (D) Log.d(TAG, "stop");
 
         if (mConnectThread != null) {
-            mConnectThread.interrupt();
             mConnectThread.cancel();
 
         }
 
         if (mConnectedThread != null) {
-            mConnectedThread.interrupt();
             mConnectedThread.cancel();
-        }
-
-        try {
-            if (mConnectThread != null)
-                mConnectThread.join();
-            if (mConnectedThread != null)
-                mConnectedThread.join();
-        } catch (InterruptedException e) {
-
         }
 
         mConnectThread = null;
@@ -394,10 +393,16 @@ public class ElmThread {
         }
 
         public void cancel() {
+            interrupt();
             try {
                 mmSocket.close();
             } catch (IOException e) {
                 Log.e(TAG, "close() of connect " + mSocketType + " socket failed", e);
+            }
+            try {
+                join();
+            } catch (InterruptedException e) {
+
             }
         }
     }
@@ -494,11 +499,17 @@ public class ElmThread {
 
         public void cancel() {
             runStatus = false;
+            interrupt();
             mmessages.clear();
             try {
                 mmSocket.close();
             } catch (IOException e) {
                 Log.e(TAG, "close() of connect socket failed", e);
+            }
+            try {
+                join();
+            } catch (InterruptedException e) {
+
             }
         }
 
