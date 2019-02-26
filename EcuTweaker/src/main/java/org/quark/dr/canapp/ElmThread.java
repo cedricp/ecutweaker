@@ -48,7 +48,7 @@ public class ElmThread {
     public static final int STATE_DISCONNECTED = 4;  // now connected to a remote device
 
     private static final String ECUERRORCODE =
-            "10:General Reject," +
+                    "10:General Reject," +
                     "11:Service Not Supported," +
                     "12:SubFunction Not Supported," +
                     "13:Incorrect Message Length Or Invalid Format," +
@@ -57,7 +57,7 @@ public class ElmThread {
                     "23:Routine Not Complete," +
                     "24:Request Sequence Error," +
                     "31:Request Out Of Range," +
-                    "33:Security Access Denied- Security Access Requested  ," +
+                    "33:Security Access Denied- Security Access Requested," +
                     "35:Invalid Key," +
                     "36:Exceed Number Of Attempts," +
                     "37:Required Time Delay Not Expired," +
@@ -112,6 +112,7 @@ public class ElmThread {
         mState = STATE_NONE;
         mHandler = handler;
         mTxa = mRxa = -1;
+        buildMaps();
     }
 
     public void buildMaps(){
@@ -223,14 +224,27 @@ public class ElmThread {
         if (D) Log.d(TAG, "stop");
 
         if (mConnectThread != null) {
+            mConnectThread.interrupt();
             mConnectThread.cancel();
-            mConnectThread = null;
+
         }
 
         if (mConnectedThread != null) {
+            mConnectedThread.interrupt();
             mConnectedThread.cancel();
-            mConnectedThread = null;
         }
+
+        try {
+            if (mConnectThread != null)
+                mConnectThread.join();
+            if (mConnectedThread != null)
+                mConnectedThread.join();
+        } catch (InterruptedException e) {
+
+        }
+
+        mConnectThread = null;
+        mConnectedThread = null;
 
         setState(STATE_NONE);
     }
@@ -303,8 +317,7 @@ public class ElmThread {
         bundle.putString(ScreenActivity.TOAST, "Unable to connect device");
         msg.setData(bundle);
         mHandler.sendMessage(msg);
-
-        ElmThread.this.start();
+        //ElmThread.this.start();
     }
 
     /**
@@ -449,7 +462,7 @@ public class ElmThread {
                         try {
                             Thread.sleep(delay);
                         }  catch (InterruptedException e) {
-
+                            break;
                         }
                     } else if ( (message_len > 2) && message.substring(0,2).toUpperCase().equals("AT") ) {
                         String result = write_raw(message);
@@ -468,7 +481,7 @@ public class ElmThread {
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
-
+                    break;
                 }
 
                 // Keep session alive
@@ -480,13 +493,13 @@ public class ElmThread {
         }
 
         public void cancel() {
+            runStatus = false;
             mmessages.clear();
             try {
                 mmSocket.close();
             } catch (IOException e) {
                 Log.e(TAG, "close() of connect socket failed", e);
             }
-            runStatus = false;
         }
 
         private String write_raw(String raw_buffer){

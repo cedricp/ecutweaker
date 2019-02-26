@@ -1,5 +1,6 @@
 package org.quark.dr.ecu;
 
+import android.util.Log;
 import android.util.Pair;
 import android.widget.Toast;
 
@@ -684,13 +685,18 @@ public class Ecu {
         int numDtc = bytesResponse[1] & 0xFF;
 
         for (int i = 0; i < numDtc; ++i){
+            HashMap<String, String> currentDTC;
             if (bytesResponse.length < shiftBytesCount)
                 break;
-            HashMap<String, String> currentDTC = getRequestValues(bytesResponse, dtcRequestName, true);
+            try {
+                currentDTC = getRequestValues(bytesResponse, dtcRequestName, true);
+            } catch (Exception e) {
+
+                continue;
+            }
             Iterator<String> it = currentDTC.keySet().iterator();
             List<String> currentDtcList = new ArrayList<>();
             for (;it.hasNext();){
-
                 String key = it.next();
                 if (key.equals("NDTC"))
                     continue;

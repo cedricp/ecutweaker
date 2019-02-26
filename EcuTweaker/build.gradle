@@ -1,7 +1,15 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 26
+    signingConfigs {
+        releaseConfig {
+            keyAlias 'MyAndroidKey'
+            keyPassword 'myKeyPassword'
+            storeFile file('/home/cedric/Desktop/upload-keystore.jks')
+            storePassword 'myStorePassword'
+        }
+    }
+    compileSdkVersion 27
     defaultConfig {
         applicationId "org.quark.dr.canapp"
         minSdkVersion 19
@@ -12,8 +20,12 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.releaseConfig
+        }
+        debug {
+            minifyEnabled false
         }
     }
     productFlavors {

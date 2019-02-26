@@ -17,8 +17,8 @@
         <activity
             android:name=".MainActivity"
             android:label="@string/title_activity_main"
-            android:launchMode="singleInstance"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:launchMode="singleTask"
+            android:theme="@style/AppThemeDark.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -33,7 +33,8 @@
             android:name=".ScreenActivity"
             android:label="@string/activity_screen"
             android:windowSoftInputMode="adjustPan"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:launchMode= "singleInstance"
+            android:theme="@style/AppThemeDark.NoActionBar">
         </activity>
     </application>
 </manifest>

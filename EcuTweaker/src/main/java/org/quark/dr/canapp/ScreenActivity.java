@@ -572,35 +572,38 @@ public class ScreenActivity extends AppCompatActivity {
             return;
         }
 
-        try {
-            for (String requestname : m_displaysRequestSet) {
-                Ecu.EcuRequest request = m_ecu.getRequest(requestname);
-                Log.i(TAG, "Managing request : " + requestname);
-                if (request == null) {
-                    Log.i(TAG, "Cannot find request " + requestname);
+        for (String requestname : m_displaysRequestSet) {
+            Ecu.EcuRequest request = m_ecu.getRequest(requestname);
+            Log.i(TAG, "Managing request : " + requestname);
+            if (request == null) {
+                Log.i(TAG, "Cannot find request " + requestname);
+                continue;
+            }
+
+            if (request.sentbytes.equals(req)) {
+                HashMap<String, Pair<String, String>> mapValues;
+                try {
+                    byte[] bytes = hexStringToByteArray(response);
+                    mapValues = m_ecu.getRequestValuesWithUnit(bytes, requestname);
+                } catch (Exception e) {
+                    m_logView.append("Cannot decode request " + requestname + "\n");
+                    m_logView.append("Exception : " + e.toString() + "\n");
+                    continue;
                 }
 
-                if (request.sentbytes.equals(req)) {
-                    byte[] bytes = hexStringToByteArray(response);
-                    HashMap<String, Pair<String, String>> mapValues = m_ecu.getRequestValuesWithUnit(bytes, requestname);
-
-                    for (String key : mapValues.keySet()) {
-                        if (m_displayViews.containsKey(key)) {
-                            m_displayViews.get(key).setText(mapValues.get(key).first + " " + mapValues.get(key).second);
-                        }
-                        if (m_editTextViews.containsKey(key)) {
-                            m_editTextViews.get(key).setText(mapValues.get(key).first);
-                        }
-                        if (m_spinnerViews.containsKey(key)) {
-                            Spinner spinner = m_spinnerViews.get(key);
-                            spinner.setSelection(((CustomAdapter) spinner.getAdapter()).getPosition(mapValues.get(key).first));
-                        }
+                for (String key : mapValues.keySet()) {
+                    if (m_displayViews.containsKey(key)) {
+                        m_displayViews.get(key).setText(mapValues.get(key).first + " " + mapValues.get(key).second);
+                    }
+                    if (m_editTextViews.containsKey(key)) {
+                        m_editTextViews.get(key).setText(mapValues.get(key).first);
+                    }
+                    if (m_spinnerViews.containsKey(key)) {
+                        Spinner spinner = m_spinnerViews.get(key);
+                        spinner.setSelection(((CustomAdapter) spinner.getAdapter()).getPosition(mapValues.get(key).first));
                     }
                 }
             }
-        } catch (Exception e) {
-            m_logView.append(e.toString() + "\n");
-            e.printStackTrace();
         }
     }
 
@@ -733,17 +736,20 @@ public class ScreenActivity extends AppCompatActivity {
     {
         Log.e(TAG, "+ ON DESTROY +");
         super.onDestroy();
+        stopAutoReload();
         if (mChatService != null)
             mChatService.stop();
+        mChatService = null;
     }
 
     @Override
     public void onStop()
     {
         super.onStop();
-
+        stopAutoReload();
         if (mChatService != null)
             mChatService.stop();
+        mChatService = null;
     }
 
     private void setupChat() {
@@ -894,36 +900,42 @@ public class ScreenActivity extends AppCompatActivity {
             return;
         }
 
-        if (results[1].isEmpty() || results[0].substring(0,2).toUpperCase().equals("AT")){
+        String requestCode = results[0];
+        String replyCode = results[1];
+
+        if (requestCode.length() >= 2 && requestCode.substring(0,2).toUpperCase().equals("AT")){
             // Don't worry about ELM configuration
             return;
         }
 
-        if (results[0].length() >= 2 && results[0].substring(0, 2).equals("14")){
-            if (results[1].length() >= 2 && results[1].substring(0, 2).equals("54")){
+        if (requestCode.length() >= 2 && requestCode.substring(0, 2).equals("14")){
+            if (replyCode.length() >= 2 && replyCode.substring(0, 2).equals("54")){
                 m_logView.append("Clear DTC succeeded\n");
                 return;
             }
         }
 
-        if (results[1].length() >= 6 && results[1].substring(0, 2).equals("7F")) {
-            String resultCode = results[1].substring(0, 6).toUpperCase();
+        if (replyCode.length() >= 6 && replyCode.substring(0, 2).equals("7F")) {
+            String resultCode = replyCode.substring(0, 6).toUpperCase();
             String nrcode = resultCode.substring(4, 6);
             String translatedErrorCode = mChatService.getEcuErrorCode(nrcode);
             if (translatedErrorCode != null){
                 m_logView.append("Negative response : " + translatedErrorCode + " (" + resultCode + ")\n");
                 return;
+            } else {
+                m_logView.append("Negative response (No translation) : "  + resultCode + "\n");
+                return;
             }
         } else {
-            m_logView.append("ELM Response : " + results[1] + " to " + results[0] + "\n");
+            m_logView.append("ELM Response : " + replyCode + " to " + requestCode + "\n");
         }
 
-        if (results[0].equals(m_currentDtcRequestBytes)){
-            decodeDTC(results[1]);
+        if (requestCode.equals(m_currentDtcRequestBytes)){
+            decodeDTC(replyCode);
             return;
         }
 
-        updateScreen(results[0], results[1]);
+        updateScreen(requestCode, replyCode);
     }
 
     void readDTC(){
@@ -946,12 +958,12 @@ public class ScreenActivity extends AppCompatActivity {
             clearDTCRequest = m_ecu.getRequest("ClearDTC");
         if (clearDTCRequest == null)
             clearDTCRequest = m_ecu.getRequest("Clear Diagnostic Information");
+
         if (clearDTCRequest != null){
             m_clearDTCCommand = clearDTCRequest.sentbytes;
         } else {
             m_clearDTCCommand = "14FF00";
         }
-
 
         DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
             @Override
@@ -1006,12 +1018,8 @@ public class ScreenActivity extends AppCompatActivity {
                     Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
                     switch (msg.arg1) {
                         case STATE_CONNECTED:
-                            try {
-                                activity.initELM();
-                                activity.setConnected(true);
-                            } catch (Exception e) {
-                                activity.m_logView.append("Java exception : " + e.toString() + "\n");
-                            }
+                            activity.initELM();
+                            activity.setConnected(true);
                             break;
                         case STATE_CONNECTING:
                             activity.setStatus(activity.getString(R.string.title_connecting));

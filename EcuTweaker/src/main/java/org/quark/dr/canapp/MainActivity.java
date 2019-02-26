@@ -17,6 +17,7 @@ import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.AppCompatDelegate;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Gravity;
@@ -60,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
 
     public static final String PREF_DEVICE_ADDRESS = "btAdapterAddress";
     public static final String PREF_ECUZIPFILE = "ecuZipFile";
+    public static final String PREF_PROJECT = "project";
 
 
     private EcuDatabase m_ecuDatabase;
@@ -81,6 +83,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        //AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         setContentView(R.layout.activity_main);
         initialize();
     }
@@ -182,13 +185,13 @@ public class MainActivity extends AppCompatActivity {
         TimerTask timertask = new TimerTask() {
             @Override
             public void run() {
-                if(!isChatConnected())
+                if(!isChatConnected() && !isChatConnecting())
                     connectDevice();
             }
         };
 
         mConnectionTimer = new Timer();
-        mConnectionTimer.schedule(timertask, 1000, 3000);
+        mConnectionTimer.schedule(timertask, 1000, 4000);
     }
 
     private void stopConnectionTimer(){
@@ -200,14 +203,14 @@ public class MainActivity extends AppCompatActivity {
         // Get the BluetoothDevice object
         BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 
+        if (btAdapter == null || m_btDeviceAddress.isEmpty())
+            return;
+
         if (!btAdapter.isEnabled()){
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
             return;
         }
-
-        if (btAdapter == null || m_btDeviceAddress.isEmpty())
-            return;
 
         BluetoothDevice device = btAdapter.getRemoteDevice(m_btDeviceAddress);
         // Attempt to connect to the device
@@ -278,7 +281,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void ecuTypeSelected(String type, String project){
-        m_specificEcuListView.setBackgroundColor(Color.WHITE);
+        m_specificEcuListView.setBackgroundColor(Color.BLACK);
 
         int ecuAddress = m_ecuDatabase.getAddressByFunction(type);
         if (ecuAddress < 0) {
@@ -325,10 +328,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void startScreen(String ecuFile, String ecuHREFName){
+        stopConnectionTimer();
+
         if (m_chatService != null)
             m_chatService.stop();
 
-        stopConnectionTimer();
+        m_chatService = null;
+
+        setConnected(false);
 
         try {
             Intent serverIntent = new Intent(this, ScreenActivity.class);
@@ -387,6 +394,7 @@ public class MainActivity extends AppCompatActivity {
         stopConnectionTimer();
         if (m_chatService != null)
             m_chatService.stop();
+        m_chatService = null;
     }
 
     @Override
@@ -397,6 +405,7 @@ public class MainActivity extends AppCompatActivity {
         stopConnectionTimer();
         if (m_chatService != null)
             m_chatService.stop();
+        m_chatService = null;
     }
 
     @Override
@@ -499,7 +508,9 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String ecuFile) {
-            updateEcuTypeListView(ecuFile, "");
+            SharedPreferences defaultPrefs = getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
+            m_currentProject = defaultPrefs.getString(PREF_PROJECT, "");
+            updateEcuTypeListView(ecuFile, m_currentProject);
         }
     }
 
@@ -515,6 +526,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 m_currentProject = projects[which];
+                SharedPreferences defaultPrefs = getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
+                SharedPreferences.Editor edit = defaultPrefs.edit();
+                edit.putString(PREF_PROJECT, m_currentProject);
+                edit.commit();
                 updateEcuTypeListView(m_ecuFilePath, m_currentProject);
             }
         });
@@ -712,5 +727,9 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean isChatConnected(){
         return (m_chatService != null && m_chatService.getState() == STATE_CONNECTED);
+    }
+
+    private boolean isChatConnecting(){
+        return (m_chatService != null && m_chatService.getState() == STATE_CONNECTING);
     }
 }
