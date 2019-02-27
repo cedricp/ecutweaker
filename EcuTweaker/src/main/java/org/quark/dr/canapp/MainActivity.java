@@ -27,6 +27,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import org.quark.dr.ecu.Ecu;
@@ -57,9 +58,10 @@ public class MainActivity extends AppCompatActivity {
     private static final int    REQUEST_CONNECT_DEVICE = 1;
     private static final int    REQUEST_SCREEN         = 2;
     private static final int    REQUEST_ENABLE_BT      = 3;
-    private static final String DEFAULT_PREF_TAG = "default";
+    public static final String  DEFAULT_PREF_TAG = "default";
 
     public static final String PREF_DEVICE_ADDRESS = "btAdapterAddress";
+    public static final String PREF_GLOBAL_SCALE = "globalScale";
     public static final String PREF_ECUZIPFILE = "ecuZipFile";
     public static final String PREF_PROJECT = "project";
 
@@ -93,6 +95,7 @@ public class MainActivity extends AppCompatActivity {
         m_currentEcuAddressId = -1;
 
         mHandler = new MainActivity.messageHandler(this);
+        m_chatService = new ElmThread(mHandler);
 
         m_statusView = findViewById(R.id.statusView);
         m_btButton = findViewById(R.id.btButton);
@@ -177,11 +180,19 @@ public class MainActivity extends AppCompatActivity {
             askPermission();
         }
 
+        BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (btAdapter != null && !btAdapter.isEnabled()){
+            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+        }
+
         // Only for debug purpose
         //startScreen("/sdcard/ecu.zip", "UCH_84P2_85_V3.json");
     }
 
     private void startConnectionTimer(){
+        stopConnectionTimer();
+
         TimerTask timertask = new TimerTask() {
             @Override
             public void run() {
@@ -195,7 +206,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void stopConnectionTimer(){
-        mConnectionTimer.cancel();
+        if (mConnectionTimer != null) {
+            mConnectionTimer.cancel();
+            mConnectionTimer.purge();
+            mConnectionTimer = null;
+        }
     }
 
     private void connectDevice() {
@@ -203,36 +218,25 @@ public class MainActivity extends AppCompatActivity {
         // Get the BluetoothDevice object
         BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        if (btAdapter == null || m_btDeviceAddress.isEmpty())
+        if (btAdapter == null || m_btDeviceAddress.isEmpty() || isChatConnected())
             return;
-
-        if (!btAdapter.isEnabled()){
-            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-            return;
-        }
 
         BluetoothDevice device = btAdapter.getRemoteDevice(m_btDeviceAddress);
+        if (device == null)
+            return;
         // Attempt to connect to the device
-        setupChat(true);
+        setupChat();
         m_chatService.connect(device);
     }
 
-    private void setupChat(boolean force) {
-        if (force && m_chatService != null){
-            m_chatService.stop();
-        }
-
+    private void setupChat() {
         Log.d(TAG, "setupChat()");
         // Initialize the BluetoothChatService to perform bluetooth connections
-        if (m_chatService != null)
-            m_chatService.stop();
-        m_chatService = new ElmThread(mHandler);
-        m_chatService.start();
+        m_chatService.stop();
     }
 
     void initBus(String protocol){
-        if (m_chatService != null) {
+        if (isChatConnected()) {
             String txa = m_ecuDatabase.getTxAddressById(m_currentEcuAddressId);
             String rxa = m_ecuDatabase.getRxAddressById(m_currentEcuAddressId);
             if (protocol.equals("CAN")) {
@@ -261,7 +265,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void scanBusNew(){
-        if(m_chatService == null || m_chatService.getState() != STATE_CONNECTED){
+        if(m_chatService.getState() != STATE_CONNECTED){
             return;
         }
 
@@ -318,6 +322,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (bluetoothAdapter.isEnabled()) {
+            stopConnectionTimer();
             try {
                 Intent serverIntent = new Intent(this, DeviceListActivity.class);
                 startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
@@ -330,11 +335,7 @@ public class MainActivity extends AppCompatActivity {
     void startScreen(String ecuFile, String ecuHREFName){
         stopConnectionTimer();
 
-        if (m_chatService != null)
-            m_chatService.stop();
-
-        m_chatService = null;
-
+        m_chatService.stop();
         setConnected(false);
 
         try {
@@ -392,9 +393,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "+ ON DESTROY +");
         super.onDestroy();
         stopConnectionTimer();
-        if (m_chatService != null)
-            m_chatService.stop();
-        m_chatService = null;
+        m_chatService.stop();
     }
 
     @Override
@@ -403,9 +402,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "+ ON STOP +");
         super.onStop();
         stopConnectionTimer();
-        if (m_chatService != null)
-            m_chatService.stop();
-        m_chatService = null;
+        m_chatService.stop();
     }
 
     @Override
@@ -428,13 +425,12 @@ public class MainActivity extends AppCompatActivity {
                     edit.putString(PREF_DEVICE_ADDRESS, address);
                     edit.commit();
                     m_btDeviceAddress = address;
-                    connectDevice();
+                    startConnectionTimer();
                 }
                 break;
             case REQUEST_ENABLE_BT:
                 // When the request to enable Bluetooth returns
                 if (resultCode == Activity.RESULT_OK) {
-                    connectDevice();
                 } else {
                     // User did not enable Bluetooth or an error occurred
                     Log.d(TAG, "BT not enabled");
@@ -726,10 +722,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean isChatConnected(){
-        return (m_chatService != null && m_chatService.getState() == STATE_CONNECTED);
+        return (m_chatService.getState() == STATE_CONNECTED);
     }
 
     private boolean isChatConnecting(){
-        return (m_chatService != null && m_chatService.getState() == STATE_CONNECTING);
+        return (m_chatService.getState() == STATE_CONNECTING);
     }
 }

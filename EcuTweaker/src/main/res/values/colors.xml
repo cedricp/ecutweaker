@@ -9,4 +9,5 @@
     <color name="background_material_light">#1f1f1f</color>
     <color name="colorForeground">#b83211</color>
     <color name="colorBackground">#e0d7d7</color>
+    <color name="accent_material_dark">#80cb8e</color>
 </resources>

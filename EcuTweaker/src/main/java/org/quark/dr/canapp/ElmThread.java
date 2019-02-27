@@ -32,7 +32,6 @@ public class ElmThread {
     private static final UUID SPP_UUID = UUID.fromString("0001101-0000-1000-8000-00805F9B34FB");
 
     // Member fields
-    private final BluetoothAdapter mAdapter;
     private final Handler mHandler;
     private ConnectThread mConnectThread;
     private ConnectedThread mConnectedThread;
@@ -108,7 +107,6 @@ public class ElmThread {
      */
 
     public ElmThread(Handler handler) {
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
         mState = STATE_NONE;
         mHandler = handler;
         mTxa = mRxa = -1;
@@ -133,7 +131,7 @@ public class ElmThread {
      * @param state  An integer defining the current connection state
      */
     private synchronized void setState(int state) {
-        if (D) Log.d(TAG, "setState() " + mState + " -> " + state);
+        //if (D) Log.d(TAG, "setState() " + mState + " -> " + state);
         mState = state;
 
         // Give the new state to the Handler so the UI Activity can update
@@ -147,26 +145,11 @@ public class ElmThread {
     }
 
     /**
-     * Start the chat service. Specifically start AcceptThread to begin a
-     * session in listening (server) mode. Called by the Activity onResume() */
-    public synchronized void start() {
-        if (D) Log.d(TAG, "start");
-
-        // Cancel any thread attempting to make a connection
-        if (mConnectThread != null) {mConnectThread.cancel(); mConnectThread = null;}
-
-        // Cancel any thread currently running a connection
-        if (mConnectedThread != null) {mConnectedThread.cancel(); mConnectedThread = null;}
-
-        setState(STATE_LISTEN);
-    }
-
-    /**
      * Start the ConnectThread to initiate a connection to a remote device.
      * @param device  The BluetoothDevice to connect
      */
     public synchronized void connect(BluetoothDevice device) {
-        if (D) Log.d(TAG, "connect to: " + device);
+        //if (D) Log.d(TAG, "connect to: " + device);
 
         // Cancel any thread attempting to make a connection
         if (mState == STATE_CONNECTING) {
@@ -189,27 +172,17 @@ public class ElmThread {
      */
     public synchronized void connected(BluetoothSocket socket, BluetoothDevice
             device, final String socketType) {
-        if (D) Log.d(TAG, "connected, Socket Type:" + socketType);
+        //if (D) Log.d(TAG, "connected, Socket Type:" + socketType);
 
         // Cancel the thread that completed the connection
         if (mConnectThread != null) {
             mConnectThread.cancel();
-            try {
-                mConnectThread.join();
-            } catch (InterruptedException e) {
-
-            }
             mConnectThread = null;
         }
 
         // Cancel any thread currently running a connection
         if (mConnectedThread != null) {
             mConnectedThread.cancel();
-            try {
-                mConnectedThread.join();
-            }  catch (InterruptedException e) {
-
-            }
             mConnectedThread = null;
         }
 
@@ -230,12 +203,11 @@ public class ElmThread {
     /**
      * Stop all threads
      */
-    public synchronized void stop() {
-        if (D) Log.d(TAG, "stop");
+    public void stop() {
+        //if (D) Log.d(TAG, "stop");
 
         if (mConnectThread != null) {
             mConnectThread.cancel();
-
         }
 
         if (mConnectedThread != null) {
@@ -311,12 +283,12 @@ public class ElmThread {
      */
     private void connectionFailed() {
         // Send a failure message back to the Activity
-        Message msg = mHandler.obtainMessage(ScreenActivity.MESSAGE_TOAST);
-        Bundle bundle = new Bundle();
-        bundle.putString(ScreenActivity.TOAST, "Unable to connect device");
-        msg.setData(bundle);
-        mHandler.sendMessage(msg);
-        //ElmThread.this.start();
+//        Message msg = mHandler.obtainMessage(ScreenActivity.MESSAGE_TOAST);
+//        Bundle bundle = new Bundle();
+//        bundle.putString(ScreenActivity.TOAST, "Unable to connect device");
+//        msg.setData(bundle);
+//        mHandler.sendMessage(msg);
+        setState(STATE_NONE);
     }
 
     /**
@@ -324,15 +296,12 @@ public class ElmThread {
      */
     private void connectionLost() {
 //         Send a failure message back to the Activity
-        Message msg = mHandler.obtainMessage(ScreenActivity.MESSAGE_TOAST);
-        Bundle bundle = new Bundle();
-        bundle.putString(ScreenActivity.TOAST, "Device connection was lost");
-        msg.setData(bundle);
-        mHandler.sendMessage(msg);
+//        Message msg = mHandler.obtainMessage(ScreenActivity.MESSAGE_TOAST);
+//        Bundle bundle = new Bundle();
+//        bundle.putString(ScreenActivity.TOAST, "Device connection was lost");
+//        msg.setData(bundle);
+//        mHandler.sendMessage(msg);
         setState(STATE_DISCONNECTED);
-
-        // Start the service over to restart listening mode
-        ElmThread.this.start();
     }
 
     /**
@@ -354,17 +323,18 @@ public class ElmThread {
             try {
                 tmp = device.createRfcommSocketToServiceRecord(SPP_UUID);
             } catch (IOException e) {
-                Log.e(TAG, "Socket Type: " + mSocketType + "create() failed", e);
+                //Log.e(TAG, "Socket Type: " + mSocketType + "create() failed", e);
             }
             mmSocket = tmp;
         }
 
         public void run() {
-            Log.i(TAG, "BEGIN mConnectThread SocketType:" + mSocketType);
+            //Log.i(TAG, "BEGIN mConnectThread SocketType:" + mSocketType);
             setName("ConnectThread" + mSocketType);
 
             // Always cancel discovery because it will slow down a connection
-            mAdapter.cancelDiscovery();
+            BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+            btAdapter.cancelDiscovery();
 
             // Make a connection to the BluetoothSocket
             try {
@@ -376,8 +346,8 @@ public class ElmThread {
                 try {
                     mmSocket.close();
                 } catch (IOException e2) {
-                    Log.e(TAG, "unable to close() " + mSocketType +
-                            " socket during connection failure", e2);
+//                    Log.e(TAG, "unable to close() " + mSocketType +
+//                            " socket during connection failure", e2);
                 }
                 connectionFailed();
                 return;
@@ -393,12 +363,17 @@ public class ElmThread {
         }
 
         public void cancel() {
+            if (!isAlive())
+                return;
+
             interrupt();
+
             try {
                 mmSocket.close();
             } catch (IOException e) {
-                Log.e(TAG, "close() of connect " + mSocketType + " socket failed", e);
+                //Log.e(TAG, "close() of connect " + mSocketType + " socket failed", e);
             }
+
             try {
                 join();
             } catch (InterruptedException e) {
@@ -416,10 +391,10 @@ public class ElmThread {
         private final InputStream     mmInStream;
         private final OutputStream    mmOutStream;
         private ArrayList<String>     mmessages;
-        private boolean runStatus;
+        private volatile boolean      mRunningStatus;
 
         public ConnectedThread(BluetoothSocket socket, String socketType) {
-            Log.d(TAG, "create ConnectedThread: " + socketType);
+            //Log.d(TAG, "create ConnectedThread: " + socketType);
             mmSocket = socket;
             InputStream  tmpIn  = null;
             OutputStream tmpOut = null;
@@ -431,7 +406,7 @@ public class ElmThread {
                 tmpIn  = socket.getInputStream();
                 tmpOut = socket.getOutputStream();
             } catch (IOException e) {
-                Log.e(TAG, "temp sockets not created", e);
+                //Log.e(TAG, "temp sockets not created", e);
             }
 
             mmInStream  = tmpIn;
@@ -447,12 +422,12 @@ public class ElmThread {
         }
 
         public void run() {
-            Log.i(TAG, "BEGIN mConnectedThread");
+            //Log.i(TAG, "BEGIN mConnectedThread");
             long timer = System.currentTimeMillis();
-            runStatus = true;
+            mRunningStatus = true;
 
             // Keep listening to the InputStream while connected
-            while (runStatus) {
+            while (mRunningStatus) {
                 if (mmessages.size() > 0){
                     String message;
                     int num_queue = -1;
@@ -498,14 +473,18 @@ public class ElmThread {
         }
 
         public void cancel() {
-            runStatus = false;
+            mRunningStatus = false;
             interrupt();
             mmessages.clear();
             try {
                 mmSocket.close();
             } catch (IOException e) {
-                Log.e(TAG, "close() of connect socket failed", e);
+                //Log.e(TAG, "close() of connect socket failed", e);
             }
+
+            if (!isAlive())
+                return;
+
             try {
                 join();
             } catch (InterruptedException e) {
@@ -519,10 +498,10 @@ public class ElmThread {
             try {
                 mmOutStream.write(raw_buffer.getBytes());
             } catch (IOException e) {
-                Log.e(TAG, "write_raw(1): disconnected", e);
+                //Log.e(TAG, "write_raw(1): disconnected", e);
                 connectionLost();
                 // Start the service over to restart listening mode
-                ElmThread.this.start();
+                // ElmThread.this.start();
                 return "ERROR : DISCONNECTED";
             }
 
@@ -547,10 +526,10 @@ public class ElmThread {
                         return new String(reply_buffer, 0, u -1);
                     }
                 } catch (IOException e) {
-                    Log.e(TAG, "write_raw(2): disconnected", e);
+                    //Log.e(TAG, "write_raw(2): disconnected", e);
                     connectionLost();
                     // Start the service over to restart listening mode
-                    ElmThread.this.start();
+                    // ElmThread.this.start();
                     break;
                 }
             }

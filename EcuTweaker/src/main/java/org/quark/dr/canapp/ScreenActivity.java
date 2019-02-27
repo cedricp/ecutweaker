@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -49,6 +50,8 @@ import static org.quark.dr.canapp.ElmThread.STATE_CONNECTING;
 import static org.quark.dr.canapp.ElmThread.STATE_DISCONNECTED;
 import static org.quark.dr.canapp.ElmThread.STATE_LISTEN;
 import static org.quark.dr.canapp.ElmThread.STATE_NONE;
+import static org.quark.dr.canapp.MainActivity.PREF_DEVICE_ADDRESS;
+import static org.quark.dr.canapp.MainActivity.PREF_GLOBAL_SCALE;
 import static org.quark.dr.ecu.Ecu.hexStringToByteArray;
 
 public class ScreenActivity extends AppCompatActivity {
@@ -108,17 +111,13 @@ public class ScreenActivity extends AppCompatActivity {
         initialize(savedInstanceState);
     }
 
-//    @Override
-//    protected void onRestoreInstanceState(final Bundle savedInstanceState) {
-//        super.onRestoreInstanceState(savedInstanceState);
-//        initialize(savedInstanceState);
-//    }
-
     private void initialize(Bundle savedInstanceState) {
         String ecuFile = "";
         String ecuHref = "";
         m_autoReload = false;
-        mGlobalScale = 1.3f;
+        SharedPreferences defaultPrefs = this.getSharedPreferences(MainActivity.DEFAULT_PREF_TAG, MODE_PRIVATE);
+        String globalScalePref = defaultPrefs.getString(PREF_GLOBAL_SCALE, "1.3");
+        mGlobalScale = Float.valueOf(globalScalePref);
         mLastSDSTime = 0;
 
         Bundle b = getIntent().getExtras();
@@ -216,8 +215,6 @@ public class ScreenActivity extends AppCompatActivity {
             }
         });
 
-        mHandler = new messageHandler(this);
-
         m_scrollView = this.findViewById(R.id.scrollView);
         m_layoutView = this.findViewById(R.id.mainLayout);
         m_logView = this.findViewById(R.id.logView);
@@ -229,6 +226,9 @@ public class ScreenActivity extends AppCompatActivity {
         if (!ecuFile.isEmpty()){
             openEcu(ecuFile, ecuHref);
         }
+
+        mHandler = new messageHandler(this);
+        mChatService = new ElmThread(mHandler);
 
         connectDevice();
 
@@ -737,9 +737,7 @@ public class ScreenActivity extends AppCompatActivity {
         Log.e(TAG, "+ ON DESTROY +");
         super.onDestroy();
         stopAutoReload();
-        if (mChatService != null)
-            mChatService.stop();
-        mChatService = null;
+        mChatService.stop();
     }
 
     @Override
@@ -747,17 +745,17 @@ public class ScreenActivity extends AppCompatActivity {
     {
         super.onStop();
         stopAutoReload();
-        if (mChatService != null)
-            mChatService.stop();
-        mChatService = null;
+        mChatService.stop();
+
+        SharedPreferences defaultPrefs = this.getSharedPreferences(MainActivity.DEFAULT_PREF_TAG, MODE_PRIVATE);
+        SharedPreferences.Editor edit = defaultPrefs.edit();
+        edit.putString(PREF_GLOBAL_SCALE, String.valueOf(mGlobalScale));
+        edit.commit();
     }
 
     private void setupChat() {
         Log.d(TAG, "setupChat()");
-        if (mChatService != null)
-            mChatService.stop();
-        // Initialize the BluetoothChatService to perform bluetooth connections
-        mChatService = new ElmThread(mHandler);
+        mChatService.stop();
     }
 
     private void setStatus(CharSequence status) {
@@ -816,6 +814,9 @@ public class ScreenActivity extends AppCompatActivity {
     }
 
     private void connectDevice() {
+        if (isChatConnected())
+            return;
+
         BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
         if (btAdapter == null || m_deviceAddressPref.isEmpty())
             return;
@@ -825,12 +826,14 @@ public class ScreenActivity extends AppCompatActivity {
         // address is the device MAC address
         // Get the BluetoothDevice object
         BluetoothDevice device = btAdapter.getRemoteDevice(m_deviceAddressPref);
+        if (device == null)
+            return;
         // Attempt to connect to the device
         mChatService.connect(device);
     }
 
     private boolean isChatConnected(){
-        return (mChatService != null && mChatService.getState() == STATE_CONNECTED);
+        return (mChatService.getState() == STATE_CONNECTED);
     }
 
     private void initELM() {

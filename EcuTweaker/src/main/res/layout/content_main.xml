@@ -68,7 +68,7 @@
             <ListView
                 android:id="@+id/ecuListView"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1">
 
             </ListView>
@@ -77,13 +77,13 @@
                 android:id="@+id/divider"
                 android:layout_width="match_parent"
                 android:layout_height="5dp"
-                android:background="?android:attr/listDivider"
+                android:background="@android:color/holo_orange_dark"
                 android:visibility="visible" />
 
             <ListView
                 android:id="@+id/deviceView"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:baselineAligned="false"
                 tools:layout_editor_absoluteY="128dp">
