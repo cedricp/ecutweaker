@@ -13,10 +13,9 @@ import android.bluetooth.BluetoothSocket;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 
-import org.quark.dr.ecu.IsotpDecode;
-import org.quark.dr.ecu.IsotpEncode;
+import org.quark.dr.ecu.IsoTPDecode;
+import org.quark.dr.ecu.IsoTPEncode;
 
 /**
  * This class does all the work for setting up and managing Bluetooth
@@ -430,7 +429,7 @@ public class ElmThread {
             while (mRunningStatus) {
                 if (mmessages.size() > 0){
                     String message;
-                    int num_queue = -1;
+                    int num_queue;
                     synchronized (this) {
                         message = mmessages.get(0);
                         mmessages.remove(0);
@@ -555,7 +554,7 @@ public class ElmThread {
         }
 
         private void send_can(String message){
-            IsotpEncode isotpm = new IsotpEncode(message);
+            IsoTPEncode isotpm = new IsoTPEncode(message);
             // Encode ISO_TP data
             ArrayList<String> raw_command = isotpm.getFormattedArray();
             ArrayList<String> responses = new ArrayList<>();
@@ -594,7 +593,7 @@ public class ElmThread {
                 result = "ERROR : " + errorMsg;
             } else {
                 // Decode received ISO_TP data
-                IsotpDecode isotpdec = new IsotpDecode(responses);
+                IsoTPDecode isotpdec = new IsoTPDecode(responses);
                 result = isotpdec.decodeCan();
             }
             result = message + ";" + result;

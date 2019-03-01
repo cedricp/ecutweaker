@@ -6,10 +6,10 @@ import java.util.ArrayList;
  * Class to decode a CAN frame (single or multi line)
  */
 
-public class IsotpDecode {
+public class IsoTPDecode {
     private ArrayList<String> responses;
 
-    public IsotpDecode(ArrayList<String> mess){
+    public IsoTPDecode(ArrayList<String> mess){
         responses = mess;
     }
 

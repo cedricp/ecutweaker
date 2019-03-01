@@ -36,7 +36,7 @@ import android.widget.Toast;
 
 import org.quark.dr.ecu.Ecu;
 import org.quark.dr.ecu.EcuDatabase;
-import org.quark.dr.ecu.IsotpDecode;
+import org.quark.dr.ecu.IsoTPDecode;
 import org.quark.dr.ecu.Layout;
 
 import java.util.ArrayList;
@@ -50,12 +50,11 @@ import static org.quark.dr.canapp.ElmThread.STATE_CONNECTING;
 import static org.quark.dr.canapp.ElmThread.STATE_DISCONNECTED;
 import static org.quark.dr.canapp.ElmThread.STATE_LISTEN;
 import static org.quark.dr.canapp.ElmThread.STATE_NONE;
-import static org.quark.dr.canapp.MainActivity.PREF_DEVICE_ADDRESS;
 import static org.quark.dr.canapp.MainActivity.PREF_GLOBAL_SCALE;
 import static org.quark.dr.ecu.Ecu.hexStringToByteArray;
 
 public class ScreenActivity extends AppCompatActivity {
-    private static final String TAG = "org.quark.dr.canapp";
+    private static final String TAG = "org.quark.dr.ecutweaker";
     private ScrollView m_scrollView;
     private RelativeLayout m_layoutView;
     private Ecu m_ecu;
@@ -610,6 +609,9 @@ public class ScreenActivity extends AppCompatActivity {
     private View.OnClickListener buttonClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
+            if (BuildConfig.BUILD_TYPE.equals("demo")){
+                return;
+            }
             if (! m_buttonsCommand.containsKey(v))
                 return;
             String uniqueName = m_buttonsCommand.get(v);
@@ -653,7 +655,7 @@ public class ScreenActivity extends AppCompatActivity {
                                     return;
                                 }
                             } else {
-                                if (!IsotpDecode.isHexadecimal(currentText)) {
+                                if (!IsoTPDecode.isHexadecimal(currentText)) {
                                     Toast.makeText(getApplicationContext(), "Invalid value, check inputs", Toast.LENGTH_LONG).show();
                                     return;
                                 }
@@ -956,6 +958,9 @@ public class ScreenActivity extends AppCompatActivity {
     }
 
     void clearDTC(){
+        if (BuildConfig.BUILD_TYPE.equals("demo")){
+            return;
+        }
         Ecu.EcuRequest clearDTCRequest = m_ecu.getRequest("ClearDiagnosticInformation.All");
         if (clearDTCRequest == null)
             clearDTCRequest = m_ecu.getRequest("ClearDTC");

@@ -9,7 +9,7 @@ android {
             storePassword 'myStorePassword'
         }
     }
-    compileSdkVersion 27
+    compileSdkVersion 26
     defaultConfig {
         applicationId "org.quark.dr.canapp"
         minSdkVersion 19
@@ -23,9 +23,19 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.releaseConfig
+            buildConfigField "String", "TYPE", '"release"'
         }
         debug {
             minifyEnabled false
+            buildConfigField "String", "TYPE", '"debug"'
+        }
+        demo {
+            debuggable false
+            jniDebuggable false
+            signingConfig signingConfigs.releaseConfig
+            minifyEnabled true
+            zipAlignEnabled true
+            buildConfigField "String", "TYPE", '"demo"'
         }
     }
     productFlavors {
@@ -39,7 +49,6 @@ dependencies {
     implementation 'com.android.support:design:26.1.0'
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     implementation project(':ecu')
 }
 

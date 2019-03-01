@@ -6,9 +6,9 @@ import java.util.ArrayList;
  * Class to format a CAN message to single/multi line frame
  */
 
-public class IsotpEncode {
+public class IsoTPEncode {
     private String mmessage;
-    public IsotpEncode(String mess){
+    public IsoTPEncode(String mess){
         mmessage = mess;
     }
 
@@ -26,7 +26,7 @@ public class IsotpEncode {
         ArrayList<String> raw_command = new ArrayList<>();
         String message = mmessage;
         message = message.replace(" ", "");
-        if (!IsotpDecode.isHexadecimal(message)){
+        if (!IsoTPDecode.isHexadecimal(message)){
             return raw_command;
         }
 

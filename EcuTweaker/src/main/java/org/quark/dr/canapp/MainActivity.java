@@ -85,7 +85,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         setContentView(R.layout.activity_main);
         initialize();
     }
@@ -185,6 +184,8 @@ public class MainActivity extends AppCompatActivity {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
         }
+
+        m_logView.append("EcuTweaker " + BuildConfig.BUILD_TYPE + " version\n");
 
         // Only for debug purpose
         //startScreen("/sdcard/ecu.zip", "UCH_84P2_85_V3.json");

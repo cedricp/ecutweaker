@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -47,15 +48,12 @@ public class unitTest {
         InputStream is = this.getClass().getClassLoader().getResourceAsStream("test.json");
 
         Ecu ecu = new Ecu(is);
-//        System.out.println(ecu.funcaddr);
-//        System.out.println(ecu.protocol);
-//        System.out.println(ecu.ecu_name);
-//        System.out.println(ecu.funcname);
         // ECU Methods check
         byte[] testbyte = new byte[] {0x00, -1, 10};
         byte[] ucttest = new byte[] {0x61, 0x0A, 0x16, 0x32, 0x32, 0x02, 0x58, 0x00, (byte)0xB4, 0x3C,
                 0x3C, 0x1E, 0x3C, 0x0A, 0x0A, 0x0A, 0x0A, 0x01, 0x2C, 0x5C, 0x61, 0x67, (byte)0xB5, (byte)0xBB,
                 (byte)0xC1, 0X0A};
+        // 3B 0A 16 32 32 02 58 00 B4 3C 3C 1E 3C 0A 0A 0A 0A 01 2C 5C 61 67 B5 BB C1 0A
         byte[] ucttest2 = new byte[26];
 
         BigInteger bi = new BigInteger("FF", 16);
@@ -133,9 +131,10 @@ public class unitTest {
         } catch (EcuDatabase.DatabaseException e){
             e.printStackTrace();
         }
-        EcuDatabase.EcuInfo info = db.identifyNewEcu(idn);
-        System.out.println("?? " + info.ecuName + " " + info.exact_match);
-        //info = db.identifyOldEcu(122, "61 80 82 00 44 66 27 44 32 31 33 82 00 38 71 38 00 A7 75 00 56 05 02 01 00 00");
-        System.out.println("?? " + info.ecuName + " " + info.exact_match);
+        ArrayList<EcuDatabase.EcuInfo> infos = db.identifyNewEcu(idn);
+        for (EcuDatabase.EcuInfo info : infos)
+            System.out.println("?? " + info.ecuName + " " + info.exact_match);
+//        EcuDatabase.EcuInfo  info = db.identifyOldEcu(122, "61 80 82 00 44 66 27 44 32 31 33 82 00 38 71 38 00 A7 75 00 56 05 02 01 00 00");
+//        System.out.println("?? " + info.ecuName + " " + info.exact_match);
     }
 }
