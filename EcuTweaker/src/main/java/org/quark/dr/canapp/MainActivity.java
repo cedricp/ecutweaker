@@ -34,6 +34,7 @@ import android.widget.TextView;
 import org.quark.dr.ecu.Ecu;
 import org.quark.dr.ecu.EcuDatabase;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -93,7 +94,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initialize(){
-        mLicenseLock = new LicenseLock(Long.valueOf(Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID), 16));
+        long id = new BigInteger(Settings.Secure.getString(getContentResolver(),Settings.Secure.ANDROID_ID), 16).longValue();
+        mLicenseLock = new LicenseLock(id);
         SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
 
 //        String publicCode = mLicenseLock.getPublicCode();
@@ -212,6 +214,7 @@ public class MainActivity extends AppCompatActivity {
             setLicenseSatus();
         } else {
             m_logView.append("You are using demo version, write functions deactivated.\n");
+            ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.RED);
         }
 
         // Only for debug purpose
@@ -273,8 +276,10 @@ public class MainActivity extends AppCompatActivity {
             SharedPreferences.Editor edit = defaultPrefs.edit();
             edit.putString(PREF_LICENSE_CODE, mLicenseLock.getPrivateCode());
             edit.commit();
+            ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.GREEN);
         } else {
-            m_logView.append("Wrong code\n");
+            ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.RED);
+            m_logView.append("Wrong code, sorry !\n");
         }
     }
 
