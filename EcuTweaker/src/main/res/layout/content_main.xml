@@ -36,10 +36,17 @@
             android:layout_height="40dp"
             android:orientation="horizontal">
 
+            <ImageButton
+                android:id="@+id/licenseButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="0"
+                app:srcCompat="@drawable/ic_lock" />
+
             <Button
                 android:id="@+id/btButton"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Choose BlueTooth device..."
                 android:textSize="14sp" />
@@ -47,7 +54,7 @@
             <ImageButton
                 android:id="@+id/projectButton"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_weight="0"
                 app:srcCompat="@drawable/ic_bt_search" />
 

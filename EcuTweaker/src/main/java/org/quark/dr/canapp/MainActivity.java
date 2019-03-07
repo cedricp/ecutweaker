@@ -14,10 +14,11 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.app.AppCompatDelegate;
+import android.text.InputType;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Gravity;
@@ -25,9 +26,9 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import org.quark.dr.ecu.Ecu;
@@ -61,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String  DEFAULT_PREF_TAG = "default";
 
     public static final String PREF_DEVICE_ADDRESS = "btAdapterAddress";
+    public static final String PREF_LICENSE_CODE = "licenseCode";
     public static final String PREF_GLOBAL_SCALE = "globalScale";
     public static final String PREF_ECUZIPFILE = "ecuZipFile";
     public static final String PREF_PROJECT = "project";
@@ -81,6 +83,7 @@ public class MainActivity extends AppCompatActivity {
     private Handler mHandler = null;
     private EcuDatabase.EcuIdentifierNew m_ecuIdentifierNew = null;
     private Timer mConnectionTimer;
+    private LicenseLock mLicenseLock;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,6 +93,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initialize(){
+        mLicenseLock = new LicenseLock(Long.valueOf(Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID), 16));
+        SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
+
+//        String publicCode = mLicenseLock.getPublicCode();
+//        System.out.println("?? PC " + publicCode);
+//        String generatedCode = mLicenseLock.generatePrivateCode();
+//        System.out.println("?? GC " + generatedCode);
+//        boolean ok = mLicenseLock.checkUnlock(generatedCode);
+//        System.out.println("?? OK " + ok);
         m_currentProject = "";
         m_currentEcuAddressId = -1;
 
@@ -158,6 +170,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        ImageButton licenseButton = findViewById(R.id.licenseButton);
+        licenseButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onLicenseCheck();
+            }
+        });
+
         m_chooseProjectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -165,7 +185,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
         m_btDeviceAddress = defaultPrefs.getString(PREF_DEVICE_ADDRESS, "");
 
         m_ecuDatabase = new EcuDatabase();
@@ -187,8 +206,41 @@ public class MainActivity extends AppCompatActivity {
 
         m_logView.append("EcuTweaker " + BuildConfig.BUILD_TYPE + " version\n");
 
+        String licenseCode = defaultPrefs.getString(PREF_LICENSE_CODE, "");
+        if (!licenseCode.isEmpty()){
+            mLicenseLock.checkUnlock(licenseCode);
+            setLicenseSatus();
+        } else {
+            m_logView.append("You are using demo version, write functions deactivated.\n");
+        }
+
         // Only for debug purpose
         //startScreen("/sdcard/ecu.zip", "UCH_84P2_85_V3.json");
+    }
+
+    private void onLicenseCheck(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Enter activation code");
+        builder.setMessage("Request code : " + mLicenseLock.getPublicCode());
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        builder.setView(input);
+
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                mLicenseLock.checkUnlock(input.getText().toString());
+                setLicenseSatus();
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+
+        builder.show();
     }
 
     private void startConnectionTimer(){
@@ -211,6 +263,18 @@ public class MainActivity extends AppCompatActivity {
             mConnectionTimer.cancel();
             mConnectionTimer.purge();
             mConnectionTimer = null;
+        }
+    }
+
+    private void setLicenseSatus(){
+        if (mLicenseLock.isLicenseOk()){
+            m_logView.append("Application unlocked\n");
+            SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
+            SharedPreferences.Editor edit = defaultPrefs.edit();
+            edit.putString(PREF_LICENSE_CODE, mLicenseLock.getPrivateCode());
+            edit.commit();
+        } else {
+            m_logView.append("Wrong code\n");
         }
     }
 
@@ -345,6 +409,7 @@ public class MainActivity extends AppCompatActivity {
             b.putString("ecuFile", ecuFile);
             b.putString("ecuRef", ecuHREFName);
             b.putString("deviceAddress", m_btDeviceAddress);
+            b.putBoolean("licenseOk", mLicenseLock.isLicenseOk());
             serverIntent.putExtras(b);
             startActivityForResult(serverIntent, REQUEST_SCREEN);
         } catch (android.content.ActivityNotFoundException e) {

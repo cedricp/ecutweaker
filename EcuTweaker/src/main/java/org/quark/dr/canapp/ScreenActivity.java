@@ -94,6 +94,7 @@ public class ScreenActivity extends AppCompatActivity {
     private String              mConnectedDeviceName = null;
     private float               mGlobalScale;
     private long                mLastSDSTime;
+    private boolean             mDemoMode;
 
     public float convertToPixel(float val){
         return (val / 8.0f) * mGlobalScale;
@@ -111,6 +112,7 @@ public class ScreenActivity extends AppCompatActivity {
     }
 
     private void initialize(Bundle savedInstanceState) {
+        mDemoMode = true;
         String ecuFile = "";
         String ecuHref = "";
         m_autoReload = false;
@@ -126,6 +128,7 @@ public class ScreenActivity extends AppCompatActivity {
             if (b.containsKey("deviceAddress")){
                 m_deviceAddressPref = b.getString("deviceAddress");
             }
+            mDemoMode =  ! b.getBoolean("licenseOk");
         } else if (savedInstanceState != null && savedInstanceState.containsKey("ecu_name")){
             ecuFile = savedInstanceState.getString("ecu_name");
         }
@@ -609,7 +612,7 @@ public class ScreenActivity extends AppCompatActivity {
     private View.OnClickListener buttonClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            if (BuildConfig.BUILD_TYPE.equals("demo")){
+            if (mDemoMode){
                 return;
             }
             if (! m_buttonsCommand.containsKey(v))
@@ -958,7 +961,7 @@ public class ScreenActivity extends AppCompatActivity {
     }
 
     void clearDTC(){
-        if (BuildConfig.BUILD_TYPE.equals("demo")){
+        if (mDemoMode){
             return;
         }
         Ecu.EcuRequest clearDTCRequest = m_ecu.getRequest("ClearDiagnosticInformation.All");

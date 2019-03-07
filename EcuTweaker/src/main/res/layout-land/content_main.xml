@@ -35,6 +35,13 @@
             android:layout_weight="0"
             android:orientation="horizontal">
 
+            <ImageButton
+                android:id="@+id/licenseButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="0"
+                app:srcCompat="@drawable/ic_lock" />
+
             <Button
                 android:id="@+id/btButton"
                 android:layout_width="wrap_content"
