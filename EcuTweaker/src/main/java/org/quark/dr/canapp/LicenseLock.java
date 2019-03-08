@@ -3,7 +3,7 @@ package org.quark.dr.canapp;
 import org.quark.dr.ecu.Ecu;
 
 public class LicenseLock {
-    private long mAndroidID;
+    private int mAndroidID;
     private String mPublicCode;
     private String mPrivateCode;
     private boolean mLicenseOk;
@@ -14,8 +14,9 @@ public class LicenseLock {
 
     public LicenseLock(long androidID){
         mLicenseOk = false;
-        mAndroidID = (int)androidID;
-        mPublicCode = addArmor(Integer.toHexString(getReducedID()).getBytes());
+        mAndroidID = getReducedID(androidID);
+        String hexPadded = Ecu.padLeft(Integer.toHexString(mAndroidID), 6, "0");
+        mPublicCode = addArmor(hexPadded.getBytes());
     }
 
     public String getPublicCode(){
@@ -61,18 +62,13 @@ public class LicenseLock {
      */
     public boolean checkUnlock(String unlockCode){
         try {
-            int reducedLockCode = getReducedID();
             String removedArmor = new String(removeArmor(unlockCode));
-            // System.out.println("?? unarmored = " + removedArmor);
             removedArmor = Ecu.padLeft(Integer.toBinaryString(Integer.parseInt(removedArmor, 16)), 24, "0");
             String unscrambledLockCode = unscramble(removedArmor);
-            // System.out.println("?? unscrambled = " + unscrambledLockCode);
             int integerLockCode = Integer.parseInt(unscrambledLockCode, 2);
-            // System.out.println("?? integer = " + integerLockCode);
             String xoredResult = xorOp(integerLockCode);
             int result = Integer.parseInt(xoredResult, 2);
-            // System.out.println("?? result = " + result + "/" + reducedLockCode);
-            if (result == getReducedID()) {
+            if (result == mAndroidID) {
                 mLicenseOk = true;
                 mPrivateCode = unlockCode;
                 return true;
@@ -92,25 +88,17 @@ public class LicenseLock {
      * Send mAndroidID xor'ed  + scrambled
      */
     public String generatePrivateCode(){
-        int reducedLockCode = getReducedID();
-        String xored = xorOp(reducedLockCode);
+        String xored = xorOp(mAndroidID);
         String scrambledHex = Integer.toHexString(Integer.parseInt(scramble(xored), 2));
         String armored = new String(addArmor(scrambledHex.getBytes()));
         return armored;
     }
 
-    private int getReducedID(){
-        return (int)(mAndroidID & 0xFFF);
+    private int getReducedID(long id){
+        return (int)(id & 0xFFFFFF);
     }
 
-    private String getUnlockCode(){
-        int reducedAndoridID= getReducedID();
-        String xoredAndroidID = xorOp(reducedAndoridID);
-        String scrambledBinary = scramble(xoredAndroidID);
-        return addArmor(Integer.toHexString(Integer.parseInt(scrambledBinary, 2)).getBytes());
-    }
-
-    private String addArmor(byte[] buf)
+    static public String addArmor(byte[] buf)
     {
         String result = "";
         int size = buf.length;
@@ -118,18 +106,18 @@ public class LicenseLock {
             int bit7 = bit & 7;
             int rest = 8 - bit7;
             int fivebits = ((buf[bit/8] >> bit7) & 0x1f);
-            if ((bit/8+1) < size-1)
+            if ((bit/8+1) < size)
                 fivebits |= ((buf[bit/8+1] & (0x1f >> rest)) << rest);
             result += mAlphabet.toCharArray()[fivebits];
         }
         return result;
     }
 
-    private byte[] removeArmor(String armoredString)
+    static public byte[] removeArmor(String armoredString)
     {
         char[] armoredCharArray = armoredString.toCharArray();
         int textlen = armoredString.length();
-        int result_size = (textlen*5 + 4) / 8;
+        int result_size = (textlen*5) / 8;
         byte result[] = new byte[result_size];
 
         for (int idx=0; idx < textlen; ++idx) {

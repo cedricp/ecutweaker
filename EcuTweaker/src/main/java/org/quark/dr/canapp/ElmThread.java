@@ -130,7 +130,6 @@ public class ElmThread {
      * @param state  An integer defining the current connection state
      */
     private synchronized void setState(int state) {
-        //if (D) Log.d(TAG, "setState() " + mState + " -> " + state);
         mState = state;
 
         // Give the new state to the Handler so the UI Activity can update
@@ -148,8 +147,6 @@ public class ElmThread {
      * @param device  The BluetoothDevice to connect
      */
     public synchronized void connect(BluetoothDevice device) {
-        //if (D) Log.d(TAG, "connect to: " + device);
-
         // Cancel any thread attempting to make a connection
         if (mState == STATE_CONNECTING) {
             if (mConnectThread != null) {mConnectThread.cancel(); mConnectThread = null;}
@@ -171,8 +168,6 @@ public class ElmThread {
      */
     public synchronized void connected(BluetoothSocket socket, BluetoothDevice
             device, final String socketType) {
-        //if (D) Log.d(TAG, "connected, Socket Type:" + socketType);
-
         // Cancel the thread that completed the connection
         if (mConnectThread != null) {
             mConnectThread.cancel();
@@ -203,8 +198,6 @@ public class ElmThread {
      * Stop all threads
      */
     public void stop() {
-        //if (D) Log.d(TAG, "stop");
-
         if (mConnectThread != null) {
             mConnectThread.cancel();
         }

@@ -214,6 +214,7 @@ public class MainActivity extends AppCompatActivity {
             setLicenseSatus();
         } else {
             m_logView.append("You are using demo version, write functions deactivated.\n");
+            m_logView.append("License request code : " + mLicenseLock.getPublicCode() + "\n");
             ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.RED);
         }
 
@@ -300,7 +301,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupChat() {
-        Log.d(TAG, "setupChat()");
+        if (BuildConfig.DEBUG)
+            Log.d(TAG, "setupChat()");
         // Initialize the BluetoothChatService to perform bluetooth connections
         m_chatService.stop();
     }
@@ -397,7 +399,8 @@ public class MainActivity extends AppCompatActivity {
                 Intent serverIntent = new Intent(this, DeviceListActivity.class);
                 startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
             } catch (android.content.ActivityNotFoundException e) {
-                Log.e(TAG, "+++ ActivityNotFoundException +++");
+                if (BuildConfig.DEBUG)
+                    Log.e(TAG, "+++ ActivityNotFoundException +++");
             }
         }
     }
@@ -418,7 +421,8 @@ public class MainActivity extends AppCompatActivity {
             serverIntent.putExtras(b);
             startActivityForResult(serverIntent, REQUEST_SCREEN);
         } catch (android.content.ActivityNotFoundException e) {
-            Log.e(TAG, "+++ ActivityNotFoundException +++");
+            if (BuildConfig.DEBUG)
+                Log.e(TAG, "+++ ActivityNotFoundException +++");
         }
     }
 
@@ -716,7 +720,8 @@ public class MainActivity extends AppCompatActivity {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case MESSAGE_STATE_CHANGE:
-                    Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
+                    if (BuildConfig.DEBUG)
+                        Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
                     switch (msg.arg1) {
                         case STATE_CONNECTED:
                             activity.setConnected(true);

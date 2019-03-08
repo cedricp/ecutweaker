@@ -535,12 +535,14 @@ public class ScreenActivity extends AppCompatActivity {
         // Display requests send
         for(String requestname : m_displaysRequestSet){
             Ecu.EcuRequest request = m_ecu.getRequest(requestname);
-            Log.i(TAG, "Managing request : " + requestname);
+            if (BuildConfig.DEBUG)
+                Log.i(TAG, "Managing request : " + requestname);
             if (request == null){
-                Log.i(TAG, "Cannot find request " + requestname);
+                if (BuildConfig.DEBUG)
+                    Log.i(TAG, "Cannot find request " + requestname);
             }
-
-            Log.i(TAG, "Send bytes " + request.sentbytes);
+            if (BuildConfig.DEBUG)
+                Log.i(TAG, "Send bytes " + request.sentbytes);
 
             sendCmd(request.sentbytes);
         }
@@ -576,9 +578,11 @@ public class ScreenActivity extends AppCompatActivity {
 
         for (String requestname : m_displaysRequestSet) {
             Ecu.EcuRequest request = m_ecu.getRequest(requestname);
-            Log.i(TAG, "Managing request : " + requestname);
+            if (BuildConfig.DEBUG)
+                Log.i(TAG, "Managing request : " + requestname);
             if (request == null) {
-                Log.i(TAG, "Cannot find request " + requestname);
+                if (BuildConfig.DEBUG)
+                    Log.i(TAG, "Cannot find request " + requestname);
                 continue;
             }
 
@@ -632,13 +636,15 @@ public class ScreenActivity extends AppCompatActivity {
             Integer delay = sendData.first;
             Ecu.EcuRequest request = m_ecu.getRequest(sendData.second);
             if (request == null){
-                Log.d(TAG, "Cannot find request " + sendData.second);
+                if (BuildConfig.DEBUG)
+                    Log.d(TAG, "Cannot find request " + sendData.second);
                 return;
             }
 
             if (!m_requestsInputs.containsKey(sendData.second)){
                 commands.add(new Pair<>(delay, request.sentbytes));
-                Log.d(TAG, ">>>>>>>>>>> Computed (no data) " + request.sentbytes);
+                if (BuildConfig.DEBUG)
+                    Log.d(TAG, ">>>>>>>>>>> Computed (no data) " + request.sentbytes);
                 continue;
             }
 
@@ -682,7 +688,8 @@ public class ScreenActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(), "Failed to compute frame", Toast.LENGTH_LONG).show();
                 return;
             }
-            Log.d(TAG,"Computed frame : " + Ecu.byteArrayToHex(builtStream));
+            if (BuildConfig.DEBUG)
+                Log.d(TAG,"Computed frame : " + Ecu.byteArrayToHex(builtStream));
             commands.add(new Pair<Integer, String>(delay, Ecu.byteArrayToHex(builtStream)));
         }
 
@@ -720,7 +727,8 @@ public class ScreenActivity extends AppCompatActivity {
                 // When DeviceListActivity returns with a device to connect
                 if (resultCode == Activity.RESULT_OK) {
                     String address = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
-                    Log.d(TAG, "onActivityResult " + address);
+                    if (BuildConfig.DEBUG)
+                        Log.d(TAG, "onActivityResult " + address);
                     connectDevice();
                 }
                 break;
@@ -731,7 +739,8 @@ public class ScreenActivity extends AppCompatActivity {
                     setupChat();
                 } else {
                     // User did not enable Bluetooth or an error occurred
-                    Log.d(TAG, "BT not enabled");
+                    if (BuildConfig.DEBUG)
+                        Log.d(TAG, "BT not enabled");
                 }
         }
     }
@@ -1026,7 +1035,8 @@ public class ScreenActivity extends AppCompatActivity {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case MESSAGE_STATE_CHANGE:
-                    Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
+                    if (BuildConfig.DEBUG)
+                        Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
                     switch (msg.arg1) {
                         case STATE_CONNECTED:
                             activity.initELM();
