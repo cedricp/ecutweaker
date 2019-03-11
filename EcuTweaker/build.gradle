@@ -3,10 +3,10 @@ apply plugin: 'com.android.application'
 android {
     signingConfigs {
         releaseConfig {
-            keyAlias 'MyAndroidKey'
-            keyPassword 'myKeyPassword'
-            storeFile file('/home/cedric/Desktop/upload-keystore.jks')
-            storePassword 'myStorePassword'
+            keyAlias 'upload'
+            keyPassword '6594wx64'
+            storeFile file('../upload-keystore.jks')
+            storePassword '6594wx64'
         }
     }
     compileSdkVersion 26
@@ -24,18 +24,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.releaseConfig
             buildConfigField "String", "TYPE", '"release"'
+            zipAlignEnabled true
         }
         debug {
             minifyEnabled false
             buildConfigField "String", "TYPE", '"debug"'
-        }
-        demo {
-            debuggable false
-            jniDebuggable false
-            signingConfig signingConfigs.releaseConfig
-            minifyEnabled true
-            zipAlignEnabled true
-            buildConfigField "String", "TYPE", '"demo"'
         }
     }
     productFlavors {

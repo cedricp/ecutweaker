@@ -214,12 +214,9 @@ public class MainActivity extends AppCompatActivity {
             setLicenseSatus();
         } else {
             m_logView.append("You are using demo version, write functions deactivated.\n");
-            m_logView.append("License request code : " + mLicenseLock.getPublicCode() + "\n");
+            m_logView.append("License request code to activate : " + mLicenseLock.getPublicCode() + "\n");
             ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.RED);
         }
-
-        // Only for debug purpose
-        //startScreen("/sdcard/ecu.zip", "UCH_84P2_85_V3.json");
     }
 
     private void onLicenseCheck(){
