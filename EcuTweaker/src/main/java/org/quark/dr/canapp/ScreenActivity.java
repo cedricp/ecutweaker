@@ -40,6 +40,7 @@ import org.quark.dr.ecu.IsoTPDecode;
 import org.quark.dr.ecu.Layout;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -296,9 +297,7 @@ public class ScreenActivity extends AppCompatActivity {
                 (int) convertToPixel(m_currentScreenData.m_height) + 80));
         m_layoutView.setBackgroundColor(m_currentScreenData.m_color.get());
 
-        Set<String> labels = m_currentScreenData.getLabels();
-        for (String label : labels) {
-            Layout.LabelData labelData = m_currentScreenData.getLabelData(label);
+        for (Layout.LabelData labelData: m_currentScreenData.getLabels()) {
             if (labelData.text.toUpperCase().startsWith("::PIC:")){
                 String gifName = labelData.text;
 
@@ -338,6 +337,7 @@ public class ScreenActivity extends AppCompatActivity {
                 textView.setText(labelData.text);
                 textView.setBackgroundColor(labelData.color.get());
                 textView.setTextColor(labelData.font.color.get());
+                //textView.setTextColor(Color.BLACK);
                 textView.setTextSize(convertFontToPixel(labelData.font.size));
                 if (labelData.alignment == 2) {
                     textView.setGravity(Gravity.CENTER_HORIZONTAL);
@@ -348,9 +348,7 @@ public class ScreenActivity extends AppCompatActivity {
             }
         }
 
-        Set<String> displays = m_currentScreenData.getDisplays();
-        for (String display : displays){
-            Layout.DisplayData displaydata = m_currentScreenData.getDisplayData(display);
+        for (Layout.DisplayData displaydata : m_currentScreenData.getDisplays()){
             if (displaydata.width > 0) {
                 TextView textView = new TextView(this);
                 textView.setX(convertToPixel(displaydata.rect.x));
@@ -383,9 +381,7 @@ public class ScreenActivity extends AppCompatActivity {
             m_displaysRequestSet.add(displaydata.request);
         }
 
-        Set<String> inputs = m_currentScreenData.getInputs();
-        for (String input : inputs){
-            Layout.InputData inputdata = m_currentScreenData.getInputData(input);
+        for (Layout.InputData inputdata: m_currentScreenData.getInputs()){
             if (inputdata.width > 0) {
                 TextView textView = new TextView(this);
                 textView.setX(convertToPixel(inputdata.rect.x));
@@ -418,6 +414,7 @@ public class ScreenActivity extends AppCompatActivity {
                 for (String item : m_ecu.getData(inputdata.text).items.keySet()){
                     items[i++] = item;
                 }
+                Arrays.sort(items);
                 CustomAdapter dataAdapter = new CustomAdapter(this,
                         android.R.layout.simple_spinner_item, items);
 
@@ -443,9 +440,7 @@ public class ScreenActivity extends AppCompatActivity {
             tmp.add(inputdata);
         }
 
-        Set<String> buttons = m_currentScreenData.getButtons();
-        for (String button : buttons) {
-            Layout.ButtonData buttondata = m_currentScreenData.getButtonData(button);
+        for (Layout.ButtonData buttondata: m_currentScreenData.getButtons()) {
             if (buttondata.text.toUpperCase().startsWith("::BTN:")){
                 String gifName = buttondata.text;
 

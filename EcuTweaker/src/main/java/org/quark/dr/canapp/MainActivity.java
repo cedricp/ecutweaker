@@ -18,7 +18,9 @@ import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
 import android.text.InputType;
+import android.text.Spanned;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Gravity;
@@ -216,6 +218,7 @@ public class MainActivity extends AppCompatActivity {
             m_logView.append("You are using demo version, write functions deactivated.\n");
             m_logView.append("License request code to activate : " + mLicenseLock.getPublicCode() + "\n");
             ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.RED);
+            displayHelp();
         }
     }
 
@@ -526,18 +529,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void updateEcuTypeListView(String ecuFile, String project){
-        if (ecuFile.isEmpty()){
+        if (ecuFile == null || ecuFile.isEmpty()){
             m_statusView.setText("DATABASE NOT FOUND");
             return;
         }
-        m_statusView.setText("DATABASE LOADED");
+
+        m_ecuDatabase.checkMissings();
+
         SharedPreferences defaultPrefs = getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
         SharedPreferences.Editor edit = defaultPrefs.edit();
         edit.putString(PREF_ECUZIPFILE, ecuFile);
         edit.commit();
 
         m_ecuFilePath = ecuFile;
-
         ArrayAdapter<String> adapter;
         ArrayList<String> adapterList = m_ecuDatabase.getEcuByFunctionsAndType(project);
         Collections.sort(adapterList);
@@ -548,12 +552,9 @@ public class MainActivity extends AppCompatActivity {
                 adapterList);
 
         m_ecuListView.setAdapter(adapter);
-
-        Log.i(TAG, "Database sucessfully loaded");
     }
 
     public class LoadDbTask extends AsyncTask<String, Void, String> {
-
         private final EcuDatabase db;
 
         public LoadDbTask(EcuDatabase data) {
@@ -570,7 +571,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, "Database exception : " + e.getMessage());
                 return "";
             }
-
             return ecuFile;
         }
 
@@ -582,18 +582,48 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void displayHelp(){
+        Spanned message = Html.fromHtml("Welcome to <b>ECU TWEAKER</b>,<br> You are using this application in demonstration mode." +
+                "You can use it to read all ECU parameters, but you are not allowed to " +
+                "use the buttons or the <i>CLEAR DTC</i> functionality.<br>" +
+                "You can unlock it by sending me the request code, I'll send you back an activation code.<br>" +
+                "<b>Beware, with great power comes great responsibility, you're using it at your own " +
+                "risks. The developer denies all responsibilities, <u>you are the sole responsible of " +
+                "what you do with this Software.</u></b>");
+        AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+        alertDialog.setTitle("Information");
+        alertDialog.setMessage(message);
+        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+        alertDialog.show();
+    }
+
     private void chooseProject(){
         if (!m_ecuDatabase.isLoaded())
             return;
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Choose a project");
 
-        final String[] projects = m_ecuDatabase.getProjects();
+        /*
+         * Clean view
+         */
+        ArrayList<String> ecuNames = new ArrayList<>();
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_list_item_1,
+                ecuNames);
+        m_specificEcuListView.setAdapter(adapter);
+
+        final String[] projects = m_ecuDatabase.getModels();
+
         Arrays.sort(projects);
         builder.setItems(projects, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                m_currentProject = projects[which];
+                m_currentProject = m_ecuDatabase.getProjectFromModel(projects[which]);
                 SharedPreferences defaultPrefs = getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
                 SharedPreferences.Editor edit = defaultPrefs.edit();
                 edit.putString(PREF_PROJECT, m_currentProject);

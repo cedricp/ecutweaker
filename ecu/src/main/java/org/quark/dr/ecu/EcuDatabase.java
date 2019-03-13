@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 public class EcuDatabase {
@@ -24,6 +25,7 @@ public class EcuDatabase {
     private ZipFastFileSystem m_zipFileSystem;
 
     private HashMap<Integer, String> RXADDRMAP, TXADDRMAP;
+    private HashMap<String, String> MODELSMAP;
 
     private static final String RXAT =
             "01: 760, 02: 724, 04: 762, 06: 791, 07: 771, 08: 778, 09: 7EB, 0D: 775," +
@@ -55,6 +57,26 @@ public class EcuDatabase {
             "DF: 18DADFF1, E0: 18DAE0F1, E1: 18DAE1F1, E2: 18DAE2F1, E3: 18DAE3F1, E4: 74F," +
             "E6: 622, E7: 7E4, E8: 644, E9: 742, EA: 79A, EB: 638, EC: 637, ED: 714," +
             "F7: 716, F8: 717, FA: 75B, FD: 74F, FE: 74C, FF: 7D0";
+    
+    private static final String[] PROJECT_MODEL_DICT =
+            {"XBA:KWID CN", "XBB:KWID BR", "X06:TWINGO", "X44:TWINGO II",
+            "X07:TWINGO III", "X07PH2:TWINGO III Ph 2", "X77:MODUS", "X77PH2:MODUS Ph2", "X35:SYMBOL/THALIA", "XJC:SYMBOL/THALIA II",
+            "X65:CLIO II",
+            "X85:CLIO III", "X98:CLIO IV", "X98PH2:CLIO IV Ph 2", "XJA:CLIO V", "X87:CAPTUR", "X87PH2:CAPTUR Ph2", "XJB:CAPTUR II",
+            "XJE:CAPTUR II CN", "X38:FLUENCE", "XFF:FLUENCE II", "X64:MEGANE/SCENIC I",
+            "X84:MEGANE/SCENIC II", "X84PH2:MEGANE/SCENIC II Phase 2", "X95:MEGANE/SCENIC III", "X95PH2:MEGANE/SCENIC III Ph2",
+            "XFB:MEGANE IV", "XFBPH2:MEGANE IV Ph2", "XFF:MEGANE IV SEDAN",
+            "XFA:SCENIC IV","XFAPH2:SCENIC IV Ph 2",  "X56:LAGUNA", "X74:LAGUNA II", "X74PH2:LAGUNA II Phase 2", "X91:LAGUNA III","X91PH2:LAGUNA III Ph2", "X91PH3:LAGUNA III Ph3",
+            "X47:LAGUNA III (tricorps)", "X66:ESPACE III", "X81:ESPACE IV", "X81PH2:ESPACE IV Ph2", "X81PH3:ESPACE IV Ph3", "X81PH4:ESPACE IV Ph4", "XFC:ESPACE V", "XFCPH2:ESPACE V Ph2",
+            "X73:VELSATIS", "X73PH2:VELSATIS Ph2", "X43:LATITUDE", "XFD:TALISMAN", "XFDPH2:TALISMAN Ph 2", "H45:KOLEOS", "XZG:KOLEOS II",
+            "XZGPH2:KOLEOS II Ph 2", "XZJ:KOLEOS II", "XZJPH2:KOLEOS II Ph2", "HFE:KADJAR", "HFEPH2:KADJAR Ph 2", "XZH:KADJAR CN", "XZHPH2:KADJAR Ph2 CN", "X33:WIND", "X09:TWIZY",
+            "X10:ZOE", "X10PH2:ZOE Ph2", "X76:KANGOO I", "X61:KANGOO II", "X61PH2:KANGOO II Ph2", "XFK:KANGOO III",
+            "X24:MASCOTT", "X83:TRAFFIC II", "X83PH2:TRAFFIC II Ph 2", "X82:TRAFFIC III", "X82PH2:TRAFFIC III Ph2",
+            "X70:MASTER II","X70PH2:MASTER II Ph2","X70PH3:MASTER II Ph3",   "X62:MASTER III", "X62PH2:MASTER III Ph 2", "X90:LOGAN/SANDERO",
+            "X52:LOGAN/SANDERO II", "X79:DUSTER", "X79PH2:DUSTER Ph2", "XJD:DUSTER II", "X67:DOKKER",
+            "X92:LODGY", "XGA:BM LADA", "AS1:ALPINE", "X02:MICRA (NISSAN)", "X02E:MICRA (NISSAN)", "X21:NOTE (NISSAN)",
+            "X21B:NOTE(B) (NISSAN)"
+            };
 
     public class EcuIdent{
         public String supplier_code, soft_version, version, diagnostic_version;
@@ -190,15 +212,55 @@ public class EcuDatabase {
     }
 
     public EcuDatabase() {
-        buildMaps();
+        m_loaded = false;
         m_ecuInfo = new HashMap<>();
         m_ecuAddressing = new HashMap<>();
-        m_loaded = false;
+        MODELSMAP = new HashMap<>();
+        RXADDRMAP = new HashMap<>();
+        TXADDRMAP = new HashMap<>();
+        buildMaps();
         loadAddressing();
+        loadModels();
     }
 
     public String[] getProjects(){
         return m_projectSet.toArray(new String[m_projectSet.size()]);
+    }
+
+    public String[] getModels() {
+        return MODELSMAP.values().toArray(new String[MODELSMAP.size()]);
+    }
+
+    public String getProjectFromModel(String model){
+        Iterator it = MODELSMAP.entrySet().iterator();
+        while(it.hasNext()){
+            Map.Entry keyval = (Map.Entry)it.next();
+            if (((String)keyval.getValue()).toUpperCase().equals(model.toUpperCase())){
+                return (String)keyval.getKey();
+            }
+        }
+        return "";
+    }
+
+    private void loadModels(){
+        for (int i = 0; i < PROJECT_MODEL_DICT.length; ++i){
+            String[] split = PROJECT_MODEL_DICT[i].split(":");
+            if (split.length != 2)
+                continue;
+            MODELSMAP.put(split[0], split[1]);
+        }
+        MODELSMAP.put("", "ALL");
+    }
+    
+    public void checkMissings(){
+        Iterator<String> its = m_projectSet.iterator();
+        while(its.hasNext()){
+            Set<String> modelKeySet = MODELSMAP.keySet();
+            String project = its.next();
+            if (!MODELSMAP.containsKey(project)){
+                System.out.println("?? Missing " + project);
+            }
+        }
     }
 
     private void loadAddressing() {
@@ -366,9 +428,6 @@ public class EcuDatabase {
     }
 
     private void buildMaps(){
-        RXADDRMAP = new HashMap<>();
-        TXADDRMAP = new HashMap<>();
-
         String[] RXS = RXAT.replace(" ", "").split(",");
         String[] TXS = TXAT.replace(" ", "").split(",");
 

@@ -33,8 +33,7 @@ public class CustomAdapter extends ArrayAdapter<String> {
 
         TextView tv = convertView.findViewById(android.R.id.text1);
         tv.setText(items[position]);
-        //tv.setTextColor(color);
-        tv.setTextSize(textSize);
+        //tv.setTextSize(textSize);
         return convertView;
     }
 
@@ -56,12 +55,8 @@ public class CustomAdapter extends ArrayAdapter<String> {
     public void setSpinnerTextSize(int size){
         textSize= size;
     }
-
     public void setSpinnerTextColor(int color){
         this.color = color;
     }
 
-    public int getSpinnerTextSize(){
-        return textSize;
-    }
 }
