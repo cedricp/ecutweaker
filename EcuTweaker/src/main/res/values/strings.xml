@@ -1,8 +1,8 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="activity_screen">CanAppScreen</string>
-    <string name="action_settings">Settings</string>
-    <string name="application_name">Ecu Tweaker</string>
-    <string name="font">ds_digii</string>
+    <string name="activity_screen" translatable="false">CanAppScreen</string>
+    <string name="action_settings" translatable="false">Settings</string>
+    <string name="application_name" translatable="false">Ecu Tweaker</string>
+    <string name="title_activity_main" translatable="false">Ecu Tweaker</string>
 
     <!-- BluetoothChat -->
     <string name="send">Send</string>
@@ -21,17 +21,59 @@
     <string name="title_other_devices">Other Available Devices</string>
     <string name="button_scan">Scan for devices</string>
 
-    <!-- Options Menu -->
-    <string name="bt_connect">Connect a BT device</string>
-    <string name="init_elm_kwp_str">Init KWP</string>
-    <string name="init_elm_can_str">Init CAN</string>
-    <string name="read_errors_str">Read Errors</string>
-    <string name="clear_errors_str">Clear Errors</string>
-    <string name="data_monitor_str">Data Monitor</string>
-    <string name="discoverable">Make discoverable</string>
-    <string name="title_activity_monitor_errors">MonitorErrors</string>
-    <string name="title_activity_moniror_errors">Error Monitor</string>
-    <string name="title_activity_monitor_data">MonitorData</string>
-    <string name="data_test_str">Test script</string>
-    <string name="title_activity_main">Ecu Tweaker</string>
+    <!-- Application strings -->
+    <string name="INDEXING_DB">INDEXING DATABASE...</string>
+    <string name="DB_NOT_FOUND">DATABASE NOT FOUND</string>
+    <string name="WRONG_CODE">Wrong code, sorry !</string>
+    <string name="APP_UNLOCKED">Application unlocked</string>
+    <string name="APP_ENTER_CODE">Enter activation code</string>
+    <string name="USER_REQUEST_CODE">Your request code</string>
+    <string name="OK">OK</string>
+    <string name="CANCEL">Cancel</string>
+    <string name="USER_USES_DEMO_MODE">You are using demo version, write functions deactivated.</string>
+    <string name="BT_MANAGER_MESSAGE">Bluetooth manager message</string>
+    <string name="ECU_PART_MATCH">ECU partially match file (use with caution)</string>
+    <string name="ECU_MATCH">ECU perfectly match file</string>
+    <string name="ECU_FOUND">Found ECU</string>
+    <string name="DIAG_VERSION">diagnostic version</string>
+    <string name="VERSION">version</string>
+    <string name="SOFT_VERSION">soft version</string>
+    <string name="SUPPLIER_VERSION">supplier version</string>
+    <string name="CHOOSE_PROJECT">Choose a project</string>
+    <string name="INFORMATION">Information</string>
+    <string name="DEMO_MESSAGE"><![CDATA[Welcome to <b>ECU TWEAKER</b>,<br> You are using this application in demonstration mode.
+You can use it to read all ECU parameters, but you are not allowed to
+use the buttons or the <i>CLEAR DTC</i> functionality.<br>
+You can unlock it by sending me the request code, I\'ll send you back an activation code.<br>
+<b>Beware, with great power comes great responsibility, you\'re using it at your own
+risks. The developer denies all responsibilities, <u>you are the sole responsible of
+what you do with this Software.</u></b>]]></string>
+    <string name="BAD_RESPONSE">Bad response</string>
+    <string name="TO_REQUEST">to request</string>
+    <string name="INVALID_VALUE">Invalid value, check inputs</string>
+    <string name="FRAME_COMPUTE_FAILED">Failed to compute frame</string>
+    <string name="COMPUTED_FRAME">Computed frame</string>
+    <string name="CATEGORY_CHOOSE">Choose a category</string>
+    <string name="SCREEN_CHOOSE">Choose a screen</string>
+    <string name="FRAME_NOT_SENT">Frame not sent (Bluetooth not connected)</string>
+    <string name="NO_ELM_RESPONSE">No ELM Response</string>
+    <string name="DTC_CLEAR_OK">Clear DTC succeeded</string>
+    <string name="NEGATIVE_RESPONSE">Negative response</string>
+    <string name="ELM_RESPONSE">ELM response</string>
+    <string name="BAD_ELM_RESPONSE">BAD ELM response</string>
+    <string name="CLEAR_ALL_DTC">Clear all DTC ?</string>
+    <string name="YES">Yes</string>
+    <string name="NO">No</string>
+    <string name="NO_DTC_STORED">ECU has no DTC stored</string>
+    <string name="NEW_DEVICE">New device found</string>
+    <string name="CHOOSE_BT_DEVICE">SELECT BT DEVICE</string>
+    <string name="AUTO_IDENTIFY">AUTO IDENTIFY</string>
+    <string name="AUTO_IDENT_RESULT">AutoIdent result</string>
+    <string name="NO_CHAT_SESSION">Trying to send command without Bluetooth chat session</string>
+    <string name="LOGS">View LOGS</string>
+    <string name="COPY_TO_CLIPBOARD">Copy to clipboard</string>
+    <string name="CLEAR_LOG">Clear logs</string>
+    <string name="LOGFILE_DELETED">Log file successfully deleted</string>
+    <string name="LOGFILE_DELETE_FAILED">Failed to delete log file</string>
+    <string name="LONGPRESS_TO_DELETE">Long press to clear</string>
 </resources>

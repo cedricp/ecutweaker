@@ -1,9 +1,15 @@
 package org.quark.dr.canapp;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -36,6 +42,7 @@ public class ElmThread {
     private ConnectedThread mConnectedThread;
     private int mState;
     private int mTxa, mRxa;
+    private OutputStreamWriter mLogFile;
     private HashMap<String, String> ECUERRCODEMAP;
 
     // Constants that indicate the current connection state
@@ -105,11 +112,29 @@ public class ElmThread {
      * @param handler  A Handler to send messages back to the UI Activity
      */
 
-    public ElmThread(Handler handler) {
+    public ElmThread(Handler handler, String logDir) {
         mState = STATE_NONE;
         mHandler = handler;
         mTxa = mRxa = -1;
         buildMaps();
+        mLogFile = null;
+        File file = new File(logDir + "/log.txt");
+        if (!file.exists()){
+            try {
+                file.createNewFile();
+            } catch (IOException e){
+                e.printStackTrace();
+            }
+        }
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(file, true);
+            mLogFile = new OutputStreamWriter(fileOutputStream);
+            mLogFile.append(getTimeStamp() + " - New session\n");
+        } catch (FileNotFoundException e){
+            e.printStackTrace();
+        } catch (IOException ioe){
+            ioe.printStackTrace();
+        }
     }
 
     public void buildMaps(){
@@ -210,6 +235,14 @@ public class ElmThread {
         mConnectedThread = null;
 
         setState(STATE_NONE);
+
+        if (mLogFile != null){
+            try {
+                mLogFile.close();
+            } catch (IOException e){
+                e.printStackTrace();
+            }
+        }
     }
 
     /**
@@ -589,6 +622,15 @@ public class ElmThread {
                 IsoTPDecode isotpdec = new IsoTPDecode(responses);
                 result = isotpdec.decodeCan();
             }
+
+            try {
+                if (mLogFile != null) {
+                    mLogFile.append("SENT: " + getTimeStamp() + message + "\n");
+                    mLogFile.append("RECV: " + getTimeStamp() + result + "\n");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             result = message + ";" + result;
             int result_length = result.length();
             byte[] tmpbuf = new byte[result_length];
@@ -596,5 +638,9 @@ public class ElmThread {
             System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);
             mHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, -1, tmpbuf).sendToTarget();
         }
+    }
+
+    private String getTimeStamp(){
+        return new String("[" + new SimpleDateFormat("dd-MM-yyyy-hh-mm-ss").format(new Date()) + "] ");
     }
 }

@@ -35,6 +35,20 @@
             android:layout_weight="0"
             android:orientation="horizontal">
 
+            <Button
+                android:id="@+id/viewLogButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="0"
+                android:text="@string/LOGS" />
+
+            <Button
+                android:id="@+id/clearLogButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="0"
+                android:text="@string/CLEAR_LOG" />
+
             <ImageButton
                 android:id="@+id/licenseButton"
                 android:layout_width="wrap_content"
@@ -47,7 +61,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:text="Choose BlueTooth device..."
+                android:text="@string/CHOOSE_BT_DEVICE"
                 android:textSize="14sp" />
 
             <ImageButton
@@ -105,14 +119,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="40dp"
                 android:layout_weight="1"
-                android:text="AUTO IDENTIFY OLD" />
-
-            <Button
-                android:id="@+id/buttonScanNew"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:layout_weight="1"
-                android:text="AUTO IDENTIFY NEW" />
+                android:text="@string/AUTO_IDENTIFY" />
 
         </LinearLayout>
 
@@ -122,7 +129,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="0"
             android:gravity="center_vertical|center_horizontal"
-            android:text="Indentification result" />
+            android:text="@string/AUTO_IDENT_RESULT" />
 
         <LinearLayout
             android:layout_width="match_parent"

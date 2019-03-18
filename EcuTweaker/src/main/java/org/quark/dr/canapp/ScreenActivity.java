@@ -231,7 +231,7 @@ public class ScreenActivity extends AppCompatActivity {
         }
 
         mHandler = new messageHandler(this);
-        mChatService = new ElmThread(mHandler);
+        mChatService = new ElmThread(mHandler, getApplicationContext().getFilesDir().getAbsolutePath());
 
         connectDevice();
 
@@ -545,13 +545,7 @@ public class ScreenActivity extends AppCompatActivity {
 
     private void updateScreen(String req, String response){
         if (req.isEmpty() && response.isEmpty()) {
-            // Test data
-            //response = "61112110010104001400000000DCE9";
-            //req = "2111";
-//            response = "610A163232025800B43C3C1E3C0A0A0A0A012C5C6167B5BBC10A5C";
-//            req = "210A";
-//            response = "630105060708091011121314";
-//            req = "23010000ED06";
+            return;
         }
 
         if (!isChatConnected()){
@@ -567,7 +561,9 @@ public class ScreenActivity extends AppCompatActivity {
 
         // Check response is ok
         if (requestHeader + 0x40 != responseHeader) {
-            m_logView.append("Bad response (" + responseHeader + ") to request : " + requestHeader);
+            m_logView.append(getResources().getString(R.string.BAD_RESPONSE)
+                    + " (" + responseHeader + ") " + getResources().getString(R.string.TO_REQUEST) +
+                    " : " + requestHeader);
             return;
         }
 
@@ -655,12 +651,16 @@ public class ScreenActivity extends AppCompatActivity {
                         if (!ecuData.bytesascii) {
                             if (ecuData.scaled) {
                                 if (!currentText.matches("[-+]?[0-9]*\\.?[0-9]+")) {
-                                    Toast.makeText(getApplicationContext(), "Invalid value, check inputs", Toast.LENGTH_LONG).show();
+                                    Toast.makeText(getApplicationContext(),
+                                            getResources().getString(R.string.INVALID_VALUE),
+                                            Toast.LENGTH_LONG).show();
                                     return;
                                 }
                             } else {
                                 if (!IsoTPDecode.isHexadecimal(currentText)) {
-                                    Toast.makeText(getApplicationContext(), "Invalid value, check inputs", Toast.LENGTH_LONG).show();
+                                    Toast.makeText(getApplicationContext(),
+                                            getResources().getString(R.string.INVALID_VALUE),
+                                            Toast.LENGTH_LONG).show();
                                     return;
                                 }
                             }
@@ -680,11 +680,14 @@ public class ScreenActivity extends AppCompatActivity {
                 builtStream = m_ecu.setRequestValues(sendData.second, inputBuilder);
             } catch (Exception e) {
                 e.printStackTrace();
-                Toast.makeText(getApplicationContext(), "Failed to compute frame", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(),
+                        getResources().getString(R.string.FRAME_COMPUTE_FAILED),
+                        Toast.LENGTH_LONG).show();
                 return;
             }
             if (BuildConfig.DEBUG)
-                Log.d(TAG,"Computed frame : " + Ecu.byteArrayToHex(builtStream));
+                Log.d(TAG,getResources().getString(R.string.COMPUTED_FRAME)
+                        + " : " + Ecu.byteArrayToHex(builtStream));
             commands.add(new Pair<Integer, String>(delay, Ecu.byteArrayToHex(builtStream)));
         }
 
@@ -721,9 +724,6 @@ public class ScreenActivity extends AppCompatActivity {
             case REQUEST_CONNECT_DEVICE:
                 // When DeviceListActivity returns with a device to connect
                 if (resultCode == Activity.RESULT_OK) {
-                    String address = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
-                    if (BuildConfig.DEBUG)
-                        Log.d(TAG, "onActivityResult " + address);
                     connectDevice();
                 }
                 break;
@@ -759,7 +759,7 @@ public class ScreenActivity extends AppCompatActivity {
         SharedPreferences defaultPrefs = this.getSharedPreferences(MainActivity.DEFAULT_PREF_TAG, MODE_PRIVATE);
         SharedPreferences.Editor edit = defaultPrefs.edit();
         edit.putString(PREF_GLOBAL_SCALE, String.valueOf(mGlobalScale));
-        edit.commit();
+        edit.apply();
     }
 
     private void setupChat() {
@@ -783,7 +783,7 @@ public class ScreenActivity extends AppCompatActivity {
 
     private void chooseCategory(){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Choose a category");
+        builder.setTitle(getResources().getString(R.string.CATEGORY_CHOOSE));
 
         final String[] categories =
                 m_currentLayoutData.getCategories().toArray(
@@ -803,7 +803,7 @@ public class ScreenActivity extends AppCompatActivity {
 
     private void chooseScreen(String screenname){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Choose a screen");
+        builder.setTitle(getResources().getString(R.string.SCREEN_CHOOSE));
 
         final String[] screens =
                 m_currentLayoutData.getScreenNames(screenname).toArray(
@@ -868,7 +868,7 @@ public class ScreenActivity extends AppCompatActivity {
     private void sendCmd(String cmd) {
         // Check that we're actually connected before trying anything
         if (!isChatConnected()) {
-            m_logView.append("Not sent (Bluetooth not connected) : " + cmd + "\n");
+            m_logView.append(getResources().getString(R.string.FRAME_NOT_SENT) + " : " + cmd + "\n");
             return;
         }
 
@@ -878,7 +878,7 @@ public class ScreenActivity extends AppCompatActivity {
 
     private void sendDelay(int delay) {
         if (!isChatConnected()) {
-            m_logView.append("Trying to send command without chat session\n");
+            m_logView.append(getResources().getString(R.string.NO_CHAT_SESSION) + "\n");
             return;
         }
 
@@ -908,7 +908,7 @@ public class ScreenActivity extends AppCompatActivity {
     void handleElmResult(String result, int txa){
         String[] results = result.split(";");
         if (results.length < 2 || results[0] == null || results[1] == null){
-            m_logView.append("No ELM Response (" + result + ")\n");
+            m_logView.append(getResources().getString(R.string.NO_ELM_RESPONSE) + " (" + result + ")\n");
             return;
         }
 
@@ -922,7 +922,7 @@ public class ScreenActivity extends AppCompatActivity {
 
         if (requestCode.length() >= 2 && requestCode.substring(0, 2).equals("14")){
             if (replyCode.length() >= 2 && replyCode.substring(0, 2).equals("54")){
-                m_logView.append("Clear DTC succeeded\n");
+                m_logView.append(getResources().getString(R.string.DTC_CLEAR_OK) + "\n");
                 return;
             }
         }
@@ -932,14 +932,24 @@ public class ScreenActivity extends AppCompatActivity {
             String nrcode = resultCode.substring(4, 6);
             String translatedErrorCode = mChatService.getEcuErrorCode(nrcode);
             if (translatedErrorCode != null){
-                m_logView.append("Negative response : " + translatedErrorCode + " (" + resultCode + ")\n");
+                m_logView.append(getResources().getString(R.string.NEGATIVE_RESPONSE) +
+                        " : " + translatedErrorCode + " (" + resultCode + ")\n");
                 return;
             } else {
-                m_logView.append("Negative response (No translation) : "  + resultCode + "\n");
+                m_logView.append(getResources().getString(R.string.NEGATIVE_RESPONSE) +
+                        " : "  + resultCode + "\n");
                 return;
             }
         } else {
-            m_logView.append("ELM Response : " + replyCode + " to " + requestCode + "\n");
+            m_logView.append(getResources().getString(R.string.ELM_RESPONSE) +
+                    " : " + replyCode + " " + getResources().getString(R.string.TO_REQUEST) +
+                    " " + requestCode + "\n");
+        }
+
+        if (replyCode.length() >= 5 && replyCode.startsWith("ERROR")){
+            m_logView.append(getResources().getString(R.string.BAD_RESPONSE) + " : "+ replyCode +
+                    " " +getResources().getString(R.string.TO_REQUEST)+ " '" + requestCode + "'\n");
+            return;
         }
 
         if (requestCode.equals(m_currentDtcRequestBytes)){
@@ -998,8 +1008,9 @@ public class ScreenActivity extends AppCompatActivity {
         };
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("Clear all DTC ?").setPositiveButton("Yes", dialogClickListener)
-                .setNegativeButton("No", dialogClickListener).show();
+        builder.setMessage(getResources().getString(R.string.CLEAR_ALL_DTC))
+                .setPositiveButton(getResources().getString(R.string.YES), dialogClickListener)
+                .setNegativeButton(getResources().getString(R.string.NO), dialogClickListener).show();
 
     }
 
@@ -1007,7 +1018,8 @@ public class ScreenActivity extends AppCompatActivity {
         List<List<String>> decodedDtcs = m_ecu.decodeDTC(m_currentDtcRequestName, response);
 
         if (decodedDtcs.size() == 0){
-            Toast.makeText(getApplicationContext(), "ECU has no DTC stored", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), getResources().getString(R.string.NO_DTC_STORED),
+                    Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -1061,10 +1073,12 @@ public class ScreenActivity extends AppCompatActivity {
                     break;
                 case MESSAGE_DEVICE_NAME:
                     activity.mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
-                    activity.m_logView.append("New device : " + activity.mConnectedDeviceName + "\n");
+                    activity.m_logView.append(activity.getResources().getString(R.string.NEW_DEVICE) +
+                            " : " + activity.mConnectedDeviceName + "\n");
                     break;
                 case MESSAGE_TOAST:
-                    Toast.makeText(activity.getApplicationContext(), msg.getData().getString(TOAST), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(activity.getApplicationContext(), msg.getData().getString(TOAST),
+                            Toast.LENGTH_SHORT).show();
                     break;
                 case MESSAGE_QUEUE_STATE:
                     int queue_len = msg.arg1;

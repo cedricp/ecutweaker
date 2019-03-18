@@ -5,6 +5,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -24,6 +26,7 @@ import android.text.Spanned;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -33,9 +36,14 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import org.quark.dr.ecu.Ecu;
 import org.quark.dr.ecu.EcuDatabase;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -70,10 +78,10 @@ public class MainActivity extends AppCompatActivity {
     public static final String PREF_ECUZIPFILE = "ecuZipFile";
     public static final String PREF_PROJECT = "project";
 
-
+    public static String m_lastLog;
     private EcuDatabase m_ecuDatabase;
     private TextView m_statusView;
-    private Button m_btButton, m_scanButton, m_scanNewButton;
+    private Button m_btButton, m_scanButton;
     private ImageButton m_chooseProjectButton;
     private ImageView m_btIconImage;
     private ListView m_ecuListView, m_specificEcuListView;
@@ -95,29 +103,48 @@ public class MainActivity extends AppCompatActivity {
         initialize();
     }
 
+    private String readFileAsString(String filePath) {
+        String result = "No log file found";
+        File file = new File(filePath);
+        if ( file.exists() ) {
+            result = "";
+            FileInputStream fis = null;
+            try {
+                fis = new FileInputStream(file);
+                char current;
+                while (fis.available() > 0) {
+                    current = (char) fis.read();
+                    result += String.valueOf(current);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (fis != null)
+                    try {
+                        fis.close();
+                    } catch (IOException ignored) {
+                    }
+            }
+        }
+        return result;
+    }
+
     private void initialize(){
         long id = new BigInteger(Settings.Secure.getString(getContentResolver(),Settings.Secure.ANDROID_ID), 16).longValue();
         mLicenseLock = new LicenseLock(id);
         SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
 
-//        String publicCode = mLicenseLock.getPublicCode();
-//        System.out.println("?? PC " + publicCode);
-//        String generatedCode = mLicenseLock.generatePrivateCode();
-//        System.out.println("?? GC " + generatedCode);
-//        boolean ok = mLicenseLock.checkUnlock(generatedCode);
-//        System.out.println("?? OK " + ok);
         m_currentProject = "";
         m_currentEcuAddressId = -1;
 
         mHandler = new MainActivity.messageHandler(this);
-        m_chatService = new ElmThread(mHandler);
+        m_chatService = new ElmThread(mHandler, getApplicationContext().getFilesDir().getAbsolutePath());
 
         m_statusView = findViewById(R.id.statusView);
         m_btButton = findViewById(R.id.btButton);
         m_ecuListView = findViewById(R.id.ecuListView);
         m_specificEcuListView = findViewById(R.id.deviceView);
         m_scanButton = findViewById(R.id.buttonScan);
-        m_scanNewButton = findViewById(R.id.buttonScanNew);
         m_chooseProjectButton = findViewById(R.id.projectButton);
         m_btIconImage = findViewById(R.id.btIcon);
         m_viewDiagVersion = findViewById(R.id.textViewDiagversion);
@@ -130,16 +157,72 @@ public class MainActivity extends AppCompatActivity {
         m_logView.setMovementMethod(new ScrollingMovementMethod());
         m_logView.setBackgroundResource(R.drawable.edittextroundgreen);
 
+        Button viewLogButton = findViewById(R.id.viewLogButton);
+        viewLogButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                m_lastLog = readFileAsString(
+                        MainActivity.this.getApplicationContext().getFilesDir().
+                                getAbsolutePath() + "/log.txt");
+                System.out.println("?? "  + MainActivity.this.getApplicationContext().getFilesDir().
+                        getAbsolutePath());
+                LayoutInflater inflater= LayoutInflater.from(MainActivity.this);
+                View view = inflater.inflate(R.layout.custom_scroll, null);
+
+                TextView textview = view.findViewById(R.id.textmsg);
+                textview.setEnabled(true);
+                textview.setText(m_lastLog);
+                AlertDialog.Builder alertDialog = new AlertDialog.Builder(MainActivity.this);
+                alertDialog.setTitle("LOGS");
+                alertDialog.setView(view);
+                AlertDialog alert = alertDialog.create();
+                alert.setButton(AlertDialog.BUTTON_NEUTRAL,getResources().
+                        getString(R.string.COPY_TO_CLIPBOARD),
+                        new DialogInterface.OnClickListener(){
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        ClipboardManager  clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                        ClipData clip = ClipData.newPlainText("EcuTeakerLog", m_lastLog);
+                        clipboard.setPrimaryClip(clip);
+                    }
+                });
+                alert.show();
+            }
+        });
+
+        Button clearLogButton = findViewById(R.id.clearLogButton);
+
+        clearLogButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(getApplicationContext(), getResources().getString(R.string.LONGPRESS_TO_DELETE),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        clearLogButton.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                String logFilename = MainActivity.this.getApplicationContext().getFilesDir().
+                        getAbsolutePath() + "/log.txt";
+                File logFile = new File(logFilename);
+                if (logFile.exists()){
+                    if (logFile.delete()){
+                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.LOGFILE_DELETED),
+                                Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.LOGFILE_DELETE_FAILED),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                }
+                return true;
+            }
+        });
+
         m_scanButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 scanBus();
-            }
-        });
-
-        m_scanNewButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
                 scanBusNew();
             }
         });
@@ -208,15 +291,16 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
         }
 
-        m_logView.append("EcuTweaker " + BuildConfig.BUILD_TYPE + " version\n");
+        m_logView.append("EcuTweaker " + BuildConfig.BUILD_TYPE + " "
+                + getResources().getString(R.string.VERSION) + "\n");
 
         String licenseCode = defaultPrefs.getString(PREF_LICENSE_CODE, "");
         if (!licenseCode.isEmpty()){
             mLicenseLock.checkUnlock(licenseCode);
             setLicenseSatus();
         } else {
-            m_logView.append("You are using demo version, write functions deactivated.\n");
-            m_logView.append("License request code to activate : " + mLicenseLock.getPublicCode() + "\n");
+            m_logView.append("\n");
+            m_logView.append(getResources().getString(R.string.USER_REQUEST_CODE) +" : " + mLicenseLock.getPublicCode() + "\n");
             ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.RED);
             displayHelp();
         }
@@ -224,20 +308,20 @@ public class MainActivity extends AppCompatActivity {
 
     private void onLicenseCheck(){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Enter activation code");
-        builder.setMessage("Request code : " + mLicenseLock.getPublicCode());
+        builder.setTitle(getResources().getString(R.string.APP_ENTER_CODE));
+        builder.setMessage(getResources().getString(R.string.USER_REQUEST_CODE) + " : " + mLicenseLock.getPublicCode());
         final EditText input = new EditText(this);
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         builder.setView(input);
 
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton(getResources().getString(R.string.OK), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 mLicenseLock.checkUnlock(input.getText().toString());
                 setLicenseSatus();
             }
         });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+        builder.setNegativeButton(getResources().getString(R.string.CANCEL), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.cancel();
@@ -272,7 +356,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void setLicenseSatus(){
         if (mLicenseLock.isLicenseOk()){
-            m_logView.append("Application unlocked\n");
+            m_logView.append(getResources().getString(R.string.APP_UNLOCKED) + "\n");
             SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
             SharedPreferences.Editor edit = defaultPrefs.edit();
             edit.putString(PREF_LICENSE_CODE, mLicenseLock.getPrivateCode());
@@ -280,7 +364,7 @@ public class MainActivity extends AppCompatActivity {
             ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.GREEN);
         } else {
             ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.RED);
-            m_logView.append("Wrong code, sorry !\n");
+            m_logView.append(getResources().getString(R.string.WRONG_CODE) + "\n");
         }
     }
 
@@ -524,13 +608,13 @@ public class MainActivity extends AppCompatActivity {
         if (defaultPrefs.contains(PREF_ECUZIPFILE)) {
             ecuFile = defaultPrefs.getString(PREF_ECUZIPFILE, "");
         }
-        m_statusView.setText("INDEXING DATABASE...");
+        m_statusView.setText(getResources().getString(R.string.INDEXING_DB));
         new LoadDbTask(m_ecuDatabase).execute(ecuFile);
     }
 
     void updateEcuTypeListView(String ecuFile, String project){
         if (ecuFile == null || ecuFile.isEmpty()){
-            m_statusView.setText("DATABASE NOT FOUND");
+            m_statusView.setText(getResources().getString(R.string.DB_NOT_FOUND));
             return;
         }
 
@@ -579,21 +663,16 @@ public class MainActivity extends AppCompatActivity {
             SharedPreferences defaultPrefs = getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
             m_currentProject = defaultPrefs.getString(PREF_PROJECT, "");
             updateEcuTypeListView(ecuFile, m_currentProject);
+            m_statusView.setText("ECU-TWEAKER");
         }
     }
 
     private void displayHelp(){
-        Spanned message = Html.fromHtml("Welcome to <b>ECU TWEAKER</b>,<br> You are using this application in demonstration mode." +
-                "You can use it to read all ECU parameters, but you are not allowed to " +
-                "use the buttons or the <i>CLEAR DTC</i> functionality.<br>" +
-                "You can unlock it by sending me the request code, I'll send you back an activation code.<br>" +
-                "<b>Beware, with great power comes great responsibility, you're using it at your own " +
-                "risks. The developer denies all responsibilities, <u>you are the sole responsible of " +
-                "what you do with this Software.</u></b>");
+        Spanned message = Html.fromHtml(getResources().getString(R.string.DEMO_MESSAGE));
         AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-        alertDialog.setTitle("Information");
+        alertDialog.setTitle(getResources().getString(R.string.INFORMATION));
         alertDialog.setMessage(message);
-        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, getResources().getString(R.string.OK),
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.dismiss();
@@ -606,7 +685,7 @@ public class MainActivity extends AppCompatActivity {
         if (!m_ecuDatabase.isLoaded())
             return;
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Choose a project");
+        builder.setTitle(getResources().getString(R.string.CHOOSE_PROJECT));
 
         /*
          * Clean view
@@ -663,9 +742,11 @@ public class MainActivity extends AppCompatActivity {
             m_viewSupplier.setText(supplier);
             m_viewSoft.setText(version);
             m_viewVersion.setText(soft_version);
-            m_logView.append("Found ECU : Supplier " + supplier + " Diagnostic version : "
-                    + diag_version_string + " Version : " + version
-                    + " Soft version : " + soft_version + "\n");
+            m_logView.append(getResources().getString(R.string.ECU_FOUND) + " : " +
+                    getResources().getString(R.string.SUPPLIER_VERSION) + " " + supplier +
+                    getResources().getString(R.string.DIAG_VERSION) + " : "
+                    + diag_version_string + " " +getResources().getString(R.string.VERSION) + " : " + version +
+                    " " + getResources().getString(R.string.SOFT_VERSION) + " : " + soft_version + "\n");
 
             EcuDatabase.EcuInfo ecuInfo = m_ecuDatabase.identifyOldEcu(m_currentEcuAddressId,
                     supplier, soft_version, version, diag_version);
@@ -681,11 +762,11 @@ public class MainActivity extends AppCompatActivity {
                 m_specificEcuListView.setAdapter(adapter);
                 if (!ecuInfo.exact_match) {
                     m_specificEcuListView.setBackgroundColor(Color.RED);
-                    m_logView.append("ECU partially match file (use with caution) "
+                    m_logView.append(getResources().getString(R.string.ECU_PART_MATCH) + " "
                             + ecuInfo.ecuName + "\n");
                 } else {
                     m_specificEcuListView.setBackgroundColor(Color.GREEN);
-                    m_logView.append("ECU perfectly match file " + ecuInfo.ecuName + "\n");
+                    m_logView.append(getResources().getString(R.string.ECU_MATCH) + " " + ecuInfo.ecuName + "\n");
                 }
             }
         }
@@ -785,7 +866,7 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case MESSAGE_TOAST:
                     //Toast.makeText(activity.getApplicationContext(), msg.getData().getString(TOAST), Toast.LENGTH_SHORT).show();
-                    activity.m_logView.append("Bluetooth manager message : " + msg.getData().getString(TOAST) + "\n");
+                    activity.m_logView.append(activity.getResources().getString(R.string.BT_MANAGER_MESSAGE) + " : " + msg.getData().getString(TOAST) + "\n");
                     break;
                 case MESSAGE_QUEUE_STATE:
                     int queue_len = msg.arg1;
@@ -796,7 +877,6 @@ public class MainActivity extends AppCompatActivity {
 
     void setConnected(boolean c){
         m_scanButton.setEnabled(c);
-        m_scanNewButton.setEnabled(c);
         if (c){
             m_btIconImage.setColorFilter(Color.GREEN);
         } else {

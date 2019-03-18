@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="OK">OK</string>
+    <string name="CANCEL">Abandonner</string>
+    <string name="USER_USES_DEMO_MODE">Vous utilisez la version démonstration, les fonctions d\'écritures sont desactivées</string>
+    <string name="BT_MANAGER_MESSAGE">Message Bluetooth</string>
+    <string name="ECU_PART_MATCH">Correspondance ECU partielle</string>
+    <string name="ECU_MATCH">Correspondance ECU totale</string>
+    <string name="ECU_FOUND">ECU Trouvé</string>
+    <string name="DIAG_VERSION">version diagnostic</string>
+    <string name="VERSION">version</string>
+    <string name="SOFT_VERSION">version soft</string>
+    <string name="SUPPLIER_VERSION">version fournisseur</string>
+    <string name="CHOOSE_PROJECT">Choisissez un projet</string>
+    <string name="INFORMATION">Information</string>
+    <string name="BAD_RESPONSE">Mauvaise reponse</string>
+    <string name="TO_REQUEST">à la requête</string>
+    <string name="INVALID_VALUE">Valeurs invalides</string>
+    <string name="FRAME_COMPUTE_FAILED">Echec de calcul de la trame</string>
+    <string name="COMPUTED_FRAME">trame calculée</string>
+    <string name="CATEGORY_CHOOSE">Choix catégorie</string>
+    <string name="SCREEN_CHOOSE">Choix écran</string>
+    <string name="FRAME_NOT_SENT">Trame non envoyée</string>
+    <string name="NO_ELM_RESPONSE">Pas de réponse ELM</string>
+    <string name="DTC_CLEAR_OK">Opération d\'effacement DTC terminée avec succès</string>
+    <string name="NEGATIVE_RESPONSE">Réponse négative</string>
+    <string name="ELM_RESPONSE">Réponse ELM</string>
+    <string name="BAD_ELM_RESPONSE">Mauvaise réponse ELM</string>
+    <string name="CLEAR_ALL_DTC">Effacer tous les DTC</string>
+    <string name="YES">Oui</string>
+    <string name="NO">Non</string>
+    <string name="NO_DTC_STORED">Pas de DTC enregistré</string>
+    <string name="NEW_DEVICE">Nouvel appareil Bluetooth</string>
+    <string name="CHOOSE_BT_DEVICE">CHOISIR APPAREIL BLUETOOTH</string>
+    <string name="AUTO_IDENTIFY">AUTO IDENTIFICATION</string>
+    <string name="AUTO_IDENT_RESULT">Résultat auto identification</string>
+    <string name="USER_REQUEST_CODE">Votre code de requête</string>
+    <string name="APP_ENTER_CODE">Entrez le code d\'activation</string>
+    <string name="APP_UNLOCKED">Application débloquée</string>
+    <string name="WRONG_CODE">Mauvais code</string>
+    <string name="DB_NOT_FOUND">Base de donnée non trouvée</string>
+    <string name="INDEXING_DB">Indexation de la base de donnée</string>
+    <string name="DEMO_MESSAGE"><![CDATA[Bienvenue dans <b>ECU TWEAKER</b>,<br>Vous utilisez cette application en mode démonstration.
+Vous pouvez utiliser toutes les fonctionnalités de lecture, mais les requêtes d\'écriture sont bloquées ansi que la fonction d\'effacement des défauts.<br>
+Vous pouvez débloquer l\'application en m\'envoyant le code de requête, je vous enverrai en retour le code de déblocage.<br>
+<b>Attention, vous utilisez ce logiciel a vos propres risques, tout ce que vous faites avec est de votre propre responsabilité, le developpeur
+se dégage de toute responsablite.</u></b>]]></string>
+    <string name="send">Envoie</string>
+    <string name="not_connected">Non connecté</string>
+    <string name="bt_not_enabled_leaving">Connection Bluetooth non activée</string>
+    <string name="title_connecting">Connection</string>
+    <string name="title_connected_to">Connecté a</string>
+    <string name="title_not_connected">Non connecté</string>
+    <string name="scanning">Sondage</string>
+    <string name="select_device">Chosir appareil</string>
+    <string name="none_paired">Aucun appareil appairé</string>
+    <string name="none_found">Aucun appareil trouvé</string>
+    <string name="title_paired_devices">Appareil appairé</string>
+    <string name="title_other_devices">Autres appareils</string>
+    <string name="button_scan">Chercher appareil</string>
+    <string name="NO_CHAT_SESSION">Tentative d\'envoie de commande sans session Bluetooth</string>
+    <string name="LOGS">Voir LOG</string>
+    <string name="COPY_TO_CLIPBOARD">Copier dans le presse papier</string>
+    <string name="CLEAR_LOG">Effacer LOG</string>
+    <string name="LOGFILE_DELETED">Fichier log supprimé</string>
+    <string name="LOGFILE_DELETE_FAILED">Echec d\'effacement du fichier log</string>
+    <string name="LONGPRESS_TO_DELETE">Faire appuie long pour effacer</string>
+</resources>
