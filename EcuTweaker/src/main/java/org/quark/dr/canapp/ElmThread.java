@@ -44,6 +44,7 @@ public class ElmThread {
     private int mTxa, mRxa;
     private OutputStreamWriter mLogFile;
     private HashMap<String, String> ECUERRCODEMAP;
+    private String mLogDir;
 
     // Constants that indicate the current connection state
     public static final int STATE_NONE = 0;       // we're doing nothing
@@ -118,23 +119,7 @@ public class ElmThread {
         mTxa = mRxa = -1;
         buildMaps();
         mLogFile = null;
-        File file = new File(logDir + "/log.txt");
-        if (!file.exists()){
-            try {
-                file.createNewFile();
-            } catch (IOException e){
-                e.printStackTrace();
-            }
-        }
-        try {
-            FileOutputStream fileOutputStream = new FileOutputStream(file, true);
-            mLogFile = new OutputStreamWriter(fileOutputStream);
-            mLogFile.append(getTimeStamp() + " - New session\n");
-        } catch (FileNotFoundException e){
-            e.printStackTrace();
-        } catch (IOException ioe){
-            ioe.printStackTrace();
-        }
+        mLogDir = logDir;
     }
 
     public void buildMaps(){
@@ -179,6 +164,23 @@ public class ElmThread {
 
         // Cancel any thread currently running a connection
         if (mConnectedThread != null) {mConnectedThread.cancel(); mConnectedThread = null;}
+        File file = new File(mLogDir + "/log.txt");
+        if (!file.exists()){
+            try {
+                file.createNewFile();
+            } catch (IOException e){
+                e.printStackTrace();
+            }
+        }
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(file, true);
+            mLogFile = new OutputStreamWriter(fileOutputStream);
+            mLogFile.append(getTimeStamp() + " - New session\n");
+        } catch (FileNotFoundException e){
+            e.printStackTrace();
+        } catch (IOException ioe){
+            ioe.printStackTrace();
+        }
 
         // Start the thread to connect with the given device
         mConnectThread = new ConnectThread(device);
