@@ -857,6 +857,7 @@ public class ScreenActivity extends AppCompatActivity {
             String txa = m_ecu.getTxId();
             String rxa = m_ecu.getRxId();
             if (m_ecu.getProtocol().equals("CAN")) {
+                mChatService.setEcuName(m_ecu.getName());
                 mChatService.initCan(rxa, txa);
             } else if (m_ecu.getProtocol().equals("KWP2000")){
                 mChatService.initKwp(m_ecu.getFunctionnalAddress(), m_ecu.getFastInit());

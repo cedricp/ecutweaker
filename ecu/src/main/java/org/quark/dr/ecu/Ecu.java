@@ -711,6 +711,10 @@ public class Ecu {
         return dtcList;
     }
 
+    public String getName(){
+        return ecu_name;
+    }
+
     private void init(JSONObject ecudef){
         requests = new HashMap<>();
         devices = new HashMap<>();

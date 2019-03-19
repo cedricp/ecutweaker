@@ -175,11 +175,8 @@ public class ElmThread {
         try {
             FileOutputStream fileOutputStream = new FileOutputStream(file, true);
             mLogFile = new OutputStreamWriter(fileOutputStream);
-            mLogFile.append(getTimeStamp() + " - New session\n");
         } catch (FileNotFoundException e){
             e.printStackTrace();
-        } catch (IOException ioe){
-            ioe.printStackTrace();
         }
 
         // Start the thread to connect with the given device
@@ -271,6 +268,16 @@ public class ElmThread {
         write("AT L0");
         write("AT AL");
         write("AT CAF0");
+    }
+
+    public void setEcuName(String name){
+        if (mLogFile != null){
+            try {
+                mLogFile.append("New session with ECU " + name + "\n");
+            } catch (IOException e){
+                e.printStackTrace();
+            }
+        }
     }
 
     public void initCan(String rxa, String txa){
