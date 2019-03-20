@@ -357,6 +357,7 @@ public class MainActivity extends AppCompatActivity {
     private void setLicenseSatus(){
         if (mLicenseLock.isLicenseOk()){
             m_logView.append(getResources().getString(R.string.APP_UNLOCKED) + "\n");
+            (findViewById(R.id.licenseButton)).setEnabled(false);
             SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
             SharedPreferences.Editor edit = defaultPrefs.edit();
             edit.putString(PREF_LICENSE_CODE, mLicenseLock.getPrivateCode());
@@ -618,7 +619,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        m_ecuDatabase.checkMissings();
+        //m_ecuDatabase.checkMissings();
 
         SharedPreferences defaultPrefs = getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
         SharedPreferences.Editor edit = defaultPrefs.edit();
@@ -640,6 +641,7 @@ public class MainActivity extends AppCompatActivity {
 
     public class LoadDbTask extends AsyncTask<String, Void, String> {
         private final EcuDatabase db;
+        private String error;
 
         public LoadDbTask(EcuDatabase data) {
             this.db = data;
@@ -648,11 +650,12 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected String doInBackground(String... params) {
             String ecuFile = params[0];
+            error = "";
             try {
                 String appDir = getApplicationContext().getFilesDir().getAbsolutePath();
                 ecuFile = m_ecuDatabase.loadDatabase(ecuFile, appDir);
             } catch (EcuDatabase.DatabaseException e){
-                Log.e(TAG, "Database exception : " + e.getMessage());
+                error = e.getMessage();
                 return "";
             }
             return ecuFile;
@@ -664,6 +667,9 @@ public class MainActivity extends AppCompatActivity {
             m_currentProject = defaultPrefs.getString(PREF_PROJECT, "");
             updateEcuTypeListView(ecuFile, m_currentProject);
             m_statusView.setText("ECU-TWEAKER");
+            if (!error.isEmpty()){
+                m_logView.append("Database exception : " + error);
+            }
         }
     }
 

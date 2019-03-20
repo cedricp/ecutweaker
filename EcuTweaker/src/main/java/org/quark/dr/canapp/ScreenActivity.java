@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -18,6 +20,7 @@ import android.util.Pair;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -30,6 +33,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
+import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -80,6 +84,8 @@ public class ScreenActivity extends AppCompatActivity {
     private ElmThread mChatService = null;
     private Handler mHandler = null;
 
+    private int mCanTimeOut;
+
     // Intent request codes
     private static final int    REQUEST_CONNECT_DEVICE = 1;
     private static final int    REQUEST_ENABLE_BT      = 3;
@@ -113,6 +119,7 @@ public class ScreenActivity extends AppCompatActivity {
     }
 
     private void initialize(Bundle savedInstanceState) {
+        mCanTimeOut = 0;
         mDemoMode = true;
         String ecuFile = "";
         String ecuHref = "";
@@ -140,6 +147,48 @@ public class ScreenActivity extends AppCompatActivity {
         m_btCommStatus = findViewById(R.id.bt_comm);
         m_dtcButton    = findViewById(R.id.dtcButton);
         m_dtcClearButton = findViewById(R.id.dtcClearButton);
+        ImageButton settingsButton = findViewById(R.id.settingsButton);
+        settingsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                LayoutInflater inflater= LayoutInflater.from(ScreenActivity.this);
+                View view = inflater.inflate(R.layout.can_settings, null);
+
+                AlertDialog.Builder alertDialog = new AlertDialog.Builder(ScreenActivity.this);
+                alertDialog.setTitle("CAN Settings");
+                alertDialog.setView(view);
+                AlertDialog alert = alertDialog.create();
+                SeekBar canSeekBar = view.findViewById(R.id.canTimeoutSeekBar);
+                canSeekBar.setProgress(mCanTimeOut);
+                final TextView canTimeoutReport = view.findViewById(R.id.canTimeOutReport);
+                canSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                        mCanTimeOut = progress;
+                        canTimeoutReport.setText(String.valueOf(progress));
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+
+                    }
+                });
+                alert.setButton(AlertDialog.BUTTON_POSITIVE,getResources().
+                                getString(R.string.OK),
+                        new DialogInterface.OnClickListener(){
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                applyCanSettings();
+                            }
+                        });
+                alert.show();
+            }
+        });
 
         m_dtcButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -240,6 +289,12 @@ public class ScreenActivity extends AppCompatActivity {
             drawScreen(m_currentScreenName);
         } else {
             chooseCategory();
+        }
+    }
+
+    void applyCanSettings(){
+        if(isChatConnected()){
+            mChatService.setTimeOut(mCanTimeOut);
         }
     }
 

@@ -297,6 +297,11 @@ public class EcuDatabase {
     }
 
     public String loadDatabase(String ecuFilename, String appDir) throws DatabaseException {
+        // Reset if not found
+        File checkEcuFile = new File(ecuFilename);
+        if (!checkEcuFile.exists())
+            ecuFilename = "";
+
         if (ecuFilename.isEmpty()) {
             ecuFilename = walkDir(Environment.getExternalStorageDirectory());
         }
@@ -310,7 +315,7 @@ public class EcuDatabase {
             ecuFilename = walkDir(new File("/mnt"));
         }
         if (ecuFilename.isEmpty()) {
-            throw new DatabaseException("Ecu file not found");
+            throw new DatabaseException("Ecu file (ecu.zip) not found");
         }
 
         String bytes;
@@ -319,6 +324,9 @@ public class EcuDatabase {
 
         File indexFile = new File(indexFileName);
         File ecuFile = new File(m_ecuFilePath);
+        if (!ecuFile.exists()){
+            throw new DatabaseException("Archive (ecu.zip) file not found");
+        }
         long indexTimeStamp = indexFile.lastModified();
         long ecuTimeStamp = ecuFile.lastModified();
         m_zipFileSystem = new ZipFastFileSystem(m_ecuFilePath, appDir);
@@ -329,6 +337,9 @@ public class EcuDatabase {
          */
         if (indexFile.exists() && (indexTimeStamp > ecuTimeStamp) && m_zipFileSystem.importZipEntries()){
             bytes = m_zipFileSystem.getZipFile("db.json");
+            if (bytes.isEmpty()){
+                throw new DatabaseException("Database (db.json) file not found");
+            }
         } else {
             /*
              * Else create it

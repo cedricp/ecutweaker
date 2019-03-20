@@ -270,6 +270,13 @@ public class ElmThread {
         write("AT CAF0");
     }
 
+    public void setTimeOut(int timeOut){
+        int timeout = (timeOut / 4);
+        if (timeout > 255)
+            timeout = 255;
+        write("AT ST " + Integer.toHexString(timeout));
+    }
+
     public void setEcuName(String name){
         if (mLogFile != null){
             try {

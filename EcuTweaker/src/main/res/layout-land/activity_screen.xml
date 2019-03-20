@@ -81,6 +81,13 @@
                     android:keepScreenOn="false"
                     android:scrollbars="vertical" />
 
+                <ImageButton
+                    android:id="@+id/settingsButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0"
+                    app:srcCompat="@drawable/ic_settings" />
+
                 <Button
                     android:id="@+id/zoom_in"
                     android:layout_width="50dp"

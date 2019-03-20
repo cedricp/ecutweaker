@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="activity_screen" translatable="false">Schermata Can</string>
+    <string name="action_settings" translatable="false">Impostazioni</string>
+    <string name="application_name" translatable="false">Ecu Tweaker</string>
+    <string name="title_activity_main" translatable="false">Ecu Tweaker</string>
+
+    <!-- BluetoothChat -->
+    <string name="send">Invia</string>
+    <string name="not_connected">Non sei connesso ad un dispositivo</string>
+    <string name="bt_not_enabled_leaving">Bluetooth non attivo. Lascia la chat Bluetooth.</string>
+    <string name="title_connecting">Connessione…</string>
+    <string name="title_connected_to">Connesso a <xliff:g id="device_name">%1$s</xliff:g></string>
+    <string name="title_not_connected">non connesso</string>
+
+    <!-- DeviceListActivity -->
+    <string name="scanning">Scansione per dispositivi…</string>
+    <string name="select_device">Seleziona un dispositivo per collegarti</string>
+    <string name="none_paired">Nessun dispositivo accoppiato</string>
+    <string name="none_found">Nessun dispositivo trovato</string>
+    <string name="title_paired_devices">Dispositivi accoppiati</string>
+    <string name="title_other_devices">Altri dispositivi disponibili</string>
+    <string name="button_scan">Cerca dispositivi</string>
+
+    <!-- Application strings -->
+    <string name="INDEXING_DB">INDICIZZAZIONE DATABASE...</string>
+    <string name="DB_NOT_FOUND">DATABASE NON TROVATO</string>
+    <string name="WRONG_CODE">Codice errato!</string>
+    <string name="APP_UNLOCKED">Applicazione sbloccata</string>
+    <string name="APP_ENTER_CODE">Inserisci codice attivazione</string>
+    <string name="USER_REQUEST_CODE">Il tuo codice di richiesta</string>
+    <string name="OK">OK</string>
+    <string name="CANCEL">Cancella</string>
+    <string name="USER_USES_DEMO_MODE">Stai usando una versione demo, funzione di scrittura disattivata.</string>
+    <string name="BT_MANAGER_MESSAGE">Messaggio gestione Bluetooth</string>
+    <string name="ECU_PART_MATCH">ECU parzialmente compatibili (usare con cautela)</string>
+    <string name="ECU_MATCH">ECU perfettamente compatibili</string>
+    <string name="ECU_FOUND">Trovate ECU</string>
+    <string name="DIAG_VERSION">Versione di diagnosi</string>
+    <string name="VERSION">Versione</string>
+    <string name="SOFT_VERSION">Versione software</string>
+    <string name="SUPPLIER_VERSION">Versione fornitore</string>
+    <string name="CHOOSE_PROJECT">Scegli un progetto</string>
+    <string name="INFORMATION">Informationi</string>
+    <string name="DEMO_MESSAGE"><![CDATA[Benvenuto su <b>ECU TWEAKER</b>,<br> Stai usando l\'applicazione in modalità dimostrazione.
+Puoi usarlo per leggere i parametri delle ECU, ma non ti è permesso di
+usare il bottone o la funzione <i>CANCELLA DTC</i>.<br>
+Puoi sbloccarlo inviandomi una richiesta con il tuo codice, ti invierò il codice di attivazione.<br>
+<b>Attento, grandi poteri danno grandi responsabilità, usalo a tuo rischio. Lo sviluppatore non si assume nessuna responsabilità,
+ <u>tu sei il solo responsabile per l\'uso di questo software.</u></b>]]></string>
+    <string name="BAD_RESPONSE">Risposta errata</string>
+    <string name="TO_REQUEST">A richiesta</string>
+    <string name="INVALID_VALUE">Valore invalido, controlla informazione</string>
+    <string name="FRAME_COMPUTE_FAILED">Fallita analisi del frame</string>
+    <string name="COMPUTED_FRAME">Frame analizzato</string>
+    <string name="CATEGORY_CHOOSE">Scegli una categoria</string>
+    <string name="SCREEN_CHOOSE">Scegli una schermata</string>
+    <string name="FRAME_NOT_SENT">Frame non inviato (Bluetooth non connesso)</string>
+    <string name="NO_ELM_RESPONSE">Nessuna risposta ELM</string>
+    <string name="DTC_CLEAR_OK">Azzerato DTC con successo</string>
+    <string name="NEGATIVE_RESPONSE">Risposta negativa</string>
+    <string name="ELM_RESPONSE">risposta ELM</string>
+    <string name="BAD_ELM_RESPONSE">Errore risposta ELM</string>
+    <string name="CLEAR_ALL_DTC">Azzerare tutti i DTC ?</string>
+    <string name="YES">Si</string>
+    <string name="NO">No</string>
+    <string name="NO_DTC_STORED">La ECU non ha un DTC salvato</string>
+    <string name="NEW_DEVICE">Nuovo dispositivo trovato</string>
+    <string name="CHOOSE_BT_DEVICE">SELEZIONA DISPOSITIVO BT</string>
+    <string name="AUTO_IDENTIFY">RILEVAZIONE AUTOMATICA</string>
+    <string name="AUTO_IDENT_RESULT">AutoIdent result</string>
+    <string name="NO_CHAT_SESSION">Prova ad inviare comando senza Bluetooth nella sessione chat</string>
+    <string name="LOGS">Vedi LOGS</string>
+    <string name="COPY_TO_CLIPBOARD">Copia negli appunti</string>
+    <string name="CLEAR_LOG">Elimina logs</string>
+    <string name="LOGFILE_DELETED">Log cancellati con successo</string>
+    <string name="LOGFILE_DELETE_FAILED">Log non cancellati</string>
+    <string name="LONGPRESS_TO_DELETE">Pressione lunga per cancellare</string>
+</resources>
