@@ -1,6 +1,7 @@
 package org.quark.dr.canapp;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
@@ -12,6 +13,7 @@ public abstract class ElmBase {
     public static final int STATE_CONNECTED = 3;  // now connected to a remote device
     public static final int STATE_DISCONNECTED = 4;  // now connected to a remote device
 
+    protected ArrayList<String> mmessages;
     protected int mRxa, mTxa;
     protected HashMap<String, String> ECUERRCODEMAP;
 
@@ -134,5 +136,23 @@ public abstract class ElmBase {
 
     public String getEcuErrorCode(String hexError){
         return ECUERRCODEMAP.get(hexError);
+    }
+
+    public boolean isHexadecimal(String text) {
+        char[] hexDigits = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                'a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F' };
+
+        for (char symbol : text.toCharArray()) {
+            boolean found = false;
+            for (char hexDigit : hexDigits) {
+                if (symbol == hexDigit) {
+                    found = true;
+                    break;
+                }
+            }
+            if(!found)
+                return false;
+        }
+        return true;
     }
 }

@@ -21,6 +21,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 
 public class ElmWifi extends ElmBase{
     private static final String TAG = "ElmWifi";
@@ -246,6 +247,7 @@ public class ElmWifi extends ElmBase{
         private final Socket mmSocket;
 
         public ConnectedThread(Socket socket) {
+            mmessages = new ArrayList<>();
             mmSocket = socket;
             InputStream tmpIn = null;
             OutputStream tmpOut = null;

@@ -346,7 +346,6 @@ public class ElmBluetooth extends ElmBase {
         private final BluetoothSocket mmSocket;
         private final InputStream     mmInStream;
         private final OutputStream    mmOutStream;
-        private ArrayList<String>     mmessages;
         private volatile boolean      mRunningStatus;
 
         public ConnectedThread(BluetoothSocket socket, String socketType) {
@@ -378,7 +377,6 @@ public class ElmBluetooth extends ElmBase {
         }
 
         public void run() {
-            //Log.i(TAG, "BEGIN mConnectedThread");
             long timer = System.currentTimeMillis();
             mRunningStatus = true;
 
@@ -490,24 +488,6 @@ public class ElmBluetooth extends ElmBase {
                 }
             }
             return "ERROR : UNKNOWN";
-        }
-
-        public boolean isHexadecimal(String text) {
-            char[] hexDigits = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-                    'a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F' };
-
-            for (char symbol : text.toCharArray()) {
-                boolean found = false;
-                for (char hexDigit : hexDigits) {
-                    if (symbol == hexDigit) {
-                        found = true;
-                        break;
-                    }
-                }
-                if(!found)
-                    return false;
-            }
-            return true;
         }
 
         private void send_can(String message){
