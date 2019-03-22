@@ -303,16 +303,16 @@ public class EcuDatabase {
             ecuFilename = "";
 
         if (ecuFilename.isEmpty()) {
-            ecuFilename = walkDir(Environment.getExternalStorageDirectory());
+            ecuFilename = searchEcuFile(new File(Environment.getExternalStorageDirectory().getPath()));
         }
         if (ecuFilename.isEmpty()) {
-            ecuFilename = walkDir(Environment.getDataDirectory());
+            ecuFilename = searchEcuFile(new File(Environment.getDataDirectory().getPath()));
         }
         if (ecuFilename.isEmpty()) {
-            ecuFilename = walkDir(new File("/storage"));
+            ecuFilename = searchEcuFile(new File("/storage"));
         }
         if (ecuFilename.isEmpty()) {
-            ecuFilename = walkDir(new File("/mnt"));
+            ecuFilename = searchEcuFile(new File("/mnt"));
         }
         if (ecuFilename.isEmpty()) {
             throw new DatabaseException("Ecu file (ecu.zip) not found");
@@ -418,13 +418,15 @@ public class EcuDatabase {
         return m_loaded;
     }
 
-    public String walkDir(File dir) {
+    public String searchEcuFile(File dir) {
+        if (!dir.exists())
+            return "";
         String searchFile = "ECU.ZIP";
         File listFile[] = dir.listFiles();
         if (listFile != null) {
             for (File f : listFile) {
                 if (f.isDirectory()) {
-                    String res = walkDir(f);
+                    String res = searchEcuFile(f);
                     if (!res.isEmpty())
                         return res;
                 } else {

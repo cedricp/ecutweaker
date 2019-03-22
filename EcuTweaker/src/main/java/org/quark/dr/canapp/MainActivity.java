@@ -51,11 +51,11 @@ import java.util.Collections;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static org.quark.dr.canapp.ElmThread.STATE_CONNECTED;
-import static org.quark.dr.canapp.ElmThread.STATE_CONNECTING;
-import static org.quark.dr.canapp.ElmThread.STATE_DISCONNECTED;
-import static org.quark.dr.canapp.ElmThread.STATE_LISTEN;
-import static org.quark.dr.canapp.ElmThread.STATE_NONE;
+import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTED;
+import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTING;
+import static org.quark.dr.canapp.ElmBluetooth.STATE_DISCONNECTED;
+import static org.quark.dr.canapp.ElmBluetooth.STATE_LISTEN;
+import static org.quark.dr.canapp.ElmBluetooth.STATE_NONE;
 import static org.quark.dr.canapp.ScreenActivity.MESSAGE_DEVICE_NAME;
 import static org.quark.dr.canapp.ScreenActivity.MESSAGE_QUEUE_STATE;
 import static org.quark.dr.canapp.ScreenActivity.MESSAGE_READ;
@@ -90,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
     private int m_currentEcuAddressId;
     private TextView m_viewSupplier, m_viewDiagVersion, m_viewVersion, m_viewSoft, m_logView;
 
-    private ElmThread m_chatService;
+    private ElmBase m_chatService;
     private Handler mHandler = null;
     private EcuDatabase.EcuIdentifierNew m_ecuIdentifierNew = null;
     private Timer mConnectionTimer;
@@ -138,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
         m_currentEcuAddressId = -1;
 
         mHandler = new MainActivity.messageHandler(this);
-        m_chatService = new ElmThread(mHandler, getApplicationContext().getFilesDir().getAbsolutePath());
+        m_chatService = new ElmBluetooth(mHandler, getApplicationContext().getFilesDir().getAbsolutePath());
 
         m_statusView = findViewById(R.id.statusView);
         m_btButton = findViewById(R.id.btButton);
@@ -299,9 +299,9 @@ public class MainActivity extends AppCompatActivity {
             mLicenseLock.checkUnlock(licenseCode);
             setLicenseSatus();
         } else {
-            m_logView.append("\n");
             m_logView.append(getResources().getString(R.string.USER_REQUEST_CODE) +" : " + mLicenseLock.getPublicCode() + "\n");
             ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.RED);
+            m_logView.append("contact email : paillecedric@gmail.com\n");
             displayHelp();
         }
     }
@@ -382,14 +382,14 @@ public class MainActivity extends AppCompatActivity {
             return;
         // Attempt to connect to the device
         setupChat();
-        m_chatService.connect(device);
+        m_chatService.connect(m_btDeviceAddress);
     }
 
     private void setupChat() {
         if (BuildConfig.DEBUG)
             Log.d(TAG, "setupChat()");
         // Initialize the BluetoothChatService to perform bluetooth connections
-        m_chatService.stop();
+        m_chatService.disconnect();
     }
 
     void initBus(String protocol){
@@ -493,7 +493,7 @@ public class MainActivity extends AppCompatActivity {
     void startScreen(String ecuFile, String ecuHREFName){
         stopConnectionTimer();
 
-        m_chatService.stop();
+        m_chatService.disconnect();
         setConnected(false);
 
         try {
@@ -540,8 +540,6 @@ public class MainActivity extends AppCompatActivity {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     parseDatabase();
-                } else {
-
                 }
             }
         }
@@ -553,7 +551,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "+ ON DESTROY +");
         super.onDestroy();
         stopConnectionTimer();
-        m_chatService.stop();
+        m_chatService.disconnect();
     }
 
     @Override
@@ -562,7 +560,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "+ ON STOP +");
         super.onStop();
         stopConnectionTimer();
-        m_chatService.stop();
+        m_chatService.disconnect();
     }
 
     @Override

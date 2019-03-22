@@ -4,8 +4,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.content.ClipData;
-import android.content.ClipboardManager;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -50,11 +48,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.quark.dr.canapp.ElmThread.STATE_CONNECTED;
-import static org.quark.dr.canapp.ElmThread.STATE_CONNECTING;
-import static org.quark.dr.canapp.ElmThread.STATE_DISCONNECTED;
-import static org.quark.dr.canapp.ElmThread.STATE_LISTEN;
-import static org.quark.dr.canapp.ElmThread.STATE_NONE;
+import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTED;
+import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTING;
+import static org.quark.dr.canapp.ElmBluetooth.STATE_DISCONNECTED;
+import static org.quark.dr.canapp.ElmBluetooth.STATE_LISTEN;
+import static org.quark.dr.canapp.ElmBluetooth.STATE_NONE;
 import static org.quark.dr.canapp.MainActivity.PREF_GLOBAL_SCALE;
 import static org.quark.dr.ecu.Ecu.hexStringToByteArray;
 
@@ -81,7 +79,7 @@ public class ScreenActivity extends AppCompatActivity {
     private HashMap<String, ArrayList<Layout.InputData>> m_requestsInputs;
     private Set<String> m_displaysRequestSet;
 
-    private ElmThread mChatService = null;
+    private ElmBluetooth mChatService = null;
     private Handler mHandler = null;
 
     private int mCanTimeOut;
@@ -280,7 +278,7 @@ public class ScreenActivity extends AppCompatActivity {
         }
 
         mHandler = new messageHandler(this);
-        mChatService = new ElmThread(mHandler, getApplicationContext().getFilesDir().getAbsolutePath());
+        mChatService = new ElmBluetooth(mHandler, getApplicationContext().getFilesDir().getAbsolutePath());
 
         connectDevice();
 
@@ -893,7 +891,7 @@ public class ScreenActivity extends AppCompatActivity {
         if (device == null)
             return;
         // Attempt to connect to the device
-        mChatService.connect(device);
+        mChatService.connect(m_deviceAddressPref);
     }
 
     private boolean isChatConnected(){
