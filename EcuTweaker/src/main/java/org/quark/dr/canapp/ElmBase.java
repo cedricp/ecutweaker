@@ -1,5 +1,15 @@
 package org.quark.dr.canapp;
 
+import android.os.Handler;
+
+import org.quark.dr.ecu.IsoTPDecode;
+import org.quark.dr.ecu.IsoTPEncode;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -16,6 +26,11 @@ public abstract class ElmBase {
     protected ArrayList<String> mmessages;
     protected int mRxa, mTxa;
     protected HashMap<String, String> ECUERRCODEMAP;
+    protected final Handler mHandler;
+    protected OutputStreamWriter mLogFile;
+    protected String mLogDir;
+    protected volatile boolean mRunningStatus;
+
 
     protected static final String ECUERRORCODE =
             "10:General Reject," +
@@ -72,9 +87,34 @@ public abstract class ElmBase {
                     "93:Voltage Too Low";
 
     public abstract void disconnect();
-    public abstract void write(String buffer);
     public abstract boolean connect(String address);
     public abstract int getState();
+    protected abstract String write_raw(String raw_buffer);
+
+    public ElmBase(Handler handler, String logDir) {
+        mmessages = new ArrayList<>();
+        mHandler = handler;
+        mLogFile = null;
+        mLogDir = logDir;
+        buildMaps();
+    }
+
+    protected void createLogFile() {
+        File file = new File(mLogDir + "/log.txt");
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(file, true);
+            mLogFile = new OutputStreamWriter(fileOutputStream);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
 
     protected String getTimeStamp(){
         return new String("[" + new SimpleDateFormat("dd-MM-yyyy-hh-mm-ss").format(new Date()) + "] ");
@@ -155,4 +195,123 @@ public abstract class ElmBase {
         }
         return true;
     }
+
+    protected void main_loop(){
+        long timer = System.currentTimeMillis();
+        mRunningStatus = true;
+
+        // Keep listening to the InputStream while connected
+        while (mRunningStatus) {
+            if (mmessages.size() > 0) {
+                String message;
+                int num_queue;
+                synchronized (this) {
+                    message = mmessages.get(0);
+                    mmessages.remove(0);
+                    num_queue = mmessages.size();
+                }
+                int message_len = message.length();
+                if ((message_len > 6) && message.substring(0, 6).toUpperCase().equals("DELAY:")) {
+                    int delay = Integer.parseInt(message.substring(6));
+                    try {
+                        Thread.sleep(delay);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                } else if ((message_len > 2) && message.substring(0, 2).toUpperCase().equals("AT")) {
+                    String result = write_raw(message);
+                    result = message + ";" + result;
+                    int result_length = result.length();
+                    byte[] tmpbuf = new byte[result_length];
+                    System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);  //Make copy for not to rewrite in other thread
+                    mHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, mTxa, tmpbuf).sendToTarget();
+                    mHandler.obtainMessage(ScreenActivity.MESSAGE_QUEUE_STATE, num_queue, -1, null).sendToTarget();
+                } else {
+                    send_can(message);
+                    mHandler.obtainMessage(ScreenActivity.MESSAGE_QUEUE_STATE, num_queue, -1, null).sendToTarget();
+                }
+            }
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                break;
+            }
+
+            // Keep session alive
+            if (System.currentTimeMillis() - timer > 1500) {
+                timer = System.currentTimeMillis();
+                write_raw("013E");
+            }
+        }
+    }
+
+    protected void send_can(String message){
+        IsoTPEncode isotpm = new IsoTPEncode(message);
+        // Encode ISO_TP data
+        ArrayList<String> raw_command = isotpm.getFormattedArray();
+        ArrayList<String> responses = new ArrayList<>();
+        boolean error = false;
+        String errorMsg = "";
+
+        // Send data
+        for (String frame: raw_command) {
+            String frsp = write_raw(frame);
+
+            for(String s: frsp.split("\n")){
+                // Remove unwanted characters
+                s = s.replace("\n", "");
+                // Echo cancellation
+                if (s.equals(frame))
+                    continue;
+
+                // Remove whitespaces
+                s = s.replace(" ", "");
+                if (s.length() == 0)
+                    continue;
+
+                if (isHexadecimal(s)){
+                    // Filter out frame control (FC) response
+                    if (s.substring(0, 1).equals("3"))
+                        continue;
+                    responses.add(s);
+                } else {
+                    errorMsg += frsp;
+                    error = true;
+                }
+            }
+        }
+        String result;
+        if (error){
+            result = "ERROR : " + errorMsg;
+        } else {
+            // Decode received ISO_TP data
+            IsoTPDecode isotpdec = new IsoTPDecode(responses);
+            result = isotpdec.decodeCan();
+        }
+
+        try {
+            if (mLogFile != null) {
+                mLogFile.append("SENT: " + getTimeStamp() + message + "\n");
+                mLogFile.append("RECV: " + getTimeStamp() + result + "\n");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        result = message + ";" + result;
+        int result_length = result.length();
+        byte[] tmpbuf = new byte[result_length];
+        //Make copy for not to rewrite in other thread
+        System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);
+        mHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, -1, tmpbuf).sendToTarget();
+    }
+
+    public synchronized void write(String out) {
+            mmessages.add(out);
+    }
+
+    public synchronized boolean queue_empty() {
+        return mmessages.size() == 0;
+    }
+
+
 }

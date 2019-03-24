@@ -37,12 +37,9 @@ public class ElmBluetooth extends ElmBase {
     private static final UUID SPP_UUID = UUID.fromString("0001101-0000-1000-8000-00805F9B34FB");
 
     // Member fields
-    private final Handler mHandler;
     private ConnectThread mConnectThread;
     private ConnectedThread mConnectedThread;
     private int mState;
-    private OutputStreamWriter mLogFile;
-    private String mLogDir;
 
     /**
      * Constructor. Prepares a new BluetoothChat session.
@@ -51,12 +48,10 @@ public class ElmBluetooth extends ElmBase {
      */
 
     public ElmBluetooth(Handler handler, String logDir) {
+        super(handler, logDir);
         mState = STATE_NONE;
-        mHandler = handler;
         mTxa = mRxa = -1;
         buildMaps();
-        mLogFile = null;
-        mLogDir = logDir;
     }
 
 
@@ -74,10 +69,8 @@ public class ElmBluetooth extends ElmBase {
     /**
      * Return the current connection state. */
     @Override
-    public int getState() {
-        synchronized (this) {
+    public synchronized int getState() {
             return mState;
-        }
     }
 
     /**
@@ -103,20 +96,7 @@ public class ElmBluetooth extends ElmBase {
                 mConnectedThread.cancel();
                 mConnectedThread = null;
             }
-            File file = new File(mLogDir + "/log.txt");
-            if (!file.exists()) {
-                try {
-                    file.createNewFile();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            try {
-                FileOutputStream fileOutputStream = new FileOutputStream(file, true);
-                mLogFile = new OutputStreamWriter(fileOutputStream);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
+            createLogFile();
 
             // Start the thread to connect with the given device
             mConnectThread = new ConnectThread(device);
@@ -190,21 +170,9 @@ public class ElmBluetooth extends ElmBase {
         stop();
     }
 
-    /**
-     * Write to the ConnectedThread in an unsynchronized manner
-     * @param out The bytes to write
-     */
     @Override
-    public void write(String out) {
-        // Create temporary object
-        ConnectedThread r;
-        // Synchronize a copy of the ConnectedThread
-        synchronized (this) {
-            if (mState != STATE_CONNECTED) return;
-            r = mConnectedThread;
-        }
-        // Perform the write unsynchronized
-        r.post_message(out);
+    protected String write_raw(String raw_buffer) {
+        return mConnectedThread.write_raw(raw_buffer);
     }
 
     public void setEcuName(String name){
@@ -226,12 +194,6 @@ public class ElmBluetooth extends ElmBase {
         write("AT FC SM 1");
         mRxa = Integer.parseInt(rxa, 16);
         mTxa = Integer.parseInt(txa, 16);
-    }
-
-
-
-    public boolean queueEmpty(){
-        return mConnectedThread.queue_empty();
     }
 
     /**
@@ -344,86 +306,31 @@ public class ElmBluetooth extends ElmBase {
      */
     private class ConnectedThread extends Thread {
         private final BluetoothSocket mmSocket;
-        private final InputStream     mmInStream;
-        private final OutputStream    mmOutStream;
-        private volatile boolean      mRunningStatus;
+        private final InputStream mmInStream;
+        private final OutputStream mmOutStream;
 
         public ConnectedThread(BluetoothSocket socket, String socketType) {
             //Log.d(TAG, "create ConnectedThread: " + socketType);
+            mmessages.clear();
             mmSocket = socket;
-            InputStream  tmpIn  = null;
+            InputStream tmpIn = null;
             OutputStream tmpOut = null;
-            mmessages = new ArrayList<>();
 
             // Get the BluetoothSocket input and output streams
             // The InputStream read() method should block
             try {
-                tmpIn  = socket.getInputStream();
+                tmpIn = socket.getInputStream();
                 tmpOut = socket.getOutputStream();
             } catch (IOException e) {
                 //Log.e(TAG, "temp sockets not created", e);
             }
 
-            mmInStream  = tmpIn;
+            mmInStream = tmpIn;
             mmOutStream = tmpOut;
         }
 
-        public synchronized void post_message(String buffer){
-            mmessages.add(buffer);
-        }
-
-        public synchronized boolean queue_empty(){
-            return mmessages.size() == 0;
-        }
-
         public void run() {
-            long timer = System.currentTimeMillis();
-            mRunningStatus = true;
-
-            // Keep listening to the InputStream while connected
-            while (mRunningStatus) {
-                if (mmessages.size() > 0){
-                    String message;
-                    int num_queue;
-                    synchronized (this) {
-                        message = mmessages.get(0);
-                        mmessages.remove(0);
-                        num_queue = mmessages.size();
-                    }
-                    int message_len = message.length();
-                    if ( (message_len > 6) && message.substring(0,6).toUpperCase().equals("DELAY:") ) {
-                        int delay = Integer.parseInt(message.substring(6));
-                        try {
-                            Thread.sleep(delay);
-                        }  catch (InterruptedException e) {
-                            break;
-                        }
-                    } else if ( (message_len > 2) && message.substring(0,2).toUpperCase().equals("AT") ) {
-                        String result = write_raw(message);
-                        result = message + ";" + result;
-                        int result_length = result.length();
-                        byte[] tmpbuf = new byte[result_length];
-                        System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);  //Make copy for not to rewrite in other thread
-                        mHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, mTxa, tmpbuf).sendToTarget();
-                        mHandler.obtainMessage(ScreenActivity.MESSAGE_QUEUE_STATE, num_queue, -1, null).sendToTarget();
-                    }
-                    else {
-                        send_can(message);
-                        mHandler.obtainMessage(ScreenActivity.MESSAGE_QUEUE_STATE, num_queue, -1, null).sendToTarget();
-                    }
-                }
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    break;
-                }
-
-                // Keep session alive
-                if (System.currentTimeMillis() - timer > 1500){
-                    timer = System.currentTimeMillis();
-                    write_raw("013E");
-                }
-            }
+            main_loop();
         }
 
         public void cancel() {
@@ -446,7 +353,7 @@ public class ElmBluetooth extends ElmBase {
             }
         }
 
-        private String write_raw(String raw_buffer){
+        private String write_raw(String raw_buffer) {
             raw_buffer += "\r";
             byte[] reply_buffer = new byte[4096];
             try {
@@ -463,92 +370,31 @@ public class ElmBluetooth extends ElmBase {
             // Wait ELM response
             int u = -1;
             while (true) {
-                if (System.currentTimeMillis() - time_start > 1500){
+                if (System.currentTimeMillis() - time_start > 1500) {
                     return "ERROR : TIMEOUT";
                 }
                 try {
                     // Read from the InputStream
                     u = u + 1;
                     int bytes = mmInStream.read(reply_buffer, u, 1);
-                    if (bytes < 1) { --u; continue;}
+                    if (bytes < 1) {
+                        --u;
+                        continue;
+                    }
 
                     // Convert carriage return to line feed
                     if (reply_buffer[u] == 0x0d)
                         reply_buffer[u] = 0x0a;
 
                     if (reply_buffer[u] == '>') { // End of communication
-                        return new String(reply_buffer, 0, u -1);
+                        return new String(reply_buffer, 0, u - 1);
                     }
                 } catch (IOException e) {
-                    //Log.e(TAG, "write_raw(2): disconnected", e);
                     connectionLost();
-                    // Start the service over to restart listening mode
-                    // ElmBluetooth.this.start();
                     break;
                 }
             }
             return "ERROR : UNKNOWN";
         }
-
-        private void send_can(String message){
-            IsoTPEncode isotpm = new IsoTPEncode(message);
-            // Encode ISO_TP data
-            ArrayList<String> raw_command = isotpm.getFormattedArray();
-            ArrayList<String> responses = new ArrayList<>();
-            boolean error = false;
-            String errorMsg = "";
-
-            // Send data
-            for (String frame: raw_command) {
-                String frsp = write_raw(frame);
-
-                for(String s: frsp.split("\n")){
-                    // Remove unwanted characters
-                    s = s.replace("\n", "");
-                    // Echo cancellation
-                    if (s.equals(frame))
-                        continue;
-
-                    // Remove whitespaces
-                    s = s.replace(" ", "");
-                    if (s.length() == 0)
-                        continue;
-
-                    if (isHexadecimal(s)){
-                        // Filter out frame control (FC) response
-                        if (s.substring(0, 1).equals("3"))
-                            continue;
-                        responses.add(s);
-                    } else {
-                        errorMsg += frsp;
-                        error = true;
-                    }
-                }
-            }
-            String result;
-            if (error){
-                result = "ERROR : " + errorMsg;
-            } else {
-                // Decode received ISO_TP data
-                IsoTPDecode isotpdec = new IsoTPDecode(responses);
-                result = isotpdec.decodeCan();
-            }
-
-            try {
-                if (mLogFile != null) {
-                    mLogFile.append("SENT: " + getTimeStamp() + message + "\n");
-                    mLogFile.append("RECV: " + getTimeStamp() + result + "\n");
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            result = message + ";" + result;
-            int result_length = result.length();
-            byte[] tmpbuf = new byte[result_length];
-            //Make copy for not to rewrite in other thread
-            System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);
-            mHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, -1, tmpbuf).sendToTarget();
-        }
     }
-
 }

@@ -1,8 +1,6 @@
 package org.quark.dr.canapp;
 
-import android.app.Activity;
 import android.app.AlertDialog;
-import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -20,7 +18,6 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 public class ElmWifi extends ElmBase{
@@ -88,7 +85,7 @@ public class ElmWifi extends ElmBase{
 
             if (this.ioException != null) {
                 new AlertDialog.Builder(context)
-                        .setTitle("An error occurrsed")
+                        .setTitle("An error occurred")
                         .setMessage(this.ioException.toString())
                         .setIcon(android.R.drawable.ic_dialog_alert)
                         .show();
@@ -135,23 +132,20 @@ public class ElmWifi extends ElmBase{
         }
     };
 
-    public ElmWifi(Context context, Handler handler) {
+    public ElmWifi(Context context, Handler handler, String logDir) {
+        super(handler, logDir);
         this.mContext = context;
         mOBDThread = new HandlerThread("OBDII", Thread.NORM_PRIORITY);
         mOBDThread.start();
-        mWIFIHandler = handler;//new Handler(mOBDThread.getLooper());
-        buildMaps();
+        mWIFIHandler = handler;
     }
 
     @Override
-    public int getState() {
-        synchronized (this) {
+    public synchronized int getState() {
             return mState;
-        }
     }
 
     private synchronized void setState(int state) {
-
         mState = state;
         // Give the new state to the Handler so the UI Activity can update
         mWIFIHandler.obtainMessage(ScreenActivity.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
@@ -161,13 +155,14 @@ public class ElmWifi extends ElmBase{
         if (!address.isEmpty()) {
             serverIpAddress = address;
         }
-        setState(STATE_CONNECTING);
 
         if (mConnecting || isConnected()) {
             return false;
         }
 
-        WifiManager wifi = (WifiManager) mContext.getSystemService(Context.WIFI_SERVICE);
+        setState(STATE_CONNECTING);
+
+        WifiManager wifi = (WifiManager) mContext.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         if (wifiLock == null) {
             this.wifiLock = wifi.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "HighPerf wifi lock");
         }
@@ -203,7 +198,7 @@ public class ElmWifi extends ElmBase{
 
     @Override
     public void disconnect() {
-
+        mConnectedThread.cancel();
         if (wifiLock != null && wifiLock.isHeld())
             wifiLock.release();
 
@@ -230,24 +225,15 @@ public class ElmWifi extends ElmBase{
     }
 
     @Override
-    public void write(String out) {
-        // Create temporary object
-        ElmWifi.ConnectedThread r;
-        // Synchronize a copy of the ConnectedThread
-        synchronized (this) {
-            if (mState != STATE_CONNECTED) return;
-            r = mConnectedThread;
-        }
-        // Perform the write unsynchronized
-        r.write(out.getBytes());
+    protected String write_raw(String raw_buffer) {
+        return mConnectedThread.write(raw_buffer.getBytes());
     }
-
 
     private class ConnectedThread extends Thread {
         private final Socket mmSocket;
 
         public ConnectedThread(Socket socket) {
-            mmessages = new ArrayList<>();
+            mmessages.clear();
             mmSocket = socket;
             InputStream tmpIn = null;
             OutputStream tmpOut = null;
@@ -265,11 +251,12 @@ public class ElmWifi extends ElmBase{
         }
 
         public void run() {
-            readDataFromOBD();
+            main_loop();
         }
 
-        public void write(byte[] buffer) {
+        public String write(byte[] buffer) {
             writeDataToOBD(buffer);
+            return readDataFromOBD();
         }
 
         public void writeDataToOBD(byte[] buffer) {
@@ -280,16 +267,14 @@ public class ElmWifi extends ElmBase{
                     byte[] arrayOfBytes = buffer;
                     outStream.write(arrayOfBytes);
                     outStream.flush();
-                    mWIFIHandler.obtainMessage(ScreenActivity.MESSAGE_WRITE, -1, -1, buffer).sendToTarget();
                 }
-
             } catch (Exception localIOException1) {
                 localIOException1.printStackTrace();
                 connectionLost();
             }
         }
 
-        public void readDataFromOBD() {
+        public String readDataFromOBD() {
 
             while (true) {
                 try {
@@ -302,10 +287,12 @@ public class ElmWifi extends ElmBase{
 
                         long start = System.currentTimeMillis();
                         while ((char) (b = (byte) inStream.read()) != '>') {
+                            if (b == 0x0d)
+                                b = 0x0a;
                             res.append((char) b);
                         }
                         rawData = res.toString().trim();
-                        mWIFIHandler.obtainMessage(ScreenActivity.MESSAGE_READ, rawData.length(), -1, rawData).sendToTarget();
+                        return rawData;
                     }
 
                 } catch (IOException localIOException) {
@@ -314,14 +301,24 @@ public class ElmWifi extends ElmBase{
                     e.printStackTrace();
                     connectionLost();
                 }
+                return "";
             }
         }
 
         public void cancel() {
+            mRunningStatus = false;
             try {
                 mmSocket.close();
             } catch (IOException e) {
                 Log.e(TAG, "close() of connect " + mSocket + " socket failed", e);
+            }
+
+            interrupt();
+
+            try {
+                join();
+            } catch (InterruptedException e) {
+
             }
         }
     }
