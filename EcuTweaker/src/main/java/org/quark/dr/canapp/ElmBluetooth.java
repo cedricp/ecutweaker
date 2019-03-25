@@ -142,7 +142,8 @@ public class ElmBluetooth extends ElmBase {
     /**
      * Stop all threads
      */
-    public void stop() {
+    @Override
+    public void disconnect(){
         if (mConnectThread != null) {
             mConnectThread.cancel();
         }
@@ -163,11 +164,6 @@ public class ElmBluetooth extends ElmBase {
                 e.printStackTrace();
             }
         }
-    }
-
-    @Override
-    public void disconnect(){
-        stop();
     }
 
     @Override
@@ -359,10 +355,8 @@ public class ElmBluetooth extends ElmBase {
             try {
                 mmOutStream.write(raw_buffer.getBytes());
             } catch (IOException e) {
-                //Log.e(TAG, "write_raw(1): disconnected", e);
                 connectionLost();
                 // Start the service over to restart listening mode
-                // ElmBluetooth.this.start();
                 return "ERROR : DISCONNECTED";
             }
 

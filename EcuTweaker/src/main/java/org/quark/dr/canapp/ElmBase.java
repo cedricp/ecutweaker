@@ -96,6 +96,7 @@ public abstract class ElmBase {
         mHandler = handler;
         mLogFile = null;
         mLogDir = logDir;
+        mRxa = mTxa = -1;
         buildMaps();
     }
 
@@ -202,7 +203,8 @@ public abstract class ElmBase {
 
         // Keep listening to the InputStream while connected
         while (mRunningStatus) {
-            if (mmessages.size() > 0) {
+
+            if (ElmBase.this.mmessages.size() > 0) {
                 String message;
                 int num_queue;
                 synchronized (this) {
@@ -238,7 +240,7 @@ public abstract class ElmBase {
             }
 
             // Keep session alive
-            if (System.currentTimeMillis() - timer > 1500) {
+            if (System.currentTimeMillis() - timer > 1500 && mRxa > 0) {
                 timer = System.currentTimeMillis();
                 write_raw("013E");
             }
@@ -303,15 +305,10 @@ public abstract class ElmBase {
         //Make copy for not to rewrite in other thread
         System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);
         mHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, -1, tmpbuf).sendToTarget();
+        System.out.println("?? Recv " + result);
     }
 
     public synchronized void write(String out) {
-            mmessages.add(out);
+        mmessages.add(out);
     }
-
-    public synchronized boolean queue_empty() {
-        return mmessages.size() == 0;
-    }
-
-
 }

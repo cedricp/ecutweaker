@@ -785,10 +785,6 @@ public class ScreenActivity extends AppCompatActivity {
                 if (resultCode == Activity.RESULT_OK) {
                     // Bluetooth is now enabled, so set up a chat session
                     setupChat();
-                } else {
-                    // User did not enable Bluetooth or an error occurred
-                    if (BuildConfig.DEBUG)
-                        Log.d(TAG, "BT not enabled");
                 }
         }
     }
@@ -799,7 +795,7 @@ public class ScreenActivity extends AppCompatActivity {
         Log.e(TAG, "+ ON DESTROY +");
         super.onDestroy();
         stopAutoReload();
-        mChatService.stop();
+        mChatService.disconnect();
     }
 
     @Override
@@ -807,7 +803,7 @@ public class ScreenActivity extends AppCompatActivity {
     {
         super.onStop();
         stopAutoReload();
-        mChatService.stop();
+        mChatService.disconnect();
 
         SharedPreferences defaultPrefs = this.getSharedPreferences(MainActivity.DEFAULT_PREF_TAG, MODE_PRIVATE);
         SharedPreferences.Editor edit = defaultPrefs.edit();
@@ -817,7 +813,7 @@ public class ScreenActivity extends AppCompatActivity {
 
     private void setupChat() {
         Log.d(TAG, "setupChat()");
-        mChatService.stop();
+        mChatService.disconnect();
     }
 
     private void setStatus(CharSequence status) {

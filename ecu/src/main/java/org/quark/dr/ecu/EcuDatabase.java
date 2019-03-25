@@ -254,6 +254,17 @@ public class EcuDatabase {
         }
         MODELSMAP.put("", "ALL");
     }
+
+    private void filterProjects(){
+        Iterator<String> its = m_projectSet.iterator();
+        while(its.hasNext()) {
+            Set<String> modelKeySet = MODELSMAP.keySet();
+            String project = its.next();
+            if (!MODELSMAP.containsKey(project)){
+                MODELSMAP.remove(project);
+            }
+        }
+    }
     
     public void checkMissings(){
         Iterator<String> its = m_projectSet.iterator();
@@ -411,6 +422,7 @@ public class EcuDatabase {
         }
 
         m_loaded = true;
+        filterProjects();
         return ecuFilename;
     }
 

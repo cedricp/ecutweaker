@@ -72,17 +72,21 @@ public class MainActivity extends AppCompatActivity {
     private static final int    REQUEST_ENABLE_BT      = 3;
     public static final String  DEFAULT_PREF_TAG = "default";
 
+    private final int LINK_WIFI=0;
+    private final int LINK_BLUETOOTH=1;
+
     public static final String PREF_DEVICE_ADDRESS = "btAdapterAddress";
     public static final String PREF_LICENSE_CODE = "licenseCode";
     public static final String PREF_GLOBAL_SCALE = "globalScale";
     public static final String PREF_ECUZIPFILE = "ecuZipFile";
     public static final String PREF_PROJECT = "project";
+    public static final String PREF_LINK_MODE =  "BT";
 
     public static String m_lastLog;
     private EcuDatabase m_ecuDatabase;
     private TextView m_statusView;
     private Button m_btButton, m_scanButton;
-    private ImageButton m_chooseProjectButton;
+    private ImageButton m_chooseProjectButton, m_linkChooser;
     private ImageView m_btIconImage;
     private ListView m_ecuListView, m_specificEcuListView;
     private ArrayList<EcuDatabase.EcuInfo> m_currentEcuInfoList;
@@ -95,6 +99,7 @@ public class MainActivity extends AppCompatActivity {
     private EcuDatabase.EcuIdentifierNew m_ecuIdentifierNew = null;
     private Timer mConnectionTimer;
     private LicenseLock mLicenseLock;
+    private int mLinkMode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -133,12 +138,13 @@ public class MainActivity extends AppCompatActivity {
         long id = new BigInteger(Settings.Secure.getString(getContentResolver(),Settings.Secure.ANDROID_ID), 16).longValue();
         mLicenseLock = new LicenseLock(id);
         SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
+        String linkMode = defaultPrefs.getString(PREF_LINK_MODE, "BT");
 
         m_currentProject = "";
         m_currentEcuAddressId = -1;
 
         mHandler = new MainActivity.messageHandler(this);
-        m_chatService = new ElmBluetooth(mHandler, getApplicationContext().getFilesDir().getAbsolutePath());
+        m_chatService = null;
 
         m_statusView = findViewById(R.id.statusView);
         m_btButton = findViewById(R.id.btButton);
@@ -146,6 +152,7 @@ public class MainActivity extends AppCompatActivity {
         m_specificEcuListView = findViewById(R.id.deviceView);
         m_scanButton = findViewById(R.id.buttonScan);
         m_chooseProjectButton = findViewById(R.id.projectButton);
+        m_linkChooser = findViewById(R.id.linkChooser);
         m_btIconImage = findViewById(R.id.btIcon);
         m_viewDiagVersion = findViewById(R.id.textViewDiagversion);
         m_viewSupplier = findViewById(R.id.textViewSupplier);
@@ -156,6 +163,15 @@ public class MainActivity extends AppCompatActivity {
         m_logView.setGravity(Gravity.BOTTOM);
         m_logView.setMovementMethod(new ScrollingMovementMethod());
         m_logView.setBackgroundResource(R.drawable.edittextroundgreen);
+
+        m_btIconImage.setColorFilter(Color.RED);
+
+        if (linkMode.equals("BT")) {
+            mLinkMode = LINK_BLUETOOTH;
+        } else {
+            mLinkMode = LINK_WIFI;
+        }
+        setLink();
 
         Button viewLogButton = findViewById(R.id.viewLogButton);
         viewLogButton.setOnClickListener(new View.OnClickListener() {
@@ -272,6 +288,17 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        m_linkChooser.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mLinkMode == LINK_WIFI)
+                    mLinkMode = LINK_BLUETOOTH;
+                else
+                    mLinkMode = LINK_WIFI;
+                setLink();
+            }
+        });
+
         m_btDeviceAddress = defaultPrefs.getString(PREF_DEVICE_ADDRESS, "");
 
         m_ecuDatabase = new EcuDatabase();
@@ -303,6 +330,24 @@ public class MainActivity extends AppCompatActivity {
             ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.RED);
             m_logView.append("contact email : paillecedric@gmail.com\n");
             displayHelp();
+        }
+    }
+
+    private void setLink(){
+        if (mLinkMode == LINK_BLUETOOTH){
+            m_linkChooser.setImageResource(R.drawable.ic_bt_connected);
+            m_btButton.setEnabled(true);
+            SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
+            SharedPreferences.Editor edit = defaultPrefs.edit();
+            edit.putString(PREF_LINK_MODE, "BT");
+            edit.apply();
+        } else {
+            m_linkChooser.setImageResource(R.drawable.ic_wifi);
+            m_btButton.setEnabled(false);
+            SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
+            SharedPreferences.Editor edit = defaultPrefs.edit();
+            edit.putString(PREF_LINK_MODE, "WIFI");
+            edit.apply();
         }
     }
 
@@ -361,7 +406,7 @@ public class MainActivity extends AppCompatActivity {
             SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
             SharedPreferences.Editor edit = defaultPrefs.edit();
             edit.putString(PREF_LICENSE_CODE, mLicenseLock.getPrivateCode());
-            edit.commit();
+            edit.apply();
             ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.GREEN);
         } else {
             ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.RED);
@@ -370,32 +415,37 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void connectDevice() {
-        // address is the device MAC address
-        // Get the BluetoothDevice object
-        BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (m_chatService != null)
+            m_chatService.disconnect();
 
-        if (btAdapter == null || m_btDeviceAddress.isEmpty() || isChatConnected())
-            return;
+        if (mLinkMode == LINK_BLUETOOTH) {
+            m_chatService = new ElmBluetooth(mHandler, getApplicationContext().getFilesDir().getAbsolutePath());
+            // address is the device MAC address
+            // Get the BluetoothDevice object
+            BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        BluetoothDevice device = btAdapter.getRemoteDevice(m_btDeviceAddress);
-        if (device == null)
-            return;
-        // Attempt to connect to the device
-        setupChat();
-        m_chatService.connect(m_btDeviceAddress);
+            if (btAdapter == null || m_btDeviceAddress.isEmpty() || isChatConnected())
+                return;
+
+            BluetoothDevice device = btAdapter.getRemoteDevice(m_btDeviceAddress);
+            if (device == null)
+                return;
+            // Attempt to connect to the device
+            m_chatService.connect(m_btDeviceAddress);
+        } else {
+            m_chatService = new ElmWifi(getApplicationContext(), mHandler, getApplicationContext().
+                    getFilesDir().getAbsolutePath());
+            m_chatService.connect("");
+        }
     }
 
-    private void setupChat() {
-        if (BuildConfig.DEBUG)
-            Log.d(TAG, "setupChat()");
-        // Initialize the BluetoothChatService to perform bluetooth connections
-        m_chatService.disconnect();
-    }
 
     void initBus(String protocol){
         if (isChatConnected()) {
             String txa = m_ecuDatabase.getTxAddressById(m_currentEcuAddressId);
             String rxa = m_ecuDatabase.getRxAddressById(m_currentEcuAddressId);
+            if (rxa == null || txa == null)
+                return;
             if (protocol.equals("CAN")) {
                 m_chatService.initCan(rxa, txa);
             } else if (protocol.equals("KWP2000")){
@@ -422,11 +472,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void scanBusNew(){
-        if(m_chatService.getState() != STATE_CONNECTED){
+        if(m_chatService != null && m_chatService.getState() != STATE_CONNECTED){
             return;
         }
 
-        if (m_currentEcuInfoList == null || m_currentEcuInfoList.isEmpty())
+        if (m_chatService == null || m_currentEcuInfoList == null || m_currentEcuInfoList.isEmpty())
             return;
 
         m_ecuIdentifierNew.reInit(m_currentEcuAddressId);
@@ -493,8 +543,9 @@ public class MainActivity extends AppCompatActivity {
     void startScreen(String ecuFile, String ecuHREFName){
         stopConnectionTimer();
 
-        m_chatService.disconnect();
-        setConnected(false);
+        if (m_chatService != null)
+            m_chatService.disconnect();
+        setConnected(0);
 
         try {
             Intent serverIntent = new Intent(this, ScreenActivity.class);
@@ -551,7 +602,8 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "+ ON DESTROY +");
         super.onDestroy();
         stopConnectionTimer();
-        m_chatService.disconnect();
+        if (m_chatService != null)
+            m_chatService.disconnect();
     }
 
     @Override
@@ -560,7 +612,8 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "+ ON STOP +");
         super.onStop();
         stopConnectionTimer();
-        m_chatService.disconnect();
+        if (m_chatService != null)
+            m_chatService.disconnect();
     }
 
     @Override
@@ -595,7 +648,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 break;
             case REQUEST_SCREEN:
-                setConnected(false);
+                setConnected(0);
                 startConnectionTimer();
                 break;
         }
@@ -836,17 +889,16 @@ public class MainActivity extends AppCompatActivity {
                         Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
                     switch (msg.arg1) {
                         case STATE_CONNECTED:
-                            activity.setConnected(true);
+                            activity.setConnected(1);
                             break;
                         case STATE_CONNECTING:
-                            activity.setConnected(false);
+                            activity.setConnected(2);
                             break;
                         case STATE_LISTEN:
-                        case STATE_NONE:
-
                             break;
+                        case STATE_NONE:
                         case STATE_DISCONNECTED:
-                            activity.setConnected(false);
+                            activity.setConnected(0);
                             break;
                     }
                     break;
@@ -879,12 +931,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    void setConnected(boolean c){
-        m_scanButton.setEnabled(c);
-        if (c){
+    void setConnected(int c){
+        m_scanButton.setEnabled(c == 1 ? true : false);
+        if (c == 1){
             m_btIconImage.setColorFilter(Color.GREEN);
-        } else {
-            m_btIconImage.clearColorFilter();
+            m_btIconImage.setImageResource(R.drawable.ic_link_ok);
+        } else if (c == 0){
+            m_btIconImage.setColorFilter(Color.RED);
+            m_btIconImage.setImageResource(R.drawable.ic_link_nok);
+        } else if (c == 2){
+            m_btIconImage.setColorFilter(Color.YELLOW);
+            m_btIconImage.setImageResource(R.drawable.ic_link_ok);
         }
     }
 
@@ -909,10 +966,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean isChatConnected(){
-        return (m_chatService.getState() == STATE_CONNECTED);
+        return m_chatService != null && (m_chatService.getState() == STATE_CONNECTED);
     }
 
     private boolean isChatConnecting(){
-        return (m_chatService.getState() == STATE_CONNECTING);
+        return m_chatService != null && (m_chatService.getState() == STATE_CONNECTING);
     }
 }

@@ -66,6 +66,13 @@
                 android:layout_weight="0"
                 app:srcCompat="@drawable/ic_lock" />
 
+            <ImageButton
+                android:id="@+id/linkChooser"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="0"
+                app:srcCompat="@drawable/ic_bt_connected" />
+
             <Button
                 android:id="@+id/btButton"
                 android:layout_width="wrap_content"
@@ -86,7 +93,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_weight="0"
-                app:srcCompat="@drawable/ic_bt_connected" />
+                app:srcCompat="@drawable/ic_link_nok" />
         </LinearLayout>
 
         <LinearLayout
