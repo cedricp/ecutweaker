@@ -49,7 +49,7 @@ se dégage de toute responsablite.</u></b>]]></string>
     <string name="not_connected">Non connecté</string>
     <string name="bt_not_enabled_leaving">Connection Bluetooth non activée</string>
     <string name="title_connecting">Connection</string>
-    <string name="title_connected_to">Connecté a <xliff:g id="device_name">%1$s</xliff:g></string>
+    <string name="title_connected_to">Connecté à <xliff:g id="device_name">%1$s</xliff:g></string>
     <string name="title_not_connected">Non connecté</string>
     <string name="scanning">Sondage</string>
     <string name="select_device">Chosir appareil</string>

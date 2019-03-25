@@ -30,6 +30,7 @@ public abstract class ElmBase {
     protected OutputStreamWriter mLogFile;
     protected String mLogDir;
     protected volatile boolean mRunningStatus;
+    private boolean mTesterPresentFlag;
 
 
     protected static final String ECUERRORCODE =
@@ -90,13 +91,15 @@ public abstract class ElmBase {
     public abstract boolean connect(String address);
     public abstract int getState();
     protected abstract String write_raw(String raw_buffer);
+    protected abstract void logInfo(String log);
 
-    public ElmBase(Handler handler, String logDir) {
+    public ElmBase(Handler handler, String logDir, boolean testerPresent) {
         mmessages = new ArrayList<>();
         mHandler = handler;
         mLogFile = null;
         mLogDir = logDir;
         mRxa = mTxa = -1;
+        mTesterPresentFlag = testerPresent;
         buildMaps();
     }
 
@@ -223,6 +226,8 @@ public abstract class ElmBase {
                 } else if ((message_len > 2) && message.substring(0, 2).toUpperCase().equals("AT")) {
                     String result = write_raw(message);
                     result = message + ";" + result;
+                    System.out.println("?? Message " + result);
+
                     int result_length = result.length();
                     byte[] tmpbuf = new byte[result_length];
                     System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);  //Make copy for not to rewrite in other thread
@@ -240,7 +245,7 @@ public abstract class ElmBase {
             }
 
             // Keep session alive
-            if (System.currentTimeMillis() - timer > 1500 && mRxa > 0) {
+            if (mTesterPresentFlag && ((System.currentTimeMillis() - timer) > 1500)  && mRxa > 0) {
                 timer = System.currentTimeMillis();
                 write_raw("013E");
             }
@@ -310,5 +315,15 @@ public abstract class ElmBase {
 
     public synchronized void write(String out) {
         mmessages.add(out);
+    }
+
+    public void setEcuName(String name){
+        if (mLogFile != null){
+            try {
+                mLogFile.append("New session with ECU " + name + "\n");
+            } catch (IOException e){
+                e.printStackTrace();
+            }
+        }
     }
 }

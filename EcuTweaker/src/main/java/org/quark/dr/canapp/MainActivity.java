@@ -72,8 +72,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int    REQUEST_ENABLE_BT      = 3;
     public static final String  DEFAULT_PREF_TAG = "default";
 
-    private final int LINK_WIFI=0;
-    private final int LINK_BLUETOOTH=1;
+    public static final int LINK_WIFI=0;
+    public static final int LINK_BLUETOOTH=1;
 
     public static final String PREF_DEVICE_ADDRESS = "btAdapterAddress";
     public static final String PREF_LICENSE_CODE = "licenseCode";
@@ -334,6 +334,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setLink(){
+        if (m_chatService != null)
+            m_chatService.disconnect();
         if (mLinkMode == LINK_BLUETOOTH){
             m_linkChooser.setImageResource(R.drawable.ic_bt_connected);
             m_btButton.setEnabled(true);
@@ -419,7 +421,9 @@ public class MainActivity extends AppCompatActivity {
             m_chatService.disconnect();
 
         if (mLinkMode == LINK_BLUETOOTH) {
-            m_chatService = new ElmBluetooth(mHandler, getApplicationContext().getFilesDir().getAbsolutePath());
+            m_chatService = new ElmBluetooth(mHandler,
+                    getApplicationContext().getFilesDir().getAbsolutePath(),
+                    false);
             // address is the device MAC address
             // Get the BluetoothDevice object
             BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -434,7 +438,7 @@ public class MainActivity extends AppCompatActivity {
             m_chatService.connect(m_btDeviceAddress);
         } else {
             m_chatService = new ElmWifi(getApplicationContext(), mHandler, getApplicationContext().
-                    getFilesDir().getAbsolutePath());
+                    getFilesDir().getAbsolutePath(), false);
             m_chatService.connect("");
         }
     }
@@ -554,6 +558,7 @@ public class MainActivity extends AppCompatActivity {
             b.putString("ecuRef", ecuHREFName);
             b.putString("deviceAddress", m_btDeviceAddress);
             b.putBoolean("licenseOk", mLicenseLock.isLicenseOk());
+            b.putInt("linkMode", mLinkMode);
             serverIntent.putExtras(b);
             startActivityForResult(serverIntent, REQUEST_SCREEN);
         } catch (android.content.ActivityNotFoundException e) {
@@ -940,7 +945,7 @@ public class MainActivity extends AppCompatActivity {
             m_btIconImage.setColorFilter(Color.RED);
             m_btIconImage.setImageResource(R.drawable.ic_link_nok);
         } else if (c == 2){
-            m_btIconImage.setColorFilter(Color.YELLOW);
+            m_btIconImage.setColorFilter(Color.GRAY);
             m_btIconImage.setImageResource(R.drawable.ic_link_ok);
         }
     }

@@ -79,7 +79,7 @@ public class ScreenActivity extends AppCompatActivity {
     private HashMap<String, ArrayList<Layout.InputData>> m_requestsInputs;
     private Set<String> m_displaysRequestSet;
 
-    private ElmBluetooth mChatService = null;
+    private ElmBase mChatService = null;
     private Handler mHandler = null;
 
     private int mCanTimeOut;
@@ -126,6 +126,7 @@ public class ScreenActivity extends AppCompatActivity {
         String globalScalePref = defaultPrefs.getString(PREF_GLOBAL_SCALE, "1.3");
         mGlobalScale = Float.valueOf(globalScalePref);
         mLastSDSTime = 0;
+        int linkMode = MainActivity.LINK_WIFI;
 
         Bundle b = getIntent().getExtras();
         if (b != null) {
@@ -135,6 +136,7 @@ public class ScreenActivity extends AppCompatActivity {
                 m_deviceAddressPref = b.getString("deviceAddress");
             }
             mDemoMode =  ! b.getBoolean("licenseOk");
+            linkMode = b.getInt("linkMode", MainActivity.LINK_WIFI);
         } else if (savedInstanceState != null && savedInstanceState.containsKey("ecu_name")){
             ecuFile = savedInstanceState.getString("ecu_name");
         }
@@ -271,15 +273,23 @@ public class ScreenActivity extends AppCompatActivity {
         m_logView.setGravity(Gravity.BOTTOM);
         m_logView.setMovementMethod(new ScrollingMovementMethod());
         m_logView.setBackgroundResource(R.drawable.edittextroundgreen);
-        m_btIconStatus.clearColorFilter();
+        m_btIconStatus.setColorFilter(Color.RED);
+        m_btIconStatus.setImageResource(R.drawable.ic_link_nok);
 
         if (!ecuFile.isEmpty()){
             openEcu(ecuFile, ecuHref);
         }
 
         mHandler = new messageHandler(this);
-        mChatService = new ElmBluetooth(mHandler, getApplicationContext().getFilesDir().getAbsolutePath());
-
+        if (linkMode == MainActivity.LINK_BLUETOOTH) {
+            mChatService = new ElmBluetooth(mHandler,
+                    getApplicationContext().getFilesDir().getAbsolutePath(),
+                    true);
+        } else {
+            mChatService = new ElmWifi(getApplicationContext(), mHandler,
+                    getApplicationContext().getFilesDir().getAbsolutePath(),
+                    true);
+        }
         connectDevice();
 
         if (savedInstanceState != null && savedInstanceState.containsKey("screen_name")){
@@ -822,11 +832,11 @@ public class ScreenActivity extends AppCompatActivity {
 
     private void setConnected(boolean c){
         if (c) {
-            m_btIconStatus.setImageResource(R.drawable.ic_bt_connected);
+            m_btIconStatus.setImageResource(R.drawable.ic_link_ok);
             m_btIconStatus.setColorFilter(Color.GREEN);
         } else {
-            m_btIconStatus.setImageResource(R.drawable.ic_bt_disconnected);
-            m_btIconStatus.clearColorFilter();
+            m_btIconStatus.setImageResource(R.drawable.ic_link_nok);
+            m_btIconStatus.setColorFilter(Color.RED);
         }
     }
 

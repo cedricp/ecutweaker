@@ -52,7 +52,7 @@ public class ElmWifi extends ElmBase{
         public void run() {
             try {
                 mlocalSocket = new Socket();
-                mlocalSocket.connect(new InetSocketAddress(mServerIp, mServerPort), 4000);
+                mlocalSocket.connect(new InetSocketAddress(mServerIp, mServerPort), 6000);
                 mlocalSocket.setKeepAlive(true);
                 mlocalSocket.setSoTimeout(2000);
                 setState(STATE_CONNECTED);
@@ -76,9 +76,11 @@ public class ElmWifi extends ElmBase{
 
                 // Start the thread to manage the connection and perform transmissions
                 connected(mlocalSocket);
+                return;
             } catch (IOException e) {
 
             }
+            setState(STATE_DISCONNECTED);
         }
 
         public void cancel() {
@@ -99,7 +101,8 @@ public class ElmWifi extends ElmBase{
         }
     }
 
-    private void logInfo(String info){
+    @Override
+    protected void logInfo(String info){
         Message msg = mWIFIHandler.obtainMessage(ScreenActivity.MESSAGE_TOAST);
         Bundle bundle = new Bundle();
         bundle.putString(ScreenActivity.TOAST, info);
@@ -110,11 +113,12 @@ public class ElmWifi extends ElmBase{
     private void connectionLost() {
         // Send a failure message back to the Activity;
         logInfo("Wifi device connection was lost");
-        setState(STATE_NONE);
+        mRunningStatus = false;
+        setState(STATE_DISCONNECTED);
     }
 
-    public ElmWifi(Context context, Handler handler, String logDir) {
-        super(handler, logDir);
+    public ElmWifi(Context context, Handler handler, String logDir, boolean testerPresent) {
+        super(handler, logDir, testerPresent);
         this.mContext = context;
         mOBDThread = new HandlerThread("OBDII", Thread.NORM_PRIORITY);
         mOBDThread.start();
@@ -215,6 +219,7 @@ public class ElmWifi extends ElmBase{
                 }
             }
         });
+        setState(STATE_NONE);
     }
 
     private void connected(Socket socket){
@@ -230,7 +235,7 @@ public class ElmWifi extends ElmBase{
 
     @Override
     protected String write_raw(String raw_buffer) {
-        raw_buffer += "\r\n";
+        raw_buffer += "\r";
         return mConnectedThread.write(raw_buffer.getBytes());
     }
 
@@ -268,12 +273,10 @@ public class ElmWifi extends ElmBase{
             try {
                 if(mSocket != null)
                 {
-                    logInfo("Begin write");
                     outStream = mSocket.getOutputStream();
                     byte[] arrayOfBytes = buffer;
                     outStream.write(arrayOfBytes);
                     outStream.flush();
-                    logInfo("End write");
                 }
             } catch (Exception localIOException1) {
                 localIOException1.printStackTrace();
@@ -291,21 +294,17 @@ public class ElmWifi extends ElmBase{
                         byte b;
                         StringBuilder res = new StringBuilder();
                         inStream = mSocket.getInputStream();
-
                         long start = System.currentTimeMillis();
-                        logInfo("Begin read");
                         while ((char) (b = (byte) inStream.read()) != '>') {
                             if (b == 0x0d)
                                 b = 0x0a;
                             res.append((char) b);
+                            if (System.currentTimeMillis() - start > 1000) {
+                                break;
+                            }
                         }
                         rawData = res.toString();
-                        System.out.println("?? Recv : " + rawData);
-                        if (System.currentTimeMillis() - start > 1500) {
-                            connectionLost();
-                            break;
-                        }
-                        logInfo("Read buffer : " + rawData);
+
                         return rawData;
                     }
 

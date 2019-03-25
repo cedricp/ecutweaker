@@ -47,8 +47,8 @@ public class ElmBluetooth extends ElmBase {
      * @param handler  A Handler to send messages back to the UI Activity
      */
 
-    public ElmBluetooth(Handler handler, String logDir) {
-        super(handler, logDir);
+    public ElmBluetooth(Handler handler, String logDir, boolean testerPresent) {
+        super(handler, logDir, testerPresent);
         mState = STATE_NONE;
         mTxa = mRxa = -1;
         buildMaps();
@@ -169,16 +169,6 @@ public class ElmBluetooth extends ElmBase {
     @Override
     protected String write_raw(String raw_buffer) {
         return mConnectedThread.write_raw(raw_buffer);
-    }
-
-    public void setEcuName(String name){
-        if (mLogFile != null){
-            try {
-                mLogFile.append("New session with ECU " + name + "\n");
-            } catch (IOException e){
-                e.printStackTrace();
-            }
-        }
     }
 
     public void initCan(String rxa, String txa){
@@ -390,5 +380,14 @@ public class ElmBluetooth extends ElmBase {
             }
             return "ERROR : UNKNOWN";
         }
+    }
+
+    @Override
+    protected void logInfo(String info){
+        Message msg = mHandler.obtainMessage(ScreenActivity.MESSAGE_TOAST);
+        Bundle bundle = new Bundle();
+        bundle.putString(ScreenActivity.TOAST, info);
+        msg.setData(bundle);
+        mHandler.sendMessage(msg);
     }
 }
