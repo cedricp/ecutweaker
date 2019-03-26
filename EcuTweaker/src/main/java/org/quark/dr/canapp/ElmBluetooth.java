@@ -1,16 +1,8 @@
 package org.quark.dr.canapp;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.UUID;
 
 import android.bluetooth.BluetoothAdapter;
@@ -20,9 +12,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 
-import org.quark.dr.ecu.IsoTPDecode;
-import org.quark.dr.ecu.IsoTPEncode;
-
 /**
  * This class does all the work for setting up and managing Bluetooth
  * connections with other devices. It has  a thread for connecting with a device, and a
@@ -30,22 +19,12 @@ import org.quark.dr.ecu.IsoTPEncode;
  */
 public class ElmBluetooth extends ElmBase {
     // Debugging
-    private static final String TAG = "ElmThread";
+    private static final String TAG = "ElmBluetoothThread";
     private static final boolean D = false;
-
-    // UUID for this application
     private static final UUID SPP_UUID = UUID.fromString("0001101-0000-1000-8000-00805F9B34FB");
-
-    // Member fields
     private ConnectThread mConnectThread;
     private ConnectedThread mConnectedThread;
     private int mState;
-
-    /**
-     * Constructor. Prepares a new BluetoothChat session.
-     //     * @param context  The UI Activity Context
-     * @param handler  A Handler to send messages back to the UI Activity
-     */
 
     public ElmBluetooth(Handler handler, String logDir, boolean testerPresent) {
         super(handler, logDir, testerPresent);
@@ -54,48 +33,33 @@ public class ElmBluetooth extends ElmBase {
         buildMaps();
     }
 
+    @Override
+    protected void logInfo(String info){
+        Message msg = mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_TOAST);
+        Bundle bundle = new Bundle();
+        bundle.putString(ScreenActivity.TOAST, info);
+        msg.setData(bundle);
+        mConnectionHandler.sendMessage(msg);
+    }
 
-    /**
-     * Set the current state of the chat connection
-     * @param state  An integer defining the current connection state
-     */
     private synchronized void setState(int state) {
         mState = state;
 
         // Give the new state to the Handler so the UI Activity can update
-        mHandler.obtainMessage(ScreenActivity.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
+        mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
     }
 
-    /**
-     * Return the current connection state. */
     @Override
     public synchronized int getState() {
             return mState;
     }
 
-    /**
-     * Start the ConnectThread to initiate a connection to a remote device.
-     * @param address  The BluetoothDevice address to connect
-     */
-    @Override
     public boolean connect(String address) {
         synchronized (this) {
             BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
             BluetoothDevice device = btAdapter.getRemoteDevice(address);
 
-            // Cancel any thread attempting to make a connection
-            if (mState == STATE_CONNECTING) {
-                if (mConnectThread != null) {
-                    mConnectThread.cancel();
-                    mConnectThread = null;
-                }
-            }
-
-            // Cancel any thread currently running a connection
-            if (mConnectedThread != null) {
-                mConnectedThread.cancel();
-                mConnectedThread = null;
-            }
+            disconnect();
             createLogFile();
 
             // Start the thread to connect with the given device
@@ -106,12 +70,7 @@ public class ElmBluetooth extends ElmBase {
         return true;
     }
 
-    /**
-     * Start the ConnectedThread to begin managing a Bluetooth connection
-     * @param socket  The BluetoothSocket on which the connection was made
-     * @param device  The BluetoothDevice that has been connected
-     */
-    public synchronized void connected(BluetoothSocket socket, BluetoothDevice
+    public synchronized void createConnectedThread(BluetoothSocket socket, BluetoothDevice
             device, final String socketType) {
         // Cancel the thread that completed the connection
         if (mConnectThread != null) {
@@ -130,18 +89,15 @@ public class ElmBluetooth extends ElmBase {
         mConnectedThread.start();
 
         // Send the name of the connected device back to the UI Activity
-        Message msg = mHandler.obtainMessage(ScreenActivity.MESSAGE_DEVICE_NAME);
+        Message msg = mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_DEVICE_NAME);
         Bundle bundle = new Bundle();
         bundle.putString(ScreenActivity.DEVICE_NAME, device.getName());
         msg.setData(bundle);
-        mHandler.sendMessage(msg);
+        mConnectionHandler.sendMessage(msg);
 
         setState(STATE_CONNECTED);
     }
 
-    /**
-     * Stop all threads
-     */
     @Override
     public void disconnect(){
         if (mConnectThread != null) {
@@ -156,6 +112,8 @@ public class ElmBluetooth extends ElmBase {
         mConnectedThread = null;
 
         setState(STATE_NONE);
+
+        mConnectionHandler.removeCallbacksAndMessages(null);
 
         if (mLogFile != null){
             try {
@@ -182,36 +140,20 @@ public class ElmBluetooth extends ElmBase {
         mTxa = Integer.parseInt(txa, 16);
     }
 
-    /**
-     * Indicate that the connection attempt failed and notify the UI Activity.
-     */
     private void connectionFailed() {
-        // Send a failure message back to the Activity
-//        Message msg = mHandler.obtainMessage(ScreenActivity.MESSAGE_TOAST);
-//        Bundle bundle = new Bundle();
-//        bundle.putString(ScreenActivity.TOAST, "Unable to connect device");
-//        msg.setData(bundle);
-//        mHandler.sendMessage(msg);
+        logInfo("Bluetooth connection failed");
         setState(STATE_NONE);
     }
 
-    /**
-     * Indicate that the connection was lost and notify the UI Activity.
-     */
     private void connectionLost() {
-//         Send a failure message back to the Activity
-//        Message msg = mHandler.obtainMessage(ScreenActivity.MESSAGE_TOAST);
-//        Bundle bundle = new Bundle();
-//        bundle.putString(ScreenActivity.TOAST, "Device connection was lost");
-//        msg.setData(bundle);
-//        mHandler.sendMessage(msg);
+        logInfo("Bluetooth connection lost");
         setState(STATE_DISCONNECTED);
     }
 
-    /**
-     * This thread runs while attempting to make an outgoing connection
-     * with a device. It runs straight through; the connection either
-     * succeeds or fails.
+    /*
+     * Connected thread class
+     * Asynchronously manage ELM connection
+     *
      */
     private class ConnectThread extends Thread {
         private final BluetoothSocket mmSocket;
@@ -222,18 +164,18 @@ public class ElmBluetooth extends ElmBase {
             mmDevice = device;
             BluetoothSocket tmp = null;
 
-            // Get a BluetoothSocket for a connection with the
-            // given BluetoothDevice
+            /*
+             * Get a BluetoothSocket for a connection with the
+             * given BluetoothDevice
+             */
             try {
                 tmp = device.createRfcommSocketToServiceRecord(SPP_UUID);
             } catch (IOException e) {
-                //Log.e(TAG, "Socket Type: " + mSocketType + "create() failed", e);
             }
             mmSocket = tmp;
         }
 
         public void run() {
-            //Log.i(TAG, "BEGIN mConnectThread SocketType:" + mSocketType);
             setName("ConnectThread" + mSocketType);
 
             // Always cancel discovery because it will slow down a connection
@@ -246,12 +188,9 @@ public class ElmBluetooth extends ElmBase {
                 // successful connection or an exception
                 mmSocket.connect();
             } catch (IOException e) {
-                // Close the socket
                 try {
                     mmSocket.close();
                 } catch (IOException e2) {
-//                    Log.e(TAG, "unable to close() " + mSocketType +
-//                            " socket during connection failure", e2);
                 }
                 connectionFailed();
                 return;
@@ -263,7 +202,7 @@ public class ElmBluetooth extends ElmBase {
             }
 
             // Start the connected thread
-            connected(mmSocket, mmDevice, mSocketType);
+            createConnectedThread(mmSocket, mmDevice, mSocketType);
         }
 
         public void cancel() {
@@ -275,20 +214,19 @@ public class ElmBluetooth extends ElmBase {
             try {
                 mmSocket.close();
             } catch (IOException e) {
-                //Log.e(TAG, "close() of connect " + mSocketType + " socket failed", e);
             }
 
             try {
                 join();
             } catch (InterruptedException e) {
-
             }
         }
     }
 
-    /**
-     * This thread runs during a connection with a remote device.
-     * It handles all incoming and outgoing transmissions.
+    /*
+     * Connect thread class
+     * Asynchronously create a Bluetooth socket
+     *
      */
     private class ConnectedThread extends Thread {
         private final BluetoothSocket mmSocket;
@@ -296,8 +234,7 @@ public class ElmBluetooth extends ElmBase {
         private final OutputStream mmOutStream;
 
         public ConnectedThread(BluetoothSocket socket, String socketType) {
-            //Log.d(TAG, "create ConnectedThread: " + socketType);
-            mmessages.clear();
+            mMessages.clear();
             mmSocket = socket;
             InputStream tmpIn = null;
             OutputStream tmpOut = null;
@@ -308,7 +245,6 @@ public class ElmBluetooth extends ElmBase {
                 tmpIn = socket.getInputStream();
                 tmpOut = socket.getOutputStream();
             } catch (IOException e) {
-                //Log.e(TAG, "temp sockets not created", e);
             }
 
             mmInStream = tmpIn;
@@ -322,11 +258,10 @@ public class ElmBluetooth extends ElmBase {
         public void cancel() {
             mRunningStatus = false;
             interrupt();
-            mmessages.clear();
+            mMessages.clear();
             try {
                 mmSocket.close();
             } catch (IOException e) {
-                //Log.e(TAG, "close() of connect socket failed", e);
             }
 
             if (!isAlive())
@@ -380,14 +315,5 @@ public class ElmBluetooth extends ElmBase {
             }
             return "ERROR : UNKNOWN";
         }
-    }
-
-    @Override
-    protected void logInfo(String info){
-        Message msg = mHandler.obtainMessage(ScreenActivity.MESSAGE_TOAST);
-        Bundle bundle = new Bundle();
-        bundle.putString(ScreenActivity.TOAST, info);
-        msg.setData(bundle);
-        mHandler.sendMessage(msg);
     }
 }

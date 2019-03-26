@@ -17,22 +17,19 @@ import java.util.HashMap;
 
 public abstract class ElmBase {
     // Constants that indicate the current connection state
-    public static final int STATE_NONE = 0;       // we're doing nothing
-    public static final int STATE_LISTEN = 1;     // now listening for incoming connections
-    public static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
-    public static final int STATE_CONNECTED = 3;  // now connected to a remote device
-    public static final int STATE_DISCONNECTED = 4;  // now connected to a remote device
+    public static final int STATE_NONE = 0;
+    public static final int STATE_CONNECTING = 1;
+    public static final int STATE_CONNECTED = 2;
+    public static final int STATE_DISCONNECTED = 3;
 
-    protected ArrayList<String> mmessages;
+    protected ArrayList<String> mMessages;
     protected int mRxa, mTxa;
-    protected HashMap<String, String> ECUERRCODEMAP;
-    protected final Handler mHandler;
+    protected HashMap<String, String> mEcuErrorCodeMap;
+    protected final Handler mConnectionHandler;
     protected OutputStreamWriter mLogFile;
     protected String mLogDir;
     protected volatile boolean mRunningStatus;
     private boolean mTesterPresentFlag;
-
-
     protected static final String ECUERRORCODE =
             "10:General Reject," +
                     "11:Service Not Supported," +
@@ -94,8 +91,8 @@ public abstract class ElmBase {
     protected abstract void logInfo(String log);
 
     public ElmBase(Handler handler, String logDir, boolean testerPresent) {
-        mmessages = new ArrayList<>();
-        mHandler = handler;
+        mMessages = new ArrayList<>();
+        mConnectionHandler = handler;
         mLogFile = null;
         mLogDir = logDir;
         mRxa = mTxa = -1;
@@ -170,16 +167,16 @@ public abstract class ElmBase {
     }
 
     public void buildMaps(){
-        ECUERRCODEMAP = new HashMap<>();
+        mEcuErrorCodeMap = new HashMap<>();
         String[] ERRC = ECUERRORCODE.replace(" ", "").split(",");
         for (String erc : ERRC){
             String[] idToAddr = erc.split(":");
-            ECUERRCODEMAP.put(idToAddr[0], idToAddr[1]);
+            mEcuErrorCodeMap.put(idToAddr[0], idToAddr[1]);
         }
     }
 
     public String getEcuErrorCode(String hexError){
-        return ECUERRCODEMAP.get(hexError);
+        return mEcuErrorCodeMap.get(hexError);
     }
 
     public boolean isHexadecimal(String text) {
@@ -207,13 +204,13 @@ public abstract class ElmBase {
         // Keep listening to the InputStream while connected
         while (mRunningStatus) {
 
-            if (ElmBase.this.mmessages.size() > 0) {
+            if (ElmBase.this.mMessages.size() > 0) {
                 String message;
                 int num_queue;
                 synchronized (this) {
-                    message = mmessages.get(0);
-                    mmessages.remove(0);
-                    num_queue = mmessages.size();
+                    message = mMessages.get(0);
+                    mMessages.remove(0);
+                    num_queue = mMessages.size();
                 }
                 int message_len = message.length();
                 if ((message_len > 6) && message.substring(0, 6).toUpperCase().equals("DELAY:")) {
@@ -226,18 +223,18 @@ public abstract class ElmBase {
                 } else if ((message_len > 2) && message.substring(0, 2).toUpperCase().equals("AT")) {
                     String result = write_raw(message);
                     result = message + ";" + result;
-                    System.out.println("?? Message " + result);
 
                     int result_length = result.length();
                     byte[] tmpbuf = new byte[result_length];
                     System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);  //Make copy for not to rewrite in other thread
-                    mHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, mTxa, tmpbuf).sendToTarget();
-                    mHandler.obtainMessage(ScreenActivity.MESSAGE_QUEUE_STATE, num_queue, -1, null).sendToTarget();
+                    mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, mTxa, tmpbuf).sendToTarget();
+                    mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_QUEUE_STATE, num_queue, -1, null).sendToTarget();
                 } else {
                     send_can(message);
-                    mHandler.obtainMessage(ScreenActivity.MESSAGE_QUEUE_STATE, num_queue, -1, null).sendToTarget();
+                    mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_QUEUE_STATE, num_queue, -1, null).sendToTarget();
                 }
             }
+
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
@@ -287,6 +284,7 @@ public abstract class ElmBase {
                 }
             }
         }
+
         String result;
         if (error){
             result = "ERROR : " + errorMsg;
@@ -304,17 +302,17 @@ public abstract class ElmBase {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         result = message + ";" + result;
         int result_length = result.length();
         byte[] tmpbuf = new byte[result_length];
         //Make copy for not to rewrite in other thread
         System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);
-        mHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, -1, tmpbuf).sendToTarget();
-        System.out.println("?? Recv " + result);
+        mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, -1, tmpbuf).sendToTarget();
     }
 
     public synchronized void write(String out) {
-        mmessages.add(out);
+        mMessages.add(out);
     }
 
     public void setEcuName(String name){

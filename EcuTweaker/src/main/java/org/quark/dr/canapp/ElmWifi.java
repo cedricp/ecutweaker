@@ -1,104 +1,38 @@
 package org.quark.dr.canapp;
 
-import android.app.AlertDialog;
 import android.content.Context;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Message;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.ArrayList;
 
 public class ElmWifi extends ElmBase{
-    private static final String TAG = "ElmWifi";
+    private static final String TAG = "ElmWifiThread";
     private final Context mContext;
-    private final HandlerThread mOBDThread;
     private final Handler mWIFIHandler;
     private Socket mSocket;
     private boolean mConnecting = false;
     private WifiManager.WifiLock wifiLock;
     private int mState;
 
-    OutputStream outStream;
-    InputStream inStream;
-
-    String serverIpAddress = "192.168.0.10";
-    public static final int SERVERPORT = 35000;
-    String deviceName = "Elm327";
+    private String serverIpAddress = "192.168.0.10";
+    private static final int SERVERPORT = 35000;
+    private String deviceName = "Elm327";
     private ElmWifi.ConnectedThread mConnectedThread;
     private ElmWifi.ConnectThread mConnectThread;
 
-    private class ConnectThread extends Thread {
-        String mServerIp;
-        int mServerPort;
-        Socket mlocalSocket;
-
-        public ConnectThread(String serverIp, int serverPort) {
-            mServerIp = serverIp;
-            mServerPort = serverPort;
-        }
-
-        public void run() {
-            try {
-                mlocalSocket = new Socket();
-                mlocalSocket.connect(new InetSocketAddress(mServerIp, mServerPort), 6000);
-                mlocalSocket.setKeepAlive(true);
-                mlocalSocket.setSoTimeout(2000);
-                setState(STATE_CONNECTED);
-                mConnecting = false;
-
-                // Send the name of the connected device back to the UI Activity
-                Message msg = mWIFIHandler.obtainMessage(ScreenActivity.MESSAGE_DEVICE_NAME);
-                Bundle bundle = new Bundle();
-                bundle.putString(ScreenActivity.DEVICE_NAME, deviceName);
-                msg.setData(bundle);
-                mWIFIHandler.sendMessage(msg);
-
-                if (mConnectedThread != null) {
-                    mConnectedThread.cancel();
-                    mConnectedThread = null;
-                }
-
-                synchronized (this){
-                    mmessages.clear();
-                }
-
-                // Start the thread to manage the connection and perform transmissions
-                connected(mlocalSocket);
-                return;
-            } catch (IOException e) {
-
-            }
-            setState(STATE_DISCONNECTED);
-        }
-
-        public void cancel() {
-            if (!isAlive())
-                return;
-
-            interrupt();
-
-            try {
-                mlocalSocket.close();
-            } catch (IOException e) {
-            }
-
-            try {
-                join();
-            } catch (InterruptedException e) {
-            }
-        }
+    public ElmWifi(Context context, Handler handler, String logDir, boolean testerPresent) {
+        super(handler, logDir, testerPresent);
+        this.mContext = context;
+        mWIFIHandler = handler;
     }
 
     @Override
@@ -110,19 +44,11 @@ public class ElmWifi extends ElmBase{
         mWIFIHandler.sendMessage(msg);
     }
 
-    private void connectionLost() {
+    private void connectionLost(String message) {
         // Send a failure message back to the Activity;
-        logInfo("Wifi device connection was lost");
+        logInfo("Wifi device connection was lost : " + message);
         mRunningStatus = false;
         setState(STATE_DISCONNECTED);
-    }
-
-    public ElmWifi(Context context, Handler handler, String logDir, boolean testerPresent) {
-        super(handler, logDir, testerPresent);
-        this.mContext = context;
-        mOBDThread = new HandlerThread("OBDII", Thread.NORM_PRIORITY);
-        mOBDThread.start();
-        mWIFIHandler = handler;
     }
 
     @Override
@@ -145,18 +71,13 @@ public class ElmWifi extends ElmBase{
             return false;
         }
 
-        if (mConnectThread != null)
-            mConnectThread.cancel();
-
-        if (mConnectedThread != null){
-            mConnectedThread.cancel();
-        }
+        disconnect();
 
         setState(STATE_CONNECTING);
 
         WifiManager wifi = (WifiManager) mContext.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         if (wifiLock == null) {
-            this.wifiLock = wifi.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "HighPerf wifi lock");
+            wifiLock = wifi.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "HighPerf wifi lock");
         }
 
         wifiLock.acquire();
@@ -195,34 +116,21 @@ public class ElmWifi extends ElmBase{
         if (mConnectThread != null)
             mConnectThread.cancel();
 
-        if (mConnectedThread == null)
-            return;
-
-        mConnectedThread.cancel();
+        if (mConnectedThread != null)
+            mConnectedThread.cancel();
 
         if (wifiLock != null && wifiLock.isHeld())
             wifiLock.release();
 
+        mMessages.clear();
+
         mWIFIHandler.removeCallbacksAndMessages(null);
         mConnecting = false;
-        mWIFIHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (mSocket != null && mSocket.isConnected()) {
-                    try {
-                        mSocket.close();
-                        mSocket = null;
-                        setState(STATE_NONE);
-                    } catch (Exception e) {
-                        Log.d(TAG, "disconnect: " + Log.getStackTraceString(e));
-                    }
-                }
-            }
-        });
+
         setState(STATE_NONE);
     }
 
-    private void connected(Socket socket){
+    private void createConnectedThread(Socket socket){
         mSocket = socket;
         mConnectedThread = new ElmWifi.ConnectedThread(socket);
         mConnectedThread.start();
@@ -239,8 +147,16 @@ public class ElmWifi extends ElmBase{
         return mConnectedThread.write(raw_buffer.getBytes());
     }
 
+
+    /*
+     * Connected thread class
+     * Asynchronously manage ELM connection
+     *
+     */
     private class ConnectedThread extends Thread {
         private final Socket mmSocket;
+        private OutputStream mOutStream;
+        private InputStream mInStream;
 
         public ConnectedThread(Socket socket) {
             mmSocket = socket;
@@ -255,8 +171,8 @@ public class ElmWifi extends ElmBase{
                 Log.e(TAG, "temp sockets not created", e);
             }
 
-            inStream = tmpIn;
-            outStream = tmpOut;
+            mInStream = tmpIn;
+            mOutStream = tmpOut;
         }
 
         public void run() {
@@ -264,38 +180,35 @@ public class ElmWifi extends ElmBase{
         }
 
         public String write(byte[] buffer) {
-            writeDataToOBD(buffer);
-            String result = readDataFromOBD();
+            writeToElm(buffer);
+            String result = readFromElm();
             return result;
         }
 
-        public void writeDataToOBD(byte[] buffer) {
+        public void writeToElm(byte[] buffer) {
             try {
-                if(mSocket != null)
+                if(mmSocket != null)
                 {
-                    outStream = mSocket.getOutputStream();
                     byte[] arrayOfBytes = buffer;
-                    outStream.write(arrayOfBytes);
-                    outStream.flush();
+                    mOutStream.write(arrayOfBytes);
+                    mOutStream.flush();
                 }
             } catch (Exception localIOException1) {
-                localIOException1.printStackTrace();
-                connectionLost();
+                connectionLost(localIOException1.getMessage());
             }
         }
 
-        public String readDataFromOBD() {
+        public String readFromElm() {
 
             while (true) {
                 try {
-                    if(mSocket != null)
+                    if(mmSocket != null)
                     {
                         String rawData;
                         byte b;
                         StringBuilder res = new StringBuilder();
-                        inStream = mSocket.getInputStream();
                         long start = System.currentTimeMillis();
-                        while ((char) (b = (byte) inStream.read()) != '>') {
+                        while ((char) (b = (byte) mInStream.read()) != '>') {
                             if (b == 0x0d)
                                 b = 0x0a;
                             res.append((char) b);
@@ -309,11 +222,10 @@ public class ElmWifi extends ElmBase{
                     }
 
                 } catch (IOException localIOException) {
-                    connectionLost();
+                    connectionLost(localIOException.getMessage());
                     break;
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    connectionLost();
+                    connectionLost(e.getMessage());
                     break;
                 }
             }
@@ -323,17 +235,80 @@ public class ElmWifi extends ElmBase{
         public void cancel() {
             mRunningStatus = false;
             interrupt();
-            mmessages.clear();
+
             try {
                 mmSocket.close();
             } catch (IOException e) {
-                Log.e(TAG, "close() of connect " + mSocket + " socket failed", e);
+                Log.e(TAG, "close() of connect " + mmSocket + " socket failed", e);
             }
 
             try {
                 join();
             } catch (InterruptedException e) {
 
+            }
+        }
+    }
+
+    /*
+     * Connect thread class
+     * Asynchronously create a Wifi socket
+     *
+     */
+    private class ConnectThread extends Thread {
+        private String mServerIp;
+        private int mServerPort;
+        private Socket mLocalSocket;
+
+        public ConnectThread(String serverIp, int serverPort) {
+            mServerIp = serverIp;
+            mServerPort = serverPort;
+        }
+
+        public void run() {
+            try {
+                mLocalSocket = new Socket();
+                mLocalSocket.connect(new InetSocketAddress(mServerIp, mServerPort), 6000);
+                mLocalSocket.setKeepAlive(true);
+                mLocalSocket.setSoTimeout(2000);
+                setState(STATE_CONNECTED);
+                mConnecting = false;
+
+                // Send the name of the connected device back to the UI Activity
+                Message msg = mWIFIHandler.obtainMessage(ScreenActivity.MESSAGE_DEVICE_NAME);
+                Bundle bundle = new Bundle();
+                bundle.putString(ScreenActivity.DEVICE_NAME, deviceName);
+                msg.setData(bundle);
+                mWIFIHandler.sendMessage(msg);
+
+                if (mConnectedThread != null) {
+                    mConnectedThread.cancel();
+                    mConnectedThread = null;
+                }
+
+                synchronized (this){
+                    mMessages.clear();
+                }
+
+                // Start the thread to manage the connection and perform transmissions
+                createConnectedThread(mLocalSocket);
+                return;
+            } catch (IOException e) {
+            }
+            setState(STATE_DISCONNECTED);
+        }
+
+        public void cancel() {
+            interrupt();
+
+            try {
+                mLocalSocket.close();
+            } catch (IOException e) {
+            }
+
+            try {
+                join();
+            } catch (InterruptedException e) {
             }
         }
     }

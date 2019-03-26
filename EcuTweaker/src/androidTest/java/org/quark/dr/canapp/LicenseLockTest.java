@@ -21,7 +21,7 @@ public class LicenseLockTest {
 
     @Test
     public void test_Ident(){
-        byte[] unarmor = LicenseLock.removeArmor("3tpud3ehwb");
+        byte[] unarmor = LicenseLock.removeArmor("vbquv6sndd");
         String hexString = new String(unarmor);
         long id = Long.parseLong(hexString, 16);
         LicenseLock lock = new LicenseLock(id);

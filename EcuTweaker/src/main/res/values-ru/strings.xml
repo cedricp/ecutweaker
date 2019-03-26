@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-<string name="activity_screen" translatable="false">CanAppScreen</string>
-<string name="action_settings" translatable="false">Настройки</string>
-<string name="application_name" translatable="false">Ecu Tweaker</string>
-<string name="title_activity_main" translatable="false">Ecu Tweaker</string>
 
-<!-- BluetoothChat -->
+    <!-- BluetoothChat -->
 <string name="send">Отправить</string>
 <string name="not_connected">Нет связи с устройством</string>
 <string name="bt_not_enabled_leaving">Bluetooth не подключен. выходим из Bluetooth Chat.</string>

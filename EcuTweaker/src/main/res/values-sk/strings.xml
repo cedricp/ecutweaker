@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
+    <!-- BluetoothChat -->
+    <string name="send">Odoslat</string>
+    <string name="not_connected">Nie ste pripojeni k zariadeniu</string>
+    <string name="bt_not_enabled_leaving">Bluetooth nebol nepovoleny.Odchod z Bluetooth chatu</string>
+    <string name="title_connecting">Pripojenie…</string>
+    <string name="title_connected_to">Pripojene k <xliff:g id="device_name">%1$s</xliff:g></string>
+    <string name="title_not_connected">Nepripojeny</string>
+
+    <!-- DeviceListActivity -->
+    <string name="scanning">Skenovanie zariadeni..</string>
+    <string name="select_device">Vybrat zariadenie na pripojenie</string>
+    <string name="none_paired">Ziadne sparovane zariadenia</string>
+    <string name="none_found">Nenaslo sa zariadenie</string>
+    <string name="title_paired_devices">Parovane zariadenia</string>
+    <string name="title_other_devices">Ine dostupne zariadenia</string>
+    <string name="button_scan">Kontrola zariadeni</string>
+
+    <!-- Application strings -->
+    <string name="INDEXING_DB">Index databazy..</string>
+    <string name="DB_NOT_FOUND">Ziadna databaza</string>
+    <string name="WRONG_CODE">Nespravny kod,prepac!</string>
+    <string name="APP_UNLOCKED">Aplikacia odomknuta</string>
+    <string name="APP_ENTER_CODE">Zadajte aktivacny kod</string>
+    <string name="USER_REQUEST_CODE">Vas kod poziadavky</string>
+    <string name="OK">Ano</string>
+    <string name="CANCEL">Zrusit</string>
+    <string name="USER_USES_DEMO_MODE">Pouzivate DEMO verziu, funkcie zapisu su deaktivovane.</string>
+    <string name="BT_MANAGER_MESSAGE">Sprava spravcu Bluetooth</string>
+    <string name="ECU_PART_MATCH">ECU ciastocne zodpoveda suboru(pouzite opatrne)</string>
+    <string name="ECU_MATCH">ECU sa dokonale zhoduje so suborom</string>
+    <string name="ECU_FOUND">Najdene ECU</string>
+    <string name="DIAG_VERSION">Diagnosticka verzia</string>
+    <string name="VERSION">Verzia</string>
+    <string name="SOFT_VERSION">Prog. verzia</string>
+    <string name="SUPPLIER_VERSION">Verzia dodavatela</string>
+    <string name="CHOOSE_PROJECT">Vyberte projekt</string>
+    <string name="INFORMATION">Informacie</string>
+    <string name="DEMO_MESSAGE"><![CDATA[Welcome to <b>ECU TWEAKER</b>,<br> Pouzivate aplikaciu v demo rezime.
+Mozete ho pouzit na citanie vsetkych parametrov ECU, ale nemate povolenie
+pouzit tlacidla alebo <i>CLEAR DTC</i> funkcie.<br>
+Mozete ho odomknut zaslanim kodu poziadavky, poslem Vam aktivacny kod.
+<b>Dajte si pozor, s velkou silou prichadza velka zodpovednost, budete ju pouzivat na vlastne
+riziko. Vyvojar odmietne vsetky zodpovednosti, <u>ste vyhradne zodpovedni,
+co robite s tymto softverom.</u></b>]]></string>
+    <string name="BAD_RESPONSE">Chybna odpoved</string>
+    <string name="TO_REQUEST">na vyziadanie</string>
+    <string name="INVALID_VALUE">Neplatna hodnota, skontrolujte vstupy</string>
+    <string name="FRAME_COMPUTE_FAILED">Nepodarilo sa vypocitat obraz</string>
+    <string name="COMPUTED_FRAME">Vypocitany obraz</string>
+    <string name="CATEGORY_CHOOSE">Vyberte kategoriu</string>
+    <string name="SCREEN_CHOOSE">Vyberte obraz</string>
+    <string name="FRAME_NOT_SENT">Obraz nebol odoslany(Bluetooth nepripojeny)</string>
+    <string name="NO_ELM_RESPONSE">Bez odpovede ELM </string>
+    <string name="DTC_CLEAR_OK">Vymazat DTC uspesny</string>
+    <string name="NEGATIVE_RESPONSE">Zaporna odpoved</string>
+    <string name="ELM_RESPONSE">ELM Odpoved</string>
+    <string name="BAD_ELM_RESPONSE">Odpoved BAD ELM</string>
+    <string name="CLEAR_ALL_DTC">Vymazat kody DTC?</string>
+    <string name="YES">Ano</string>
+    <string name="NO">Nie</string>
+    <string name="NO_DTC_STORED">ECU nema ulozeny DTC</string>
+    <string name="NEW_DEVICE">Najdene nove zariadenie</string>
+    <string name="CHOOSE_BT_DEVICE">VYBERTE ZARIADENIE BT</string>
+    <string name="AUTO_IDENTIFY">AUTO IDENTIFIKACIA</string>
+    <string name="AUTO_IDENT_RESULT">Vysledok AutoIdent</string>
+    <string name="NO_CHAT_SESSION">Pokus o odoslanie prikazu bez Bluetooth chatu</string>
+    <string name="LOGS">Zobrazit log</string>
+    <string name="COPY_TO_CLIPBOARD">Kopirovat do schranky</string>
+    <string name="CLEAR_LOG">Vymazat log</string>
+    <string name="LOGFILE_DELETED">Subor log uspesne odstraneny</string>
+    <string name="LOGFILE_DELETE_FAILED">Nepodarilo sa odstranit log</string>
+    <string name="LONGPRESS_TO_DELETE">Dlhym stlacenim zmazete</string>
+</resources>

@@ -13,6 +13,8 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.Html;
+import android.text.Spanned;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Pair;
 import android.support.v7.app.AppCompatActivity;
@@ -51,7 +53,6 @@ import java.util.Set;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTED;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTING;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_DISCONNECTED;
-import static org.quark.dr.canapp.ElmBluetooth.STATE_LISTEN;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_NONE;
 import static org.quark.dr.canapp.MainActivity.PREF_GLOBAL_SCALE;
 import static org.quark.dr.ecu.Ecu.hexStringToByteArray;
@@ -122,7 +123,8 @@ public class ScreenActivity extends AppCompatActivity {
         String ecuFile = "";
         String ecuHref = "";
         m_autoReload = false;
-        SharedPreferences defaultPrefs = this.getSharedPreferences(MainActivity.DEFAULT_PREF_TAG, MODE_PRIVATE);
+        SharedPreferences defaultPrefs = this.getSharedPreferences(MainActivity.DEFAULT_PREF_TAG,
+                MODE_PRIVATE);
         String globalScalePref = defaultPrefs.getString(PREF_GLOBAL_SCALE, "1.3");
         mGlobalScale = Float.valueOf(globalScalePref);
         mLastSDSTime = 0;
@@ -564,7 +566,7 @@ public class ScreenActivity extends AppCompatActivity {
 
     void updateDisplays(){
         if (!isChatConnected()) {
-            setConnected(false);
+            setConnectionStatus(STATE_DISCONNECTED);
             return;
         }
 
@@ -793,8 +795,7 @@ public class ScreenActivity extends AppCompatActivity {
             case REQUEST_ENABLE_BT:
                 // When the request to enable Bluetooth returns
                 if (resultCode == Activity.RESULT_OK) {
-                    // Bluetooth is now enabled, so set up a chat session
-                    setupChat();
+                    // Bluetooth/Wifi is now enabled, so set up a chat session
                 }
         }
     }
@@ -821,22 +822,20 @@ public class ScreenActivity extends AppCompatActivity {
         edit.apply();
     }
 
-    private void setupChat() {
-        Log.d(TAG, "setupChat()");
-        mChatService.disconnect();
-    }
-
     private void setStatus(CharSequence status) {
         m_logView.append(status + "\n");
     }
 
-    private void setConnected(boolean c){
-        if (c) {
-            m_btIconStatus.setImageResource(R.drawable.ic_link_ok);
+    void setConnectionStatus(int c){
+        if (c == STATE_CONNECTED){
             m_btIconStatus.setColorFilter(Color.GREEN);
-        } else {
-            m_btIconStatus.setImageResource(R.drawable.ic_link_nok);
+            m_btIconStatus.setImageResource(R.drawable.ic_link_ok);
+        } else if (c == STATE_DISCONNECTED){
             m_btIconStatus.setColorFilter(Color.RED);
+            m_btIconStatus.setImageResource(R.drawable.ic_link_nok);
+        } else if (c == STATE_CONNECTING){
+            m_btIconStatus.setColorFilter(Color.GRAY);
+            m_btIconStatus.setImageResource(R.drawable.ic_link_ok);
         }
     }
 
@@ -885,19 +884,21 @@ public class ScreenActivity extends AppCompatActivity {
         if (isChatConnected())
             return;
 
-        BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (btAdapter == null || m_deviceAddressPref.isEmpty())
-            return;
+        if (mChatService instanceof ElmBluetooth) {
+            BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+            if (btAdapter == null || m_deviceAddressPref.isEmpty())
+                return;
 
-        setupChat();
-
-        // address is the device MAC address
-        // Get the BluetoothDevice object
-        BluetoothDevice device = btAdapter.getRemoteDevice(m_deviceAddressPref);
-        if (device == null)
-            return;
-        // Attempt to connect to the device
-        mChatService.connect(m_deviceAddressPref);
+            // address is the device MAC address
+            // Get the BluetoothDevice object
+            BluetoothDevice device = btAdapter.getRemoteDevice(m_deviceAddressPref);
+            if (device == null)
+                return;
+            // Attempt to connect to the device
+            mChatService.connect(m_deviceAddressPref);
+        } else {
+            mChatService.connect("");
+        }
     }
 
     private boolean isChatConnected(){
@@ -1075,6 +1076,8 @@ public class ScreenActivity extends AppCompatActivity {
     }
 
     void decodeDTC(String response){
+        // Test data ACU4
+        // response = "57 06 90 07 41 90 08 41 90 42 52 90 08 42 90 07 42 90 7C 40".replace(" ", "");
         List<List<String>> decodedDtcs = m_ecu.decodeDTC(m_currentDtcRequestName, response);
 
         if (decodedDtcs.size() == 0){
@@ -1083,14 +1086,27 @@ public class ScreenActivity extends AppCompatActivity {
             return;
         }
 
+        String dtcReport = "";
         int i = 0;
         for (List<String> stringList : decodedDtcs){
-            m_logView.append("DTC #" + (i + 1) + "\n");
+            dtcReport += "<b>DTC #" + (i + 1) + "</b><br>";
             i++;
             for (String dtcLine : stringList){
-                m_logView.append("   " + dtcLine + "\n");
+                dtcReport += "* " + dtcLine + "<br>";
             }
         }
+
+        Spanned message = Html.fromHtml(dtcReport);
+        AlertDialog alertDialog = new AlertDialog.Builder(ScreenActivity.this).create();
+        alertDialog.setTitle("DTC Report");
+        alertDialog.setMessage(message);
+        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, getResources().getString(R.string.OK),
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+        alertDialog.show();
     }
 
     private static class messageHandler extends Handler {
@@ -1107,17 +1123,16 @@ public class ScreenActivity extends AppCompatActivity {
                     switch (msg.arg1) {
                         case STATE_CONNECTED:
                             activity.initELM();
-                            activity.setConnected(true);
+                            activity.setConnectionStatus(STATE_CONNECTED);
                             break;
                         case STATE_CONNECTING:
-                            activity.setStatus(activity.getString(R.string.title_connecting));
+                            activity.setConnectionStatus(STATE_CONNECTING);
                             break;
-                        case STATE_LISTEN:
                         case STATE_NONE:
-                            activity.setStatus(activity.getString(R.string.title_not_connected));
+                            activity.setConnectionStatus(STATE_DISCONNECTED);
                             break;
                         case STATE_DISCONNECTED:
-                            activity.setConnected(false);
+                            activity.setConnectionStatus(STATE_DISCONNECTED);
                             break;
                     }
                     break;

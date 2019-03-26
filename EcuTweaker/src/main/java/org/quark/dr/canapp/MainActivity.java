@@ -54,7 +54,6 @@ import java.util.TimerTask;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTED;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTING;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_DISCONNECTED;
-import static org.quark.dr.canapp.ElmBluetooth.STATE_LISTEN;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_NONE;
 import static org.quark.dr.canapp.ScreenActivity.MESSAGE_DEVICE_NAME;
 import static org.quark.dr.canapp.ScreenActivity.MESSAGE_QUEUE_STATE;
@@ -135,7 +134,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initialize(){
-        long id = new BigInteger(Settings.Secure.getString(getContentResolver(),Settings.Secure.ANDROID_ID), 16).longValue();
+        long id = new BigInteger(Settings.Secure.getString(getContentResolver(),
+                Settings.Secure.ANDROID_ID), 16).longValue();
         mLicenseLock = new LicenseLock(id);
         SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
         String linkMode = defaultPrefs.getString(PREF_LINK_MODE, "BT");
@@ -211,7 +211,8 @@ public class MainActivity extends AppCompatActivity {
         clearLogButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(getApplicationContext(), getResources().getString(R.string.LONGPRESS_TO_DELETE),
+                Toast.makeText(getApplicationContext(),
+                        getResources().getString(R.string.LONGPRESS_TO_DELETE),
                         Toast.LENGTH_SHORT).show();
             }
         });
@@ -224,10 +225,12 @@ public class MainActivity extends AppCompatActivity {
                 File logFile = new File(logFilename);
                 if (logFile.exists()){
                     if (logFile.delete()){
-                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.LOGFILE_DELETED),
+                        Toast.makeText(getApplicationContext(),
+                                getResources().getString(R.string.LOGFILE_DELETED),
                                 Toast.LENGTH_SHORT).show();
                     } else {
-                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.LOGFILE_DELETE_FAILED),
+                        Toast.makeText(getApplicationContext(),
+                                getResources().getString(R.string.LOGFILE_DELETE_FAILED),
                                 Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -326,7 +329,8 @@ public class MainActivity extends AppCompatActivity {
             mLicenseLock.checkUnlock(licenseCode);
             setLicenseSatus();
         } else {
-            m_logView.append(getResources().getString(R.string.USER_REQUEST_CODE) +" : " + mLicenseLock.getPublicCode() + "\n");
+            m_logView.append(getResources().getString(R.string.USER_REQUEST_CODE) +" : "
+                    + mLicenseLock.getPublicCode() + "\n");
             ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.RED);
             m_logView.append("contact email : paillecedric@gmail.com\n");
             displayHelp();
@@ -334,8 +338,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setLink(){
+        /*
+         * First disconnect chat
+         */
         if (m_chatService != null)
             m_chatService.disconnect();
+
         if (mLinkMode == LINK_BLUETOOTH){
             m_linkChooser.setImageResource(R.drawable.ic_bt_connected);
             m_btButton.setEnabled(true);
@@ -356,7 +364,8 @@ public class MainActivity extends AppCompatActivity {
     private void onLicenseCheck(){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getResources().getString(R.string.APP_ENTER_CODE));
-        builder.setMessage(getResources().getString(R.string.USER_REQUEST_CODE) + " : " + mLicenseLock.getPublicCode());
+        builder.setMessage(getResources().getString(R.string.USER_REQUEST_CODE) + " : "
+                + mLicenseLock.getPublicCode());
         final EditText input = new EditText(this);
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         builder.setView(input);
@@ -405,7 +414,8 @@ public class MainActivity extends AppCompatActivity {
         if (mLicenseLock.isLicenseOk()){
             m_logView.append(getResources().getString(R.string.APP_UNLOCKED) + "\n");
             (findViewById(R.id.licenseButton)).setEnabled(false);
-            SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
+            SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG,
+                    MODE_PRIVATE);
             SharedPreferences.Editor edit = defaultPrefs.edit();
             edit.putString(PREF_LICENSE_CODE, mLicenseLock.getPrivateCode());
             edit.apply();
@@ -538,8 +548,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent serverIntent = new Intent(this, DeviceListActivity.class);
                 startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
             } catch (android.content.ActivityNotFoundException e) {
-                if (BuildConfig.DEBUG)
-                    Log.e(TAG, "+++ ActivityNotFoundException +++");
+
             }
         }
     }
@@ -549,7 +558,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (m_chatService != null)
             m_chatService.disconnect();
-        setConnected(0);
+        setConnectionStatus(STATE_DISCONNECTED);
 
         try {
             Intent serverIntent = new Intent(this, ScreenActivity.class);
@@ -562,8 +571,7 @@ public class MainActivity extends AppCompatActivity {
             serverIntent.putExtras(b);
             startActivityForResult(serverIntent, REQUEST_SCREEN);
         } catch (android.content.ActivityNotFoundException e) {
-            if (BuildConfig.DEBUG)
-                Log.e(TAG, "+++ ActivityNotFoundException +++");
+
         }
     }
 
@@ -604,7 +612,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onDestroy()
     {
-        Log.d(TAG, "+ ON DESTROY +");
         super.onDestroy();
         stopConnectionTimer();
         if (m_chatService != null)
@@ -614,7 +621,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onStop()
     {
-        Log.d(TAG, "+ ON STOP +");
         super.onStop();
         stopConnectionTimer();
         if (m_chatService != null)
@@ -623,7 +629,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onStart() {
-        Log.d(TAG, "+ ON START +");
         super.onStart();
         startConnectionTimer();
     }
@@ -635,8 +640,8 @@ public class MainActivity extends AppCompatActivity {
                 // When DeviceListActivity returns with a device to connect
                 if (resultCode == Activity.RESULT_OK) {
                     String address = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
-                    Log.d(TAG, "onActivityResult " + address);
-                    SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
+                    SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG,
+                            MODE_PRIVATE);
                     SharedPreferences.Editor edit = defaultPrefs.edit();
                     edit.putString(PREF_DEVICE_ADDRESS, address);
                     edit.commit();
@@ -647,13 +652,10 @@ public class MainActivity extends AppCompatActivity {
             case REQUEST_ENABLE_BT:
                 // When the request to enable Bluetooth returns
                 if (resultCode == Activity.RESULT_OK) {
-                } else {
-                    // User did not enable Bluetooth or an error occurred
-                    Log.d(TAG, "BT not enabled");
                 }
                 break;
             case REQUEST_SCREEN:
-                setConnected(0);
+                setConnectionStatus(STATE_DISCONNECTED);
                 startConnectionTimer();
                 break;
         }
@@ -807,8 +809,10 @@ public class MainActivity extends AppCompatActivity {
             m_logView.append(getResources().getString(R.string.ECU_FOUND) + " : " +
                     getResources().getString(R.string.SUPPLIER_VERSION) + " " + supplier +
                     getResources().getString(R.string.DIAG_VERSION) + " : "
-                    + diag_version_string + " " +getResources().getString(R.string.VERSION) + " : " + version +
-                    " " + getResources().getString(R.string.SOFT_VERSION) + " : " + soft_version + "\n");
+                    + diag_version_string + " " +getResources().getString(R.string.VERSION)
+                    + " : " + version
+                    + " " + getResources().getString(R.string.SOFT_VERSION) + " : "
+                    + soft_version + "\n");
 
             EcuDatabase.EcuInfo ecuInfo = m_ecuDatabase.identifyOldEcu(m_currentEcuAddressId,
                     supplier, soft_version, version, diag_version);
@@ -894,16 +898,14 @@ public class MainActivity extends AppCompatActivity {
                         Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
                     switch (msg.arg1) {
                         case STATE_CONNECTED:
-                            activity.setConnected(1);
+                            activity.setConnectionStatus(STATE_CONNECTED);
                             break;
                         case STATE_CONNECTING:
-                            activity.setConnected(2);
-                            break;
-                        case STATE_LISTEN:
+                            activity.setConnectionStatus(STATE_CONNECTING);
                             break;
                         case STATE_NONE:
                         case STATE_DISCONNECTED:
-                            activity.setConnected(0);
+                            activity.setConnectionStatus(STATE_DISCONNECTED);
                             break;
                     }
                     break;
@@ -926,7 +928,6 @@ public class MainActivity extends AppCompatActivity {
 
                     break;
                 case MESSAGE_TOAST:
-                    //Toast.makeText(activity.getApplicationContext(), msg.getData().getString(TOAST), Toast.LENGTH_SHORT).show();
                     activity.m_logView.append(activity.getResources().getString(R.string.BT_MANAGER_MESSAGE) + " : " + msg.getData().getString(TOAST) + "\n");
                     break;
                 case MESSAGE_QUEUE_STATE:
@@ -936,15 +937,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    void setConnected(int c){
-        m_scanButton.setEnabled(c == 1 ? true : false);
-        if (c == 1){
+    void setConnectionStatus(int c){
+        m_scanButton.setEnabled(c == STATE_CONNECTED ? true : false);
+        if (c == STATE_CONNECTED){
             m_btIconImage.setColorFilter(Color.GREEN);
             m_btIconImage.setImageResource(R.drawable.ic_link_ok);
-        } else if (c == 0){
+        } else if (c == STATE_DISCONNECTED){
             m_btIconImage.setColorFilter(Color.RED);
             m_btIconImage.setImageResource(R.drawable.ic_link_nok);
-        } else if (c == 2){
+        } else if (c == STATE_CONNECTING){
             m_btIconImage.setColorFilter(Color.GRAY);
             m_btIconImage.setImageResource(R.drawable.ic_link_ok);
         }
@@ -958,16 +959,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Send command
         m_chatService.write(cmd);
-    }
-
-    private void sendDelay(int delay) {
-        // Check that we're actually connected before trying anything
-        if (!isChatConnected()) {
-            return;
-        }
-
-        // Send command
-        m_chatService.write("DELAY:" + Integer.toString(delay));
     }
 
     private boolean isChatConnected(){
