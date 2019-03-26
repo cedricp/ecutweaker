@@ -76,22 +76,22 @@
             <Button
                 android:id="@+id/btButton"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:text="@string/CHOOSE_BT_DEVICE"
-                android:textSize="14sp" />
+                android:textSize="12sp" />
 
             <ImageButton
                 android:id="@+id/projectButton"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_weight="0"
                 app:srcCompat="@drawable/ic_bt_search" />
 
             <ImageView
                 android:id="@+id/btIcon"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
                 android:layout_weight="0"
                 app:srcCompat="@drawable/ic_link_nok" />
         </LinearLayout>

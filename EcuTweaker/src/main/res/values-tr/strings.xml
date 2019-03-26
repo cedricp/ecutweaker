@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <!-- BluetoothChat -->
+    <string name="send">Gönder</string>
+    <string name="not_connected">Bir cihaza bağlı değilsiniz.</string>
+    <string name="bt_not_enabled_leaving">Bluetooth etkin değil. Bluetooth bağlantısı sonlandırılıyor.</string>
+    <string name="title_connecting">Bağlanıyor</string>
+    <string name="title_connected_to">Bağlanıldı<xliff:g id="device_name">%1$s</xliff:g></string>
+    <string name="title_not_connected">Bağlı değil</string>
+
+    <!-- DeviceListActivity -->
+    <string name="scanning">Cihazlar taranıyor</string>
+    <string name="select_device">Bağlanmak için bir cihaz seçin</string>
+    <string name="none_paired">Hiç bir cihaz eşleştirilmedi</string>
+    <string name="none_found">Biçbir cihaz bulunamadı</string>
+    <string name="title_paired_devices">Eşleşmiş Cihazlar</string>
+    <string name="title_other_devices">Diğer Kullanılabilir Cihazlar</string>
+    <string name="button_scan">Cihazları tara</string>
+
+    <!-- Application strings -->
+    <string name="INDEXING_DB">VERİTABANI İNDEKSLENİYOR...</string>
+    <string name="DB_NOT_FOUND">VERİTABANI BULUNAMADI</string>
+    <string name="WRONG_CODE">Yanlış Kod! Üzgünüm!</string>
+    <string name="APP_UNLOCKED">Uygulama kilitli değil</string>
+    <string name="APP_ENTER_CODE">Aktivasyon Kodunu Girin</string>
+    <string name="USER_REQUEST_CODE">İstek Kodunuz</string>
+    <string name="OK">Tamam</string>
+    <string name="CANCEL">Çıkış</string>
+    <string name="USER_USES_DEMO_MODE">Demo versiyonunu kullanıyorsunuz, yazma fonksiyonu devre dışı.</string>
+    <string name="BT_MANAGER_MESSAGE">Bluetooth Yöneticisi Mesajı</string>
+    <string name="ECU_PART_MATCH">Kısmen eşleşen ECU\'lar(dikkatli kullanın)</string>
+    <string name="ECU_MATCH">Tam eşleşen ECU\'lar</string>
+    <string name="ECU_FOUND">ECU Bulundu</string>
+    <string name="DIAG_VERSION">tanılama sürümü</string>
+    <string name="VERSION">versiyon</string>
+    <string name="SOFT_VERSION">yazılım versiyonu</string>
+    <string name="SUPPLIER_VERSION">üretici versiyonu</string>
+    <string name="CHOOSE_PROJECT">Bir proje seçin</string>
+    <string name="INFORMATION">Bilgi</string>
+    <string name="DEMO_MESSAGE"><![CDATA[Welcome to <b>ECU TWEAKER</b>,<br> You are using this application in demonstration mode. You can use it to read all ECU parameters, but you are not allowed to use the buttons or the <i>CLEAR DTC</i> functionality.<br> You can unlock it by sending me the request code, I\'ll send you back an activation code.<br> <b>Beware, with great power comes great responsibility, you\'re using it at your own risks. The developer denies all responsibilities, <u>you are the sole responsible of what you do with this Software.</u></b>]]></string>
+    <string name="BAD_RESPONSE">Hatalı cevap</string>
+    <string name="TO_REQUEST">istek</string>
+    <string name="INVALID_VALUE">Geçersiz değer, girişleri kontrol edin.</string>
+    <string name="FRAME_COMPUTE_FAILED">Failed to compute frame</string>
+    <string name="COMPUTED_FRAME">Computed frame</string>
+    <string name="CATEGORY_CHOOSE">Kategori seçin</string>
+    <string name="SCREEN_CHOOSE">Ekran seçin</string>
+    <string name="FRAME_NOT_SENT">Komut Gönderilemedi(Bluetooth bağlı değil)</string>
+    <string name="NO_ELM_RESPONSE">ELM cevap vermiyor</string>
+    <string name="DTC_CLEAR_OK">DTC(Arıza Kaydı)Silme Başarılı</string>
+    <string name="NEGATIVE_RESPONSE">Olumsuz cevap</string>
+    <string name="ELM_RESPONSE">ELM Cevabı</string>
+    <string name="BAD_ELM_RESPONSE">Hatalı ELM Cevabı</string>
+    <string name="CLEAR_ALL_DTC">Tüm Arıza Kayıtları Silinsin mi?</string>
+    <string name="YES">Ever</string>
+    <string name="NO">Hayır</string>
+    <string name="NO_DTC_STORED">Arıza Kaydı Bulunamadı</string>
+    <string name="NEW_DEVICE">Yeni cihaz bulundu</string>
+    <string name="CHOOSE_BT_DEVICE">Bluetooth Cihazı Seçin</string>
+    <string name="AUTO_IDENTIFY">Otomatik Tanımlama</string>
+    <string name="AUTO_IDENT_RESULT">Oto Tanımlama Sonucu</string>
+    <string name="NO_CHAT_SESSION">Trying to send command without Bluetooth chat session</string>
+    <string name="LOGS">LOG Kayıtları</string>
+    <string name="COPY_TO_CLIPBOARD">Kopyala</string>
+    <string name="CLEAR_LOG">LOG\'ları Temizle</string>
+    <string name="LOGFILE_DELETED">LOG Dosyası Başarıyla Silindi</string>
+    <string name="LOGFILE_DELETE_FAILED">LOG dosyası silinemedi</string>
+    <string name="LONGPRESS_TO_DELETE">Silmek İçin Uzun Basın</string>
+</resources>
