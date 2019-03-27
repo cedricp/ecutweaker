@@ -46,7 +46,7 @@
 
             <ImageView
                 android:id="@+id/iconBt"
-                android:layout_width="wrap_content"
+                android:layout_width="50dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 app:srcCompat="@drawable/ic_bt_disconnected" />

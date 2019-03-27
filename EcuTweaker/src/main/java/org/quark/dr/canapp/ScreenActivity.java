@@ -78,7 +78,7 @@ public class ScreenActivity extends AppCompatActivity {
     private HashMap<String, View> m_buttonsViews;
     private HashMap<View, String> m_buttonsCommand;
     private HashMap<String, ArrayList<Layout.InputData>> m_requestsInputs;
-    private Set<String> m_displaysRequestSet;
+    private Set<String> m_displaysRequestSet, m_startRequestSet;
 
     private ElmBase mChatService = null;
     private Handler mHandler = null;
@@ -232,6 +232,9 @@ public class ScreenActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (!isChatConnected()){
                     connectDevice();
+                    Toast.makeText(getApplicationContext(),
+                            getResources().getString(R.string.not_connected),
+                            Toast.LENGTH_LONG).show();
                     return;
                 }
 
@@ -348,6 +351,7 @@ public class ScreenActivity extends AppCompatActivity {
         m_buttonsCommand = new HashMap<>();
         m_requestsInputs = new HashMap<>();
         m_displaysRequestSet = new HashSet<>();
+        m_startRequestSet =  new HashSet<>();
 
         if (m_currentLayoutData == null)
             return;
@@ -355,6 +359,14 @@ public class ScreenActivity extends AppCompatActivity {
         m_currentScreenData = m_currentLayoutData.getScreen(screenName);
         if (m_currentScreenData == null)
             return;
+
+        for (Pair<Integer, String> pair : m_currentScreenData.getPreSendData()){
+            Ecu.EcuRequest request = m_ecu.getRequest(pair.second);
+            // Skip start diagnostic session
+            if (request.sentbytes.startsWith("10"))
+                continue;
+            m_startRequestSet.add(pair.second);
+        }
 
         m_layoutView.removeAllViews();
         m_layoutView.setLayoutParams(new FrameLayout.LayoutParams(
@@ -632,7 +644,11 @@ public class ScreenActivity extends AppCompatActivity {
             return;
         }
 
-        for (String requestname : m_displaysRequestSet) {
+        Set<String> globalRequestSet = new HashSet<>();
+        globalRequestSet.addAll(m_displaysRequestSet);
+        globalRequestSet.addAll(m_startRequestSet);
+
+        for (String requestname : globalRequestSet) {
             Ecu.EcuRequest request = m_ecu.getRequest(requestname);
             if (BuildConfig.DEBUG)
                 Log.i(TAG, "Managing request : " + requestname);
@@ -797,6 +813,7 @@ public class ScreenActivity extends AppCompatActivity {
                 if (resultCode == Activity.RESULT_OK) {
                     // Bluetooth/Wifi is now enabled, so set up a chat session
                 }
+                break;
         }
     }
 
@@ -820,10 +837,6 @@ public class ScreenActivity extends AppCompatActivity {
         SharedPreferences.Editor edit = defaultPrefs.edit();
         edit.putString(PREF_GLOBAL_SCALE, String.valueOf(mGlobalScale));
         edit.apply();
-    }
-
-    private void setStatus(CharSequence status) {
-        m_logView.append(status + "\n");
     }
 
     void setConnectionStatus(int c){
@@ -881,7 +894,7 @@ public class ScreenActivity extends AppCompatActivity {
     }
 
     private void connectDevice() {
-        if (isChatConnected())
+        if (isChatConnected() || isChatConnecting())
             return;
 
         if (mChatService instanceof ElmBluetooth) {
@@ -903,6 +916,10 @@ public class ScreenActivity extends AppCompatActivity {
 
     private boolean isChatConnected(){
         return (mChatService.getState() == STATE_CONNECTED);
+    }
+
+    private boolean isChatConnecting(){
+        return (mChatService.getState() == STATE_CONNECTING);
     }
 
     private void initELM() {
@@ -1026,7 +1043,7 @@ public class ScreenActivity extends AppCompatActivity {
         if (dtcRequest == null)
             dtcRequest = m_ecu.getRequest("ReadDTC");
         if (dtcRequest == null){
-            Toast.makeText(getApplicationContext(), "No READ_DTC command", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "No READ_DTC request in this file", Toast.LENGTH_SHORT).show();
             return;
         }
         m_currentDtcRequestName = dtcRequest.name;
@@ -1129,8 +1146,6 @@ public class ScreenActivity extends AppCompatActivity {
                             activity.setConnectionStatus(STATE_CONNECTING);
                             break;
                         case STATE_NONE:
-                            activity.setConnectionStatus(STATE_DISCONNECTED);
-                            break;
                         case STATE_DISCONNECTED:
                             activity.setConnectionStatus(STATE_DISCONNECTED);
                             break;

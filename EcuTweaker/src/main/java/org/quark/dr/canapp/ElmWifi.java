@@ -23,9 +23,9 @@ public class ElmWifi extends ElmBase{
     private WifiManager.WifiLock wifiLock;
     private int mState;
 
-    private String serverIpAddress = "192.168.0.10";
-    private static final int SERVERPORT = 35000;
-    private String deviceName = "Elm327";
+    private String mServerIPAddress = "192.168.0.10";
+    private static final int mServerPort = 35000;
+    private String mDeviceName = "Elm327";
     private ElmWifi.ConnectedThread mConnectedThread;
     private ElmWifi.ConnectThread mConnectThread;
 
@@ -64,7 +64,7 @@ public class ElmWifi extends ElmBase{
 
     public boolean connect(String address) {
         if (!address.isEmpty()) {
-            serverIpAddress = address;
+            mServerIPAddress = address;
         }
 
         if (mConnecting || isConnected()) {
@@ -89,22 +89,20 @@ public class ElmWifi extends ElmBase{
                 name.toUpperCase().contains("ECU") ||
                 name.toUpperCase().contains("LINK") ) ) {
             mConnecting = true;
-            deviceName = name.replace("\"","");
+            mDeviceName = name.replace("\"","");
 
             mWIFIHandler.removeCallbacksAndMessages(null);
 
             if(!isConnected() && mConnecting)
             {
-                mConnectThread = new ElmWifi.ConnectThread(serverIpAddress, SERVERPORT);
+                mConnectThread = new ElmWifi.ConnectThread(mServerIPAddress, mServerPort);
                 mConnectThread.start();
             }
 
             return true;
         }
 
-        Message msg = mWIFIHandler.obtainMessage(ScreenActivity.MESSAGE_TOAST);
         logInfo("Unable to connect wifi device");
-
         setState(STATE_NONE);
 
         mConnecting = false;
@@ -142,7 +140,7 @@ public class ElmWifi extends ElmBase{
     }
 
     @Override
-    protected String write_raw(String raw_buffer) {
+    protected String writeRaw(String raw_buffer) {
         raw_buffer += "\r";
         return mConnectedThread.write(raw_buffer.getBytes());
     }
@@ -176,7 +174,7 @@ public class ElmWifi extends ElmBase{
         }
 
         public void run() {
-            main_loop();
+            connectedThreadMainLoop();
         }
 
         public String write(byte[] buffer) {
@@ -199,7 +197,6 @@ public class ElmWifi extends ElmBase{
         }
 
         public String readFromElm() {
-
             while (true) {
                 try {
                     if(mmSocket != null)
@@ -207,17 +204,12 @@ public class ElmWifi extends ElmBase{
                         String rawData;
                         byte b;
                         StringBuilder res = new StringBuilder();
-                        long start = System.currentTimeMillis();
                         while ((char) (b = (byte) mInStream.read()) != '>') {
                             if (b == 0x0d)
                                 b = 0x0a;
                             res.append((char) b);
-                            if (System.currentTimeMillis() - start > 1000) {
-                                break;
-                            }
                         }
                         rawData = res.toString();
-
                         return rawData;
                     }
 
@@ -277,7 +269,7 @@ public class ElmWifi extends ElmBase{
                 // Send the name of the connected device back to the UI Activity
                 Message msg = mWIFIHandler.obtainMessage(ScreenActivity.MESSAGE_DEVICE_NAME);
                 Bundle bundle = new Bundle();
-                bundle.putString(ScreenActivity.DEVICE_NAME, deviceName);
+                bundle.putString(ScreenActivity.DEVICE_NAME, mDeviceName);
                 msg.setData(bundle);
                 mWIFIHandler.sendMessage(msg);
 

@@ -30,8 +30,8 @@ public abstract class ElmBase {
     protected String mLogDir;
     protected volatile boolean mRunningStatus;
     private boolean mTesterPresentFlag;
-    protected static final String ECUERRORCODE =
-            "10:General Reject," +
+    protected static final String mEcuErrorCodeString =
+                    "10:General Reject," +
                     "11:Service Not Supported," +
                     "12:SubFunction Not Supported," +
                     "13:Incorrect Message Length Or Invalid Format," +
@@ -87,7 +87,7 @@ public abstract class ElmBase {
     public abstract void disconnect();
     public abstract boolean connect(String address);
     public abstract int getState();
-    protected abstract String write_raw(String raw_buffer);
+    protected abstract String writeRaw(String raw_buffer);
     protected abstract void logInfo(String log);
 
     public ElmBase(Handler handler, String logDir, boolean testerPresent) {
@@ -168,7 +168,7 @@ public abstract class ElmBase {
 
     public void buildMaps(){
         mEcuErrorCodeMap = new HashMap<>();
-        String[] ERRC = ECUERRORCODE.replace(" ", "").split(",");
+        String[] ERRC = mEcuErrorCodeString.replace(" ", "").split(",");
         for (String erc : ERRC){
             String[] idToAddr = erc.split(":");
             mEcuErrorCodeMap.put(idToAddr[0], idToAddr[1]);
@@ -197,11 +197,14 @@ public abstract class ElmBase {
         return true;
     }
 
-    protected void main_loop(){
+    protected void connectedThreadMainLoop(){
         long timer = System.currentTimeMillis();
         mRunningStatus = true;
 
-        // Keep listening to the InputStream while connected
+        /*
+          * Keep listening to the InputStream while connected
+          * Thread can be stopped by switching the running status member
+          */
         while (mRunningStatus) {
 
             if (ElmBase.this.mMessages.size() > 0) {
@@ -221,7 +224,7 @@ public abstract class ElmBase {
                         break;
                     }
                 } else if ((message_len > 2) && message.substring(0, 2).toUpperCase().equals("AT")) {
-                    String result = write_raw(message);
+                    String result = writeRaw(message);
                     result = message + ";" + result;
 
                     int result_length = result.length();
@@ -230,7 +233,7 @@ public abstract class ElmBase {
                     mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, mTxa, tmpbuf).sendToTarget();
                     mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_QUEUE_STATE, num_queue, -1, null).sendToTarget();
                 } else {
-                    send_can(message);
+                    sendCan(message);
                     mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_QUEUE_STATE, num_queue, -1, null).sendToTarget();
                 }
             }
@@ -244,12 +247,12 @@ public abstract class ElmBase {
             // Keep session alive
             if (mTesterPresentFlag && ((System.currentTimeMillis() - timer) > 1500)  && mRxa > 0) {
                 timer = System.currentTimeMillis();
-                write_raw("013E");
+                writeRaw("013E");
             }
         }
     }
 
-    protected void send_can(String message){
+    protected void sendCan(String message){
         IsoTPEncode isotpm = new IsoTPEncode(message);
         // Encode ISO_TP data
         ArrayList<String> raw_command = isotpm.getFormattedArray();
@@ -259,7 +262,7 @@ public abstract class ElmBase {
 
         // Send data
         for (String frame: raw_command) {
-            String frsp = write_raw(frame);
+            String frsp = writeRaw(frame);
 
             for(String s: frsp.split("\n")){
                 // Remove unwanted characters

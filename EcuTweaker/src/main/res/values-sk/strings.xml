@@ -2,75 +2,75 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
     <!-- BluetoothChat -->
-    <string name="send">Odoslat</string>
-    <string name="not_connected">Nie ste pripojeni k zariadeniu</string>
-    <string name="bt_not_enabled_leaving">Bluetooth nebol nepovoleny.Odchod z Bluetooth chatu</string>
+    <string name="send">Odoslať</string>
+    <string name="not_connected">Nie ste pripojení k zariadeniu</string>
+    <string name="bt_not_enabled_leaving">Bluetooth nebol povolený.Odchod z Bluetooth</string>
     <string name="title_connecting">Pripojenie…</string>
-    <string name="title_connected_to">Pripojene k <xliff:g id="device_name">%1$s</xliff:g></string>
-    <string name="title_not_connected">Nepripojeny</string>
+    <string name="title_connected_to">Pripojené k <xliff:g id="device_name">%1$s</xliff:g></string>
+    <string name="title_not_connected">Nepripojený</string>
 
     <!-- DeviceListActivity -->
-    <string name="scanning">Skenovanie zariadeni..</string>
+    <string name="scanning">Skenovanie zariadení..</string>
     <string name="select_device">Vybrat zariadenie na pripojenie</string>
-    <string name="none_paired">Ziadne sparovane zariadenia</string>
-    <string name="none_found">Nenaslo sa zariadenie</string>
-    <string name="title_paired_devices">Parovane zariadenia</string>
-    <string name="title_other_devices">Ine dostupne zariadenia</string>
-    <string name="button_scan">Kontrola zariadeni</string>
+    <string name="none_paired">Žiadne spárované zariadenia</string>
+    <string name="none_found">Nenašlo sa zariadenie</string>
+    <string name="title_paired_devices">Parované zariadenia</string>
+    <string name="title_other_devices">Iné dostupné zariadenia</string>
+    <string name="button_scan">Kontrola zariadení</string>
 
     <!-- Application strings -->
-    <string name="INDEXING_DB">Index databazy..</string>
-    <string name="DB_NOT_FOUND">Ziadna databaza</string>
-    <string name="WRONG_CODE">Nespravny kod,prepac!</string>
-    <string name="APP_UNLOCKED">Aplikacia odomknuta</string>
-    <string name="APP_ENTER_CODE">Zadajte aktivacny kod</string>
-    <string name="USER_REQUEST_CODE">Vas kod poziadavky</string>
-    <string name="OK">Ano</string>
-    <string name="CANCEL">Zrusit</string>
-    <string name="USER_USES_DEMO_MODE">Pouzivate DEMO verziu, funkcie zapisu su deaktivovane.</string>
-    <string name="BT_MANAGER_MESSAGE">Sprava spravcu Bluetooth</string>
-    <string name="ECU_PART_MATCH">ECU ciastocne zodpoveda suboru(pouzite opatrne)</string>
-    <string name="ECU_MATCH">ECU sa dokonale zhoduje so suborom</string>
-    <string name="ECU_FOUND">Najdene ECU</string>
-    <string name="DIAG_VERSION">Diagnosticka verzia</string>
+    <string name="INDEXING_DB">Index databázy..</string>
+    <string name="DB_NOT_FOUND">Žiadna databáza</string>
+    <string name="WRONG_CODE">Nesprávny kód,prepáč!</string>
+    <string name="APP_UNLOCKED">Aplikácia odomknutá</string>
+    <string name="APP_ENTER_CODE">Zadajte aktivačný kód</string>
+    <string name="USER_REQUEST_CODE">Váš kód požiadavky</string>
+    <string name="OK">Áno</string>
+    <string name="CANCEL">Zrušiť</string>
+    <string name="USER_USES_DEMO_MODE">Používate DEMO verziu, funkcie zápisu sú deaktivované.</string>
+    <string name="BT_MANAGER_MESSAGE">Správa spravcu Bluetooth</string>
+    <string name="ECU_PART_MATCH">ECU čiastocne zodpovedá súboru(použite opatrne)</string>
+    <string name="ECU_MATCH">ECU sa dokonale zhoduje so súborom</string>
+    <string name="ECU_FOUND">Nájdené ECU</string>
+    <string name="DIAG_VERSION">Diagnostická verzia</string>
     <string name="VERSION">Verzia</string>
     <string name="SOFT_VERSION">Prog. verzia</string>
-    <string name="SUPPLIER_VERSION">Verzia dodavatela</string>
+    <string name="SUPPLIER_VERSION">Verzia dodávateľa</string>
     <string name="CHOOSE_PROJECT">Vyberte projekt</string>
-    <string name="INFORMATION">Informacie</string>
-    <string name="DEMO_MESSAGE"><![CDATA[Welcome to <b>ECU TWEAKER</b>,<br> Pouzivate aplikaciu v demo rezime.
-Mozete ho pouzit na citanie vsetkych parametrov ECU, ale nemate povolenie
-pouzit tlacidla alebo <i>CLEAR DTC</i> funkcie.<br>
-Mozete ho odomknut zaslanim kodu poziadavky, poslem Vam aktivacny kod.
-<b>Dajte si pozor, s velkou silou prichadza velka zodpovednost, budete ju pouzivat na vlastne
-riziko. Vyvojar odmietne vsetky zodpovednosti, <u>ste vyhradne zodpovedni,
-co robite s tymto softverom.</u></b>]]></string>
-    <string name="BAD_RESPONSE">Chybna odpoved</string>
-    <string name="TO_REQUEST">na vyziadanie</string>
-    <string name="INVALID_VALUE">Neplatna hodnota, skontrolujte vstupy</string>
-    <string name="FRAME_COMPUTE_FAILED">Nepodarilo sa vypocitat obraz</string>
-    <string name="COMPUTED_FRAME">Vypocitany obraz</string>
-    <string name="CATEGORY_CHOOSE">Vyberte kategoriu</string>
+    <string name="INFORMATION">Informácie</string>
+    <string name="DEMO_MESSAGE"><![CDATA[Vitajte v <b>ECU TWEAKER</b>,<br> Používate aplikáciu v demo režime.
+Môžete ho použiť na čítanie všetkych parametrov ECU, ale nemáte povolenie
+použiť tlačidlá alebo <i>CLEAR DTC</i> funkcie.<br>
+Možete ho odomknút zaslaním kódu požiadavky, pošlem Vám aktivačný kod.
+<b>Dajte si pozor, s veľkou silou prichádza veľká zodpovednosť, budete ju používat na vlastné
+riziko. Vyvojár odmieta všetku zodpovednosť, <u>ste výhradne zodpovední,
+čo robíte s týmto softvérom.</u></b>]]></string>
+    <string name="BAD_RESPONSE">Chybná odpoveď</string>
+    <string name="TO_REQUEST">na vyžiadanie</string>
+    <string name="INVALID_VALUE">Neplatná hodnota, skontrolujte vstupy</string>
+    <string name="FRAME_COMPUTE_FAILED">Nepodarilo sa vypočítať obraz</string>
+    <string name="COMPUTED_FRAME">Vypočítaný obraz</string>
+    <string name="CATEGORY_CHOOSE">Vyberte kategóriu</string>
     <string name="SCREEN_CHOOSE">Vyberte obraz</string>
-    <string name="FRAME_NOT_SENT">Obraz nebol odoslany(Bluetooth nepripojeny)</string>
+    <string name="FRAME_NOT_SENT">Obraz nebol odoslaný(Bluetooth nepripojený)</string>
     <string name="NO_ELM_RESPONSE">Bez odpovede ELM </string>
-    <string name="DTC_CLEAR_OK">Vymazat DTC uspesny</string>
-    <string name="NEGATIVE_RESPONSE">Zaporna odpoved</string>
-    <string name="ELM_RESPONSE">ELM Odpoved</string>
-    <string name="BAD_ELM_RESPONSE">Odpoved BAD ELM</string>
-    <string name="CLEAR_ALL_DTC">Vymazat kody DTC?</string>
-    <string name="YES">Ano</string>
+    <string name="DTC_CLEAR_OK">Vymazať DTC úspešný</string>
+    <string name="NEGATIVE_RESPONSE">Zaporná odpoveď</string>
+    <string name="ELM_RESPONSE">ELM Odpoveď</string>
+    <string name="BAD_ELM_RESPONSE">Odpoveď BAD ELM</string>
+    <string name="CLEAR_ALL_DTC">Vymazať kódy DTC?</string>
+    <string name="YES">Áno</string>
     <string name="NO">Nie</string>
-    <string name="NO_DTC_STORED">ECU nema ulozeny DTC</string>
-    <string name="NEW_DEVICE">Najdene nove zariadenie</string>
-    <string name="CHOOSE_BT_DEVICE">VYBERTE ZARIADENIE BT</string>
+    <string name="NO_DTC_STORED">ECU nemá uložený DTC</string>
+    <string name="NEW_DEVICE">Najdené nové zariadenie</string>
+    <string name="CHOOSE_BT_DEVICE">VYBER BT ZARIADENIE</string>
     <string name="AUTO_IDENTIFY">AUTO IDENTIFIKACIA</string>
-    <string name="AUTO_IDENT_RESULT">Vysledok AutoIdent</string>
-    <string name="NO_CHAT_SESSION">Pokus o odoslanie prikazu bez Bluetooth chatu</string>
-    <string name="LOGS">Zobrazit log</string>
-    <string name="COPY_TO_CLIPBOARD">Kopirovat do schranky</string>
-    <string name="CLEAR_LOG">Vymazat log</string>
-    <string name="LOGFILE_DELETED">Subor log uspesne odstraneny</string>
-    <string name="LOGFILE_DELETE_FAILED">Nepodarilo sa odstranit log</string>
-    <string name="LONGPRESS_TO_DELETE">Dlhym stlacenim zmazete</string>
+    <string name="AUTO_IDENT_RESULT">Výsledok Autoidentu</string>
+    <string name="NO_CHAT_SESSION">Pokus o odoslanie príkazu bez Bluetooth</string>
+    <string name="LOGS">ZOBRAZ LOG</string>
+    <string name="COPY_TO_CLIPBOARD">Kopírovať do schránky</string>
+    <string name="CLEAR_LOG">VYMAŽ LOG</string>
+    <string name="LOGFILE_DELETED">Súbor log úspešne odstranený</string>
+    <string name="LOGFILE_DELETE_FAILED">Nepodarilo sa odstrániť log</string>
+    <string name="LONGPRESS_TO_DELETE">Dlhým stlačením zmažete</string>
 </resources>

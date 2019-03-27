@@ -18,7 +18,7 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="horizontal">
 
             <TextView
@@ -33,7 +33,7 @@
             <Button
                 android:id="@+id/clearLogButton"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="0"
                 android:text="@string/CLEAR_LOG"
                 android:textSize="10sp" />
@@ -41,7 +41,7 @@
             <Button
                 android:id="@+id/viewLogButton"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="0"
                 android:text="@string/LOGS"
                 android:textSize="10sp" />
@@ -76,22 +76,22 @@
             <Button
                 android:id="@+id/btButton"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/CHOOSE_BT_DEVICE"
-                android:textSize="12sp" />
+                android:textSize="10sp" />
 
             <ImageButton
                 android:id="@+id/projectButton"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="0"
                 app:srcCompat="@drawable/ic_bt_search" />
 
             <ImageView
                 android:id="@+id/btIcon"
                 android:layout_width="50dp"
-                android:layout_height="50dp"
+                android:layout_height="match_parent"
                 android:layout_weight="0"
                 app:srcCompat="@drawable/ic_link_nok" />
         </LinearLayout>

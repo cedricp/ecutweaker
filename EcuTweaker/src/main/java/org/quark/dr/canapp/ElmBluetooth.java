@@ -12,11 +12,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 
-/**
- * This class does all the work for setting up and managing Bluetooth
- * connections with other devices. It has  a thread for connecting with a device, and a
- * thread for performing data transmissions when connected.
- */
 public class ElmBluetooth extends ElmBase {
     // Debugging
     private static final String TAG = "ElmBluetoothThread";
@@ -125,8 +120,8 @@ public class ElmBluetooth extends ElmBase {
     }
 
     @Override
-    protected String write_raw(String raw_buffer) {
-        return mConnectedThread.write_raw(raw_buffer);
+    protected String writeRaw(String raw_buffer) {
+        return mConnectedThread.write(raw_buffer);
     }
 
     public void initCan(String rxa, String txa){
@@ -146,6 +141,7 @@ public class ElmBluetooth extends ElmBase {
     }
 
     private void connectionLost() {
+        mRunningStatus = false;
         logInfo("Bluetooth connection lost");
         setState(STATE_DISCONNECTED);
     }
@@ -252,7 +248,7 @@ public class ElmBluetooth extends ElmBase {
         }
 
         public void run() {
-            main_loop();
+            connectedThreadMainLoop();
         }
 
         public void cancel() {
@@ -274,7 +270,7 @@ public class ElmBluetooth extends ElmBase {
             }
         }
 
-        private String write_raw(String raw_buffer) {
+        private String write(String raw_buffer) {
             raw_buffer += "\r";
             byte[] reply_buffer = new byte[4096];
             try {
@@ -285,13 +281,9 @@ public class ElmBluetooth extends ElmBase {
                 return "ERROR : DISCONNECTED";
             }
 
-            long time_start = System.currentTimeMillis();
             // Wait ELM response
             int u = -1;
             while (true) {
-                if (System.currentTimeMillis() - time_start > 1500) {
-                    return "ERROR : TIMEOUT";
-                }
                 try {
                     // Read from the InputStream
                     u = u + 1;

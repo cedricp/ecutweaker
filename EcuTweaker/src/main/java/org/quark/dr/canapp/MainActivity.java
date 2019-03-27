@@ -71,8 +71,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int    REQUEST_ENABLE_BT      = 3;
     public static final String  DEFAULT_PREF_TAG = "default";
 
-    public static final int LINK_WIFI=0;
-    public static final int LINK_BLUETOOTH=1;
+    public static final int     LINK_WIFI=0;
+    public static final int     LINK_BLUETOOTH=1;
 
     public static final String PREF_DEVICE_ADDRESS = "btAdapterAddress";
     public static final String PREF_LICENSE_CODE = "licenseCode";
@@ -81,24 +81,25 @@ public class MainActivity extends AppCompatActivity {
     public static final String PREF_PROJECT = "project";
     public static final String PREF_LINK_MODE =  "BT";
 
-    public static String m_lastLog;
-    private EcuDatabase m_ecuDatabase;
-    private TextView m_statusView;
-    private Button m_btButton, m_scanButton;
-    private ImageButton m_chooseProjectButton, m_linkChooser;
-    private ImageView m_btIconImage;
-    private ListView m_ecuListView, m_specificEcuListView;
-    private ArrayList<EcuDatabase.EcuInfo> m_currentEcuInfoList;
-    private String m_ecuFilePath, m_btDeviceAddress, m_currentProject;
-    private int m_currentEcuAddressId;
-    private TextView m_viewSupplier, m_viewDiagVersion, m_viewVersion, m_viewSoft, m_logView;
+    public static String mLastLog;
+    private EcuDatabase mEcuDatabase;
+    private TextView mStatusView;
+    private Button mBtButton, mScanButton;
+    private ImageButton mChooseProjectButton, mLinkChooser;
+    private ImageView mBtIconImage;
+    private ListView mEcuListView, mSpecificEcuListView;
+    private ArrayList<EcuDatabase.EcuInfo> mCurrentEcuInfoList;
+    private String mEcuFilePath, mBtDeviceAddress, mCurrentProject;
+    private int mCurrentEcuAddressId;
+    private TextView mViewSupplier, mViewDiagVersion, mViewVersion, mViewSoft, mLogView;
 
-    private ElmBase m_chatService;
+    private ElmBase mChatService;
     private Handler mHandler = null;
-    private EcuDatabase.EcuIdentifierNew m_ecuIdentifierNew = null;
+    private EcuDatabase.EcuIdentifierNew mEcuIdentifierNew = null;
     private Timer mConnectionTimer;
     private LicenseLock mLicenseLock;
     private int mLinkMode;
+    private boolean mActivateBluetoothAsked;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -140,31 +141,32 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
         String linkMode = defaultPrefs.getString(PREF_LINK_MODE, "BT");
 
-        m_currentProject = "";
-        m_currentEcuAddressId = -1;
+        mCurrentProject = "";
+        mCurrentEcuAddressId = -1;
+        mActivateBluetoothAsked = false;
 
         mHandler = new MainActivity.messageHandler(this);
-        m_chatService = null;
+        mChatService = null;
 
-        m_statusView = findViewById(R.id.statusView);
-        m_btButton = findViewById(R.id.btButton);
-        m_ecuListView = findViewById(R.id.ecuListView);
-        m_specificEcuListView = findViewById(R.id.deviceView);
-        m_scanButton = findViewById(R.id.buttonScan);
-        m_chooseProjectButton = findViewById(R.id.projectButton);
-        m_linkChooser = findViewById(R.id.linkChooser);
-        m_btIconImage = findViewById(R.id.btIcon);
-        m_viewDiagVersion = findViewById(R.id.textViewDiagversion);
-        m_viewSupplier = findViewById(R.id.textViewSupplier);
-        m_viewSoft = findViewById(R.id.textViewSoft);
-        m_viewVersion = findViewById(R.id.textViewVersion);
-        m_logView = findViewById(R.id.logView);
+        mStatusView = findViewById(R.id.statusView);
+        mBtButton = findViewById(R.id.btButton);
+        mEcuListView = findViewById(R.id.ecuListView);
+        mSpecificEcuListView = findViewById(R.id.deviceView);
+        mScanButton = findViewById(R.id.buttonScan);
+        mChooseProjectButton = findViewById(R.id.projectButton);
+        mLinkChooser = findViewById(R.id.linkChooser);
+        mBtIconImage = findViewById(R.id.btIcon);
+        mViewDiagVersion = findViewById(R.id.textViewDiagversion);
+        mViewSupplier = findViewById(R.id.textViewSupplier);
+        mViewSoft = findViewById(R.id.textViewSoft);
+        mViewVersion = findViewById(R.id.textViewVersion);
+        mLogView = findViewById(R.id.logView);
 
-        m_logView.setGravity(Gravity.BOTTOM);
-        m_logView.setMovementMethod(new ScrollingMovementMethod());
-        m_logView.setBackgroundResource(R.drawable.edittextroundgreen);
+        mLogView.setGravity(Gravity.BOTTOM);
+        mLogView.setMovementMethod(new ScrollingMovementMethod());
+        mLogView.setBackgroundResource(R.drawable.edittextroundgreen);
 
-        m_btIconImage.setColorFilter(Color.RED);
+        mBtIconImage.setColorFilter(Color.RED);
 
         if (linkMode.equals("BT")) {
             mLinkMode = LINK_BLUETOOTH;
@@ -177,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
         viewLogButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                m_lastLog = readFileAsString(
+                mLastLog = readFileAsString(
                         MainActivity.this.getApplicationContext().getFilesDir().
                                 getAbsolutePath() + "/log.txt");
                 System.out.println("?? "  + MainActivity.this.getApplicationContext().getFilesDir().
@@ -187,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
 
                 TextView textview = view.findViewById(R.id.textmsg);
                 textview.setEnabled(true);
-                textview.setText(m_lastLog);
+                textview.setText(mLastLog);
                 AlertDialog.Builder alertDialog = new AlertDialog.Builder(MainActivity.this);
                 alertDialog.setTitle("LOGS");
                 alertDialog.setView(view);
@@ -198,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         ClipboardManager  clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-                        ClipData clip = ClipData.newPlainText("EcuTeakerLog", m_lastLog);
+                        ClipData clip = ClipData.newPlainText("EcuTeakerLog", mLastLog);
                         clipboard.setPrimaryClip(clip);
                     }
                 });
@@ -238,39 +240,38 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        m_scanButton.setOnClickListener(new View.OnClickListener() {
+        mScanButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                scanBus();
-                scanBusNew();
+                onScanBus();
             }
         });
 
-        m_btButton.setOnClickListener(new View.OnClickListener() {
+        mBtButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 selectBtDevice();
             }
         });
 
-        m_ecuListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mEcuListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 String info = ((TextView) view).getText().toString();
-                ecuTypeSelected(info, m_currentProject);
+                ecuTypeSelected(info, mCurrentProject);
             }
         });
 
-        m_specificEcuListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mSpecificEcuListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                if ( m_currentEcuInfoList == null || m_ecuFilePath == null){
+                if ( mCurrentEcuInfoList == null || mEcuFilePath == null){
                     return;
                 }
                 String stringToSearch = ((TextView)view).getText().toString();
-                for (EcuDatabase.EcuInfo ecuinfo : m_currentEcuInfoList){
+                for (EcuDatabase.EcuInfo ecuinfo : mCurrentEcuInfoList){
                     if (stringToSearch.equals(ecuinfo.ecuName)){
-                        startScreen(m_ecuFilePath, ecuinfo.href);
+                        startScreen(mEcuFilePath, ecuinfo.href);
                     }
                 }
             }
@@ -284,28 +285,29 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        m_chooseProjectButton.setOnClickListener(new View.OnClickListener() {
+        mChooseProjectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 chooseProject();
             }
         });
 
-        m_linkChooser.setOnClickListener(new View.OnClickListener() {
+        mLinkChooser.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mLinkMode == LINK_WIFI)
+                if (mLinkMode == LINK_WIFI) {
                     mLinkMode = LINK_BLUETOOTH;
-                else
+                } else {
                     mLinkMode = LINK_WIFI;
+                }
                 setLink();
             }
         });
 
-        m_btDeviceAddress = defaultPrefs.getString(PREF_DEVICE_ADDRESS, "");
+        mBtDeviceAddress = defaultPrefs.getString(PREF_DEVICE_ADDRESS, "");
 
-        m_ecuDatabase = new EcuDatabase();
-        m_ecuIdentifierNew = m_ecuDatabase.new EcuIdentifierNew();
+        mEcuDatabase = new EcuDatabase();
+        mEcuIdentifierNew = mEcuDatabase.new EcuIdentifierNew();
 
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.READ_EXTERNAL_STORAGE)
@@ -315,13 +317,7 @@ public class MainActivity extends AppCompatActivity {
             askPermission();
         }
 
-        BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (btAdapter != null && !btAdapter.isEnabled()){
-            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-        }
-
-        m_logView.append("EcuTweaker " + BuildConfig.BUILD_TYPE + " "
+        mLogView.append("EcuTweaker " + BuildConfig.BUILD_TYPE + " "
                 + getResources().getString(R.string.VERSION) + "\n");
 
         String licenseCode = defaultPrefs.getString(PREF_LICENSE_CODE, "");
@@ -329,10 +325,10 @@ public class MainActivity extends AppCompatActivity {
             mLicenseLock.checkUnlock(licenseCode);
             setLicenseSatus();
         } else {
-            m_logView.append(getResources().getString(R.string.USER_REQUEST_CODE) +" : "
+            mLogView.append(getResources().getString(R.string.USER_REQUEST_CODE) +" : "
                     + mLicenseLock.getPublicCode() + "\n");
             ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.RED);
-            m_logView.append("contact email : paillecedric@gmail.com\n");
+            mLogView.append("contact email : paillecedric@gmail.com\n");
             displayHelp();
         }
     }
@@ -341,19 +337,27 @@ public class MainActivity extends AppCompatActivity {
         /*
          * First disconnect chat
          */
-        if (m_chatService != null)
-            m_chatService.disconnect();
+        if (mChatService != null)
+            mChatService.disconnect();
 
         if (mLinkMode == LINK_BLUETOOTH){
-            m_linkChooser.setImageResource(R.drawable.ic_bt_connected);
-            m_btButton.setEnabled(true);
+            mLinkChooser.setImageResource(R.drawable.ic_bt_connected);
+            mBtButton.setEnabled(true);
             SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
             SharedPreferences.Editor edit = defaultPrefs.edit();
             edit.putString(PREF_LINK_MODE, "BT");
             edit.apply();
+
+            BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+            if (!mActivateBluetoothAsked && btAdapter != null && !btAdapter.isEnabled()){
+                mActivateBluetoothAsked = true;
+                Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+            }
         } else {
-            m_linkChooser.setImageResource(R.drawable.ic_wifi);
-            m_btButton.setEnabled(false);
+            mActivateBluetoothAsked = false;
+            mLinkChooser.setImageResource(R.drawable.ic_wifi);
+            mBtButton.setEnabled(false);
             SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
             SharedPreferences.Editor edit = defaultPrefs.edit();
             edit.putString(PREF_LINK_MODE, "WIFI");
@@ -412,7 +416,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void setLicenseSatus(){
         if (mLicenseLock.isLicenseOk()){
-            m_logView.append(getResources().getString(R.string.APP_UNLOCKED) + "\n");
+            mLogView.append(getResources().getString(R.string.APP_UNLOCKED) + "\n");
             (findViewById(R.id.licenseButton)).setEnabled(false);
             SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG,
                     MODE_PRIVATE);
@@ -422,52 +426,74 @@ public class MainActivity extends AppCompatActivity {
             ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.GREEN);
         } else {
             ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.RED);
-            m_logView.append(getResources().getString(R.string.WRONG_CODE) + "\n");
+            mLogView.append(getResources().getString(R.string.WRONG_CODE) + "\n");
         }
     }
 
     private void connectDevice() {
-        if (m_chatService != null)
-            m_chatService.disconnect();
+        if (mChatService != null)
+            mChatService.disconnect();
 
         if (mLinkMode == LINK_BLUETOOTH) {
-            m_chatService = new ElmBluetooth(mHandler,
+            BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+            if (btAdapter != null && !btAdapter.isEnabled()){
+                return;
+            }
+
+            mChatService = new ElmBluetooth(mHandler,
                     getApplicationContext().getFilesDir().getAbsolutePath(),
                     false);
             // address is the device MAC address
             // Get the BluetoothDevice object
-            BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
-
-            if (btAdapter == null || m_btDeviceAddress.isEmpty() || isChatConnected())
+            if (btAdapter == null || mBtDeviceAddress.isEmpty() || isChatConnected())
                 return;
 
-            BluetoothDevice device = btAdapter.getRemoteDevice(m_btDeviceAddress);
+            BluetoothDevice device = btAdapter.getRemoteDevice(mBtDeviceAddress);
             if (device == null)
                 return;
             // Attempt to connect to the device
-            m_chatService.connect(m_btDeviceAddress);
+            mChatService.connect(mBtDeviceAddress);
         } else {
-            m_chatService = new ElmWifi(getApplicationContext(), mHandler, getApplicationContext().
+            mChatService = new ElmWifi(getApplicationContext(), mHandler, getApplicationContext().
                     getFilesDir().getAbsolutePath(), false);
-            m_chatService.connect("");
+            mChatService.connect("");
         }
     }
 
-
     void initBus(String protocol){
         if (isChatConnected()) {
-            String txa = m_ecuDatabase.getTxAddressById(m_currentEcuAddressId);
-            String rxa = m_ecuDatabase.getRxAddressById(m_currentEcuAddressId);
+            String txa = mEcuDatabase.getTxAddressById(mCurrentEcuAddressId);
+            String rxa = mEcuDatabase.getRxAddressById(mCurrentEcuAddressId);
             if (rxa == null || txa == null)
                 return;
             if (protocol.equals("CAN")) {
-                m_chatService.initCan(rxa, txa);
+                mChatService.initCan(rxa, txa);
             } else if (protocol.equals("KWP2000")){
-                String hexAddr = Ecu.padLeft(Integer.toHexString(m_currentEcuAddressId),
+                String hexAddr = Ecu.padLeft(Integer.toHexString(mCurrentEcuAddressId),
                         2, "0");
-                m_chatService.initKwp(hexAddr, true);
+                mChatService.initKwp(hexAddr, true);
             }
         }
+    }
+
+    void onScanBus(){
+        AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+        alertDialog.setTitle("SELECT BUS");
+        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "CAN",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        scanBus();
+                        scanBusNew();
+                    }
+                });
+
+        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "KWP",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        scanBusKWP();
+                    }
+                });
+        alertDialog.show();
     }
 
     void scanBus(){
@@ -475,29 +501,53 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        if (m_currentEcuInfoList == null || m_currentEcuInfoList.isEmpty())
+        if (mCurrentEcuInfoList == null || mCurrentEcuInfoList.isEmpty())
             return;
 
-        m_chatService.initElm();
+        mChatService.initElm();
         initBus("CAN");
+        mChatService.setTimeOut(1000);
+        /*
+         * (old) ECUs gives their identifiers with 2180 command
+         */
+        sendCmd("10C0");
+        sendCmd("2180");
+    }
 
+    void scanBusKWP(){
+        if(!isChatConnected()){
+            return;
+        }
+
+        if (mCurrentEcuInfoList == null || mCurrentEcuInfoList.isEmpty())
+            return;
+
+        mChatService.initElm();
+        initBus("KWP2000");
+        mChatService.setTimeOut(1000);
+        /*
+         * (old) ECUs gives their identifiers with 2180 command
+         */
         sendCmd("10C0");
         sendCmd("2180");
     }
 
     void scanBusNew(){
-        if(m_chatService != null && m_chatService.getState() != STATE_CONNECTED){
+        if(!isChatConnected()){
             return;
         }
 
-        if (m_chatService == null || m_currentEcuInfoList == null || m_currentEcuInfoList.isEmpty())
+        if (mChatService == null || mCurrentEcuInfoList == null || mCurrentEcuInfoList.isEmpty())
             return;
 
-        m_ecuIdentifierNew.reInit(m_currentEcuAddressId);
+        mEcuIdentifierNew.reInit(mCurrentEcuAddressId);
 
-        m_chatService.initElm();
+        mChatService.initElm();
         initBus("CAN");
-
+        mChatService.setTimeOut(1000);
+        /*
+         * (new) ECUs gives their identifiers with these commands
+         */
         sendCmd("1003");
         sendCmd("22F1A0");
         sendCmd("22F18A");
@@ -506,18 +556,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void ecuTypeSelected(String type, String project){
-        m_specificEcuListView.setBackgroundColor(Color.BLACK);
+        mSpecificEcuListView.setBackgroundColor(Color.BLACK);
 
-        int ecuAddress = m_ecuDatabase.getAddressByFunction(type);
+        int ecuAddress = mEcuDatabase.getAddressByFunction(type);
         if (ecuAddress < 0) {
-            m_specificEcuListView.setAdapter(null);
+            mSpecificEcuListView.setAdapter(null);
             return;
         }
-        m_currentEcuAddressId = ecuAddress;
-        ArrayList<EcuDatabase.EcuInfo> ecuArray = m_ecuDatabase.getEcuInfo(ecuAddress);
-        m_currentEcuInfoList = ecuArray;
+        mCurrentEcuAddressId = ecuAddress;
+        ArrayList<EcuDatabase.EcuInfo> ecuArray = mEcuDatabase.getEcuInfo(ecuAddress);
+        mCurrentEcuInfoList = ecuArray;
         if (ecuArray == null) {
-            m_specificEcuListView.setAdapter(null);
+            mSpecificEcuListView.setAdapter(null);
             return;
         }
         ArrayList<String> ecuNames = new ArrayList<>();
@@ -531,7 +581,7 @@ public class MainActivity extends AppCompatActivity {
         adapter=new ArrayAdapter<String>(this,
                 android.R.layout.simple_list_item_1,
                 ecuNames);
-        m_specificEcuListView.setAdapter(adapter);
+        mSpecificEcuListView.setAdapter(adapter);
     }
 
     void selectBtDevice(){
@@ -556,8 +606,8 @@ public class MainActivity extends AppCompatActivity {
     void startScreen(String ecuFile, String ecuHREFName){
         stopConnectionTimer();
 
-        if (m_chatService != null)
-            m_chatService.disconnect();
+        if (mChatService != null)
+            mChatService.disconnect();
         setConnectionStatus(STATE_DISCONNECTED);
 
         try {
@@ -565,7 +615,7 @@ public class MainActivity extends AppCompatActivity {
             Bundle b = new Bundle();
             b.putString("ecuFile", ecuFile);
             b.putString("ecuRef", ecuHREFName);
-            b.putString("deviceAddress", m_btDeviceAddress);
+            b.putString("deviceAddress", mBtDeviceAddress);
             b.putBoolean("licenseOk", mLicenseLock.isLicenseOk());
             b.putInt("linkMode", mLinkMode);
             serverIntent.putExtras(b);
@@ -614,8 +664,8 @@ public class MainActivity extends AppCompatActivity {
     {
         super.onDestroy();
         stopConnectionTimer();
-        if (m_chatService != null)
-            m_chatService.disconnect();
+        if (mChatService != null)
+            mChatService.disconnect();
     }
 
     @Override
@@ -623,8 +673,8 @@ public class MainActivity extends AppCompatActivity {
     {
         super.onStop();
         stopConnectionTimer();
-        if (m_chatService != null)
-            m_chatService.disconnect();
+        if (mChatService != null)
+            mChatService.disconnect();
     }
 
     @Override
@@ -645,7 +695,7 @@ public class MainActivity extends AppCompatActivity {
                     SharedPreferences.Editor edit = defaultPrefs.edit();
                     edit.putString(PREF_DEVICE_ADDRESS, address);
                     edit.commit();
-                    m_btDeviceAddress = address;
+                    mBtDeviceAddress = address;
                     startConnectionTimer();
                 }
                 break;
@@ -667,26 +717,26 @@ public class MainActivity extends AppCompatActivity {
         if (defaultPrefs.contains(PREF_ECUZIPFILE)) {
             ecuFile = defaultPrefs.getString(PREF_ECUZIPFILE, "");
         }
-        m_statusView.setText(getResources().getString(R.string.INDEXING_DB));
-        new LoadDbTask(m_ecuDatabase).execute(ecuFile);
+        mStatusView.setText(getResources().getString(R.string.INDEXING_DB));
+        new LoadDbTask(mEcuDatabase).execute(ecuFile);
     }
 
     void updateEcuTypeListView(String ecuFile, String project){
         if (ecuFile == null || ecuFile.isEmpty()){
-            m_statusView.setText(getResources().getString(R.string.DB_NOT_FOUND));
+            mStatusView.setText(getResources().getString(R.string.DB_NOT_FOUND));
             return;
         }
 
-        //m_ecuDatabase.checkMissings();
+        //mEcuDatabase.checkMissings();
 
         SharedPreferences defaultPrefs = getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
         SharedPreferences.Editor edit = defaultPrefs.edit();
         edit.putString(PREF_ECUZIPFILE, ecuFile);
         edit.commit();
 
-        m_ecuFilePath = ecuFile;
+        mEcuFilePath = ecuFile;
         ArrayAdapter<String> adapter;
-        ArrayList<String> adapterList = m_ecuDatabase.getEcuByFunctionsAndType(project);
+        ArrayList<String> adapterList = mEcuDatabase.getEcuByFunctionsAndType(project);
         Collections.sort(adapterList);
         if (adapterList.isEmpty())
             return;
@@ -694,7 +744,7 @@ public class MainActivity extends AppCompatActivity {
                 android.R.layout.simple_list_item_1,
                 adapterList);
 
-        m_ecuListView.setAdapter(adapter);
+        mEcuListView.setAdapter(adapter);
     }
 
     public class LoadDbTask extends AsyncTask<String, Void, String> {
@@ -711,7 +761,7 @@ public class MainActivity extends AppCompatActivity {
             error = "";
             try {
                 String appDir = getApplicationContext().getFilesDir().getAbsolutePath();
-                ecuFile = m_ecuDatabase.loadDatabase(ecuFile, appDir);
+                ecuFile = mEcuDatabase.loadDatabase(ecuFile, appDir);
             } catch (EcuDatabase.DatabaseException e){
                 error = e.getMessage();
                 return "";
@@ -722,11 +772,11 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String ecuFile) {
             SharedPreferences defaultPrefs = getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
-            m_currentProject = defaultPrefs.getString(PREF_PROJECT, "");
-            updateEcuTypeListView(ecuFile, m_currentProject);
-            m_statusView.setText("ECU-TWEAKER");
+            mCurrentProject = defaultPrefs.getString(PREF_PROJECT, "");
+            updateEcuTypeListView(ecuFile, mCurrentProject);
+            mStatusView.setText("ECU-TWEAKER");
             if (!error.isEmpty()){
-                m_logView.append("Database exception : " + error);
+                mLogView.append("Database exception : " + error);
             }
         }
     }
@@ -746,7 +796,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void chooseProject(){
-        if (!m_ecuDatabase.isLoaded())
+        if (!mEcuDatabase.isLoaded())
             return;
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getResources().getString(R.string.CHOOSE_PROJECT));
@@ -758,20 +808,20 @@ public class MainActivity extends AppCompatActivity {
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_list_item_1,
                 ecuNames);
-        m_specificEcuListView.setAdapter(adapter);
+        mSpecificEcuListView.setAdapter(adapter);
 
-        final String[] projects = m_ecuDatabase.getModels();
+        final String[] projects = mEcuDatabase.getModels();
 
         Arrays.sort(projects);
         builder.setItems(projects, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                m_currentProject = m_ecuDatabase.getProjectFromModel(projects[which]);
+                mCurrentProject = mEcuDatabase.getProjectFromModel(projects[which]);
                 SharedPreferences defaultPrefs = getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
                 SharedPreferences.Editor edit = defaultPrefs.edit();
-                edit.putString(PREF_PROJECT, m_currentProject);
+                edit.putString(PREF_PROJECT, mCurrentProject);
                 edit.commit();
-                updateEcuTypeListView(m_ecuFilePath, m_currentProject);
+                updateEcuTypeListView(mEcuFilePath, mCurrentProject);
             }
         });
 
@@ -788,10 +838,8 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        String ecuRequest = results[0].replace(" ", "");
         String ecuResponse = results[1].replace(" ", "");
-
-        m_logView.append("> " + results[0] + " : " + results[1] + "\n");
+        mLogView.append("> " + results[0] + " : " + results[1] + "\n");
 
         /*
          * Old method auto identification
@@ -802,11 +850,11 @@ public class MainActivity extends AppCompatActivity {
             String version = ecuResponse.substring(36, 40);
             String diag_version_string = ecuResponse.substring(14, 16);
             int diag_version = Integer.parseInt(diag_version_string, 16);
-            m_viewDiagVersion.setText(diag_version_string);
-            m_viewSupplier.setText(supplier);
-            m_viewSoft.setText(version);
-            m_viewVersion.setText(soft_version);
-            m_logView.append(getResources().getString(R.string.ECU_FOUND) + " : " +
+            mViewDiagVersion.setText(diag_version_string);
+            mViewSupplier.setText(supplier);
+            mViewSoft.setText(version);
+            mViewVersion.setText(soft_version);
+            mLogView.append(getResources().getString(R.string.ECU_FOUND) + " : " +
                     getResources().getString(R.string.SUPPLIER_VERSION) + " " + supplier +
                     getResources().getString(R.string.DIAG_VERSION) + " : "
                     + diag_version_string + " " +getResources().getString(R.string.VERSION)
@@ -814,7 +862,7 @@ public class MainActivity extends AppCompatActivity {
                     + " " + getResources().getString(R.string.SOFT_VERSION) + " : "
                     + soft_version + "\n");
 
-            EcuDatabase.EcuInfo ecuInfo = m_ecuDatabase.identifyOldEcu(m_currentEcuAddressId,
+            EcuDatabase.EcuInfo ecuInfo = mEcuDatabase.identifyOldEcu(mCurrentEcuAddressId,
                     supplier, soft_version, version, diag_version);
 
             if (ecuInfo != null) {
@@ -825,14 +873,14 @@ public class MainActivity extends AppCompatActivity {
                 adapter = new ArrayAdapter<String>(this,
                         android.R.layout.simple_list_item_1,
                         ecuNames);
-                m_specificEcuListView.setAdapter(adapter);
+                mSpecificEcuListView.setAdapter(adapter);
                 if (!ecuInfo.exact_match) {
-                    m_specificEcuListView.setBackgroundColor(Color.RED);
-                    m_logView.append(getResources().getString(R.string.ECU_PART_MATCH) + " "
+                    mSpecificEcuListView.setBackgroundColor(Color.RED);
+                    mLogView.append(getResources().getString(R.string.ECU_PART_MATCH) + " "
                             + ecuInfo.ecuName + "\n");
                 } else {
-                    m_specificEcuListView.setBackgroundColor(Color.GREEN);
-                    m_logView.append(getResources().getString(R.string.ECU_MATCH) + " " + ecuInfo.ecuName + "\n");
+                    mSpecificEcuListView.setBackgroundColor(Color.GREEN);
+                    mLogView.append(getResources().getString(R.string.ECU_MATCH) + " " + ecuInfo.ecuName + "\n");
                 }
             }
         }
@@ -842,28 +890,28 @@ public class MainActivity extends AppCompatActivity {
          */
         if (ecuResponse.length() > 5) {
             if (ecuResponse.substring(0, 6).equals("62F1A0)")) {
-                m_ecuIdentifierNew.diag_version = ecuResponse.substring(6);
-                m_viewDiagVersion.setText(m_ecuIdentifierNew.diag_version);
+                mEcuIdentifierNew.diag_version = ecuResponse.substring(6);
+                mViewDiagVersion.setText(mEcuIdentifierNew.diag_version);
 
             }
             if (ecuResponse.substring(0, 6).equals("62F18A")) {
-                m_ecuIdentifierNew.supplier = ecuResponse.substring(6);
-                m_viewSupplier.setText(m_ecuIdentifierNew.supplier);
+                mEcuIdentifierNew.supplier = ecuResponse.substring(6);
+                mViewSupplier.setText(mEcuIdentifierNew.supplier);
             }
             if (ecuResponse.substring(0, 6).equals("62F194")) {
-                m_ecuIdentifierNew.version = ecuResponse.substring(6);
-                m_viewSoft.setText(m_ecuIdentifierNew.version);
+                mEcuIdentifierNew.version = ecuResponse.substring(6);
+                mViewSoft.setText(mEcuIdentifierNew.version);
             }
             if (ecuResponse.substring(0, 6).equals("62F195")) {
-                m_ecuIdentifierNew.soft_version = ecuResponse.substring(6);
-                m_viewVersion.setText(m_ecuIdentifierNew.soft_version);
+                mEcuIdentifierNew.soft_version = ecuResponse.substring(6);
+                mViewVersion.setText(mEcuIdentifierNew.soft_version);
             }
         }
 
         // If we get all ECU info, search in DB
-        if (m_ecuIdentifierNew.isFullyFilled()){
-            m_ecuIdentifierNew.reInit(-1);
-            ArrayList<EcuDatabase.EcuInfo> ecuInfos = m_ecuDatabase.identifyNewEcu(m_ecuIdentifierNew);
+        if (mEcuIdentifierNew.isFullyFilled()){
+            mEcuIdentifierNew.reInit(-1);
+            ArrayList<EcuDatabase.EcuInfo> ecuInfos = mEcuDatabase.identifyNewEcu(mEcuIdentifierNew);
             ArrayList<String> ecuNames = new ArrayList<>();
             boolean isExact = false;
             for (EcuDatabase.EcuInfo ecuInfo : ecuInfos) {
@@ -876,11 +924,11 @@ public class MainActivity extends AppCompatActivity {
             adapter = new ArrayAdapter<String>(this,
                     android.R.layout.simple_list_item_1,
                     ecuNames);
-            m_specificEcuListView.setAdapter(adapter);
+            mSpecificEcuListView.setAdapter(adapter);
             if (isExact){
-                m_specificEcuListView.setBackgroundColor(Color.GREEN);
+                mSpecificEcuListView.setBackgroundColor(Color.GREEN);
             } else {
-                m_specificEcuListView.setBackgroundColor(Color.RED);
+                mSpecificEcuListView.setBackgroundColor(Color.RED);
             }
         }
     }
@@ -928,7 +976,7 @@ public class MainActivity extends AppCompatActivity {
 
                     break;
                 case MESSAGE_TOAST:
-                    activity.m_logView.append(activity.getResources().getString(R.string.BT_MANAGER_MESSAGE) + " : " + msg.getData().getString(TOAST) + "\n");
+                    activity.mLogView.append(activity.getResources().getString(R.string.BT_MANAGER_MESSAGE) + " : " + msg.getData().getString(TOAST) + "\n");
                     break;
                 case MESSAGE_QUEUE_STATE:
                     int queue_len = msg.arg1;
@@ -938,16 +986,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void setConnectionStatus(int c){
-        m_scanButton.setEnabled(c == STATE_CONNECTED ? true : false);
+        //mScanButton.setEnabled(c == STATE_CONNECTED ? true : false);
         if (c == STATE_CONNECTED){
-            m_btIconImage.setColorFilter(Color.GREEN);
-            m_btIconImage.setImageResource(R.drawable.ic_link_ok);
+            mBtIconImage.setColorFilter(Color.GREEN);
+            mBtIconImage.setImageResource(R.drawable.ic_link_ok);
         } else if (c == STATE_DISCONNECTED){
-            m_btIconImage.setColorFilter(Color.RED);
-            m_btIconImage.setImageResource(R.drawable.ic_link_nok);
+            mBtIconImage.setColorFilter(Color.RED);
+            mBtIconImage.setImageResource(R.drawable.ic_link_nok);
         } else if (c == STATE_CONNECTING){
-            m_btIconImage.setColorFilter(Color.GRAY);
-            m_btIconImage.setImageResource(R.drawable.ic_link_ok);
+            mBtIconImage.setColorFilter(Color.GRAY);
+            mBtIconImage.setImageResource(R.drawable.ic_link_ok);
         }
     }
 
@@ -958,14 +1006,14 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Send command
-        m_chatService.write(cmd);
+        mChatService.write(cmd);
     }
 
     private boolean isChatConnected(){
-        return m_chatService != null && (m_chatService.getState() == STATE_CONNECTED);
+        return mChatService != null && (mChatService.getState() == STATE_CONNECTED);
     }
 
     private boolean isChatConnecting(){
-        return m_chatService != null && (m_chatService.getState() == STATE_CONNECTING);
+        return mChatService != null && (mChatService.getState() == STATE_CONNECTING);
     }
 }
