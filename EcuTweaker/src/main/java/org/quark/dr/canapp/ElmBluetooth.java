@@ -51,6 +51,7 @@ public class ElmBluetooth extends ElmBase {
 
     public boolean connect(String address) {
         synchronized (this) {
+            setState(STATE_CONNECTING);
             BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
             BluetoothDevice device = btAdapter.getRemoteDevice(address);
 
@@ -60,7 +61,6 @@ public class ElmBluetooth extends ElmBase {
             // Start the thread to connect with the given device
             mConnectThread = new ConnectThread(device);
             mConnectThread.start();
-            setState(STATE_CONNECTING);
         }
         return true;
     }

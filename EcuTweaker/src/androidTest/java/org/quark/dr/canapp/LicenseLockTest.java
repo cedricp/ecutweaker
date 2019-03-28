@@ -2,6 +2,8 @@ package org.quark.dr.canapp;
 
 import org.junit.Test;
 
+import java.text.DecimalFormat;
+
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.is;
 
@@ -21,11 +23,17 @@ public class LicenseLockTest {
 
     @Test
     public void test_Ident(){
-        byte[] unarmor = LicenseLock.removeArmor("v3pig5ngwb");
+        byte[] unarmor = LicenseLock.removeArmor("fv3svtfhbd");
         String hexString = new String(unarmor);
         long id = Long.parseLong(hexString, 16);
         LicenseLock lock = new LicenseLock(id);
         System.out.println("?? Public " + lock.getPublicCode() + " " + hexString);
         System.out.println("?? Private " + lock.generatePrivateCode());
+    }
+
+    @Test
+    public void test_df(){
+
+        System.out.println("?? DF " + df.format(125.5651231));
     }
 }

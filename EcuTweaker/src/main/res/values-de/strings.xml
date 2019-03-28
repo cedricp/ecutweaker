@@ -6,7 +6,7 @@
     <string name="AUTO_IDENT_RESULT">AutoIdent Resultat</string>
     <string name="BAD_ELM_RESPONSE">Ungueltige ELM Antwort</string>
     <string name="BAD_RESPONSE">Ungueltige Antwort</string>
-    <string name="BT_MANAGER_MESSAGE">Bluetoothmanager Mitteilung</string>
+    <string name="BT_MANAGER_MESSAGE">ELM Mitteilung</string>
     <string name="CANCEL">Abbrechen</string>
     <string name="CATEGORY_CHOOSE">Kategorieauswahl</string>
     <string name="CHOOSE_BT_DEVICE">Bluetooth Geraet auswaehlen</string>

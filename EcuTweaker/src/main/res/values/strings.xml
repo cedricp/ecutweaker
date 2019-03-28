@@ -31,7 +31,7 @@
     <string name="OK">OK</string>
     <string name="CANCEL">Cancel</string>
     <string name="USER_USES_DEMO_MODE">You are using demo version, write functions deactivated.</string>
-    <string name="BT_MANAGER_MESSAGE">Bluetooth manager message</string>
+    <string name="BT_MANAGER_MESSAGE">ELM manager message</string>
     <string name="ECU_PART_MATCH">ECU partially match file (use with caution)</string>
     <string name="ECU_MATCH">ECU perfectly match file</string>
     <string name="ECU_FOUND">Found ECU</string>

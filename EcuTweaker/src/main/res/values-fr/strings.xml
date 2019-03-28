@@ -3,7 +3,7 @@
     <string name="OK">OK</string>
     <string name="CANCEL">Abandonner</string>
     <string name="USER_USES_DEMO_MODE">Vous utilisez la version démonstration, les fonctions d\'écritures sont desactivées</string>
-    <string name="BT_MANAGER_MESSAGE">Message Bluetooth</string>
+    <string name="BT_MANAGER_MESSAGE">Message ELM</string>
     <string name="ECU_PART_MATCH">Correspondance ECU partielle</string>
     <string name="ECU_MATCH">Correspondance ECU totale</string>
     <string name="ECU_FOUND">ECU Trouvé</string>

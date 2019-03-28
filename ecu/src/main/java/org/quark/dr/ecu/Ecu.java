@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -103,6 +104,7 @@ public class Ecu {
                 items = new HashMap<>();
                 if(json.has("bitscount"))
                     bitscount = json.getInt("bitscount");
+
                 if(json.has("scaled"))
                     scaled = json.getBoolean("scaled");
 
@@ -405,12 +407,12 @@ public class Ecu {
 
             float res = ((float)val * step + (offset)) / divideby;
 
-            if (format.length() > 0 && format.contains(".")){
-                String[] parts = format.split(".");
-                if (parts.length > 0){
-                    String fmt = "%." + parts[1].length() + "f";
-                    String fmtd = String.format(fmt, res);
-                    return fmtd;
+            if (!format.isEmpty()) {
+                try {
+                    DecimalFormat df = new DecimalFormat(format);
+                    return df.format(res);
+                } catch (Exception e){
+                    e.printStackTrace();
                 }
             }
             return fmt(res);

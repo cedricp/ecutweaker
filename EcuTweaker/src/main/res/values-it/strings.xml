@@ -28,7 +28,7 @@
     <string name="OK">OK</string>
     <string name="CANCEL">Cancella</string>
     <string name="USER_USES_DEMO_MODE">Stai usando una versione demo, funzione di scrittura disattivata.</string>
-    <string name="BT_MANAGER_MESSAGE">Messaggio gestione Bluetooth</string>
+    <string name="BT_MANAGER_MESSAGE">Messaggio gestione ELM</string>
     <string name="ECU_PART_MATCH">ECU parzialmente compatibili (usare con cautela)</string>
     <string name="ECU_MATCH">ECU perfettamente compatibili</string>
     <string name="ECU_FOUND">Trovate ECU</string>

@@ -28,7 +28,7 @@
 <string name="OK">OK</string>
 <string name="CANCEL">Cancel</string>
 <string name="USER_USES_DEMO_MODE">Вы используете demo версию, запись заблокирована.</string>
-<string name="BT_MANAGER_MESSAGE">Сообщение менеджера Bluetooth</string>
+<string name="BT_MANAGER_MESSAGE">Сообщение менеджера ELM</string>
 <string name="ECU_PART_MATCH">ECU совпадает частично (используйте с осторожностью)</string>
 <string name="ECU_MATCH">ECU полностью совпадает</string>
 <string name="ECU_FOUND">ECU найден</string>
