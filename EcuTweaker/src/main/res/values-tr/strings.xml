@@ -27,7 +27,7 @@
     <string name="OK">Tamam</string>
     <string name="CANCEL">Çıkış</string>
     <string name="USER_USES_DEMO_MODE">Demo versiyonunu kullanıyorsunuz, yazma fonksiyonu devre dışı.</string>
-    <string name="BT_MANAGER_MESSAGE">ELM Yöneticisi Mesajı</string>
+    <string name="BT_MANAGER_MESSAGE">Bluetooth Yöneticisi Mesajı</string>
     <string name="ECU_PART_MATCH">Kısmen eşleşen ECU\'lar(dikkatli kullanın)</string>
     <string name="ECU_MATCH">Tam eşleşen ECU\'lar</string>
     <string name="ECU_FOUND">ECU Bulundu</string>

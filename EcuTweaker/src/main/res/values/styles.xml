@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:android="http://schemas.android.com/tools">
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
@@ -33,6 +33,7 @@
         <item name="android:colorForeground">@color/colorAccent</item>
         <item name="android:textColorSecondaryInverse">@color/darkColorPrimary</item>
         <item name="android:windowBackground">@android:color/background_dark</item>
+        <item name="android:textColorPrimaryInverse">@android:color/holo_blue_bright</item>
     </style>
 
 

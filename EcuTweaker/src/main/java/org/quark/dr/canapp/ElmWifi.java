@@ -100,6 +100,8 @@ public class ElmWifi extends ElmBase{
             }
 
             return true;
+        } else {
+            System.out.println("?? Cannot connect to " + name);
         }
 
         logInfo("Unable to connect wifi device");
@@ -286,6 +288,8 @@ public class ElmWifi extends ElmBase{
                 createConnectedThread(mLocalSocket);
                 return;
             } catch (IOException e) {
+                System.out.println(">>> Except");
+                e.printStackTrace();
             }
             setState(STATE_DISCONNECTED);
         }

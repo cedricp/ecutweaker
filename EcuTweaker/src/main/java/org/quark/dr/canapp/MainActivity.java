@@ -65,6 +65,7 @@ import static org.quark.dr.canapp.ScreenActivity.TOAST;
 public class MainActivity extends AppCompatActivity {
     final static String TAG = "EcuTweaker";
     final static int PERMISSIONS_ACCESS_EXTERNAL_STORAGE = 0;
+    final static int PERMISSIONS_ACCESS_COARSE_LOCATION = 1;
     // Intent request codes
     private static final int    REQUEST_CONNECT_DEVICE = 1;
     private static final int    REQUEST_SCREEN         = 2;
@@ -314,7 +315,13 @@ public class MainActivity extends AppCompatActivity {
                 == PackageManager.PERMISSION_GRANTED){
             parseDatabase();
         } else {
-            askPermission();
+            askStoragePermission();
+        }
+
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            askLocationPermission();
         }
 
         mLogView.append("EcuTweaker " + BuildConfig.BUILD_TYPE + " "
@@ -625,7 +632,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    void askPermission(){
+    void askStoragePermission(){
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.READ_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -641,6 +648,19 @@ public class MainActivity extends AppCompatActivity {
             }
         } else {
             parseDatabase();
+        }
+    }
+
+    void askLocationPermission(){
+        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED){
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)){
+                Toast.makeText(this, "You need location permission to connect to WiFi", Toast.LENGTH_SHORT).show();
+            }else{
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                        PERMISSIONS_ACCESS_COARSE_LOCATION);
+            }
         }
     }
 
@@ -776,7 +796,7 @@ public class MainActivity extends AppCompatActivity {
             updateEcuTypeListView(ecuFile, mCurrentProject);
             mStatusView.setText("ECU-TWEAKER");
             if (!error.isEmpty()){
-                mLogView.append("Database exception : " + error);
+                mLogView.append("Database exception : " + error + "\n");
             }
         }
     }
@@ -892,7 +912,6 @@ public class MainActivity extends AppCompatActivity {
             if (ecuResponse.substring(0, 6).equals("62F1A0)")) {
                 mEcuIdentifierNew.diag_version = ecuResponse.substring(6);
                 mViewDiagVersion.setText(mEcuIdentifierNew.diag_version);
-
             }
             if (ecuResponse.substring(0, 6).equals("62F18A")) {
                 mEcuIdentifierNew.supplier = ecuResponse.substring(6);

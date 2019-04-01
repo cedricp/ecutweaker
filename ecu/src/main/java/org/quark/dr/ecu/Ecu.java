@@ -773,7 +773,9 @@ public class Ecu {
         // Gather StartDiagnosticSession requests
         for (String requestName : requests.keySet()){
             String upperReqName = requestName.toUpperCase();
-            if (upperReqName.contains("START") && upperReqName.contains("DIAG") && upperReqName.contains("SESSION")){
+            if (upperReqName.contains("START")
+                    && upperReqName.contains("DIAG")
+                    && upperReqName.contains("SESSION")){
                 EcuRequest request = requests.get(requestName);
                 for (String sdsDataItemName : request.sendbyte_dataitems.keySet()){
 
