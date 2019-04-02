@@ -484,6 +484,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void onScanBus(){
+        if(!isChatConnected()){
+            Toast.makeText(this, "No ELM connection", Toast.LENGTH_SHORT).show();
+            return;
+        }
         AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
         alertDialog.setTitle("SELECT BUS");
         alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "CAN",
@@ -505,11 +509,14 @@ public class MainActivity extends AppCompatActivity {
 
     void scanBus(){
         if(!isChatConnected()){
+            Toast.makeText(this, "No ELM connection", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (mCurrentEcuInfoList == null || mCurrentEcuInfoList.isEmpty())
+        if (mCurrentEcuInfoList == null || mCurrentEcuInfoList.isEmpty()) {
+            Toast.makeText(this, "Select an ECU type to auto identify", Toast.LENGTH_SHORT).show();
             return;
+        }
 
         mChatService.initElm();
         initBus("CAN");

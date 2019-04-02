@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="APP_ENTER_CODE">Enter activatie code</string>
+    <string name="APP_UNLOCKED">Applicatie vrijgegeven</string>
+    <string name="AUTO_IDENTIFY">Automarisch herkennen</string>
+    <string name="AUTO_IDENT_RESULT">AutoIdent resultaat</string>
+    <string name="BAD_ELM_RESPONSE">Verkeerde ELM reaktie</string>
+    <string name="BAD_RESPONSE">Verkeerde reaktie</string>
+    <string name="BT_MANAGER_MESSAGE">ELM manager bericht</string>
+    <string name="CANCEL">Afbreken</string>
+    <string name="CATEGORY_CHOOSE">Kies een catagorie</string>
+    <string name="CHOOSE_BT_DEVICE">Selecteer BT apparaat</string>
+    <string name="CHOOSE_PROJECT">Kies een project</string>
+    <string name="CLEAR_ALL_DTC">Verwijder alle DTC ?</string>
+    <string name="CLEAR_LOG">Verwijder Logs</string>
+    <string name="COMPUTED_FRAME">Computed frame</string>
+    <string name="COPY_TO_CLIPBOARD">kopieer naar clipboard</string>
+    <string name="DB_NOT_FOUND">Database niet gevonden</string>
+    <string name="DEMO_MESSAGE"><![CDATA[Welkom bij <b>ECU TWEAKER</b>,<br> U gebruikt deze
+ applicatie in de demonstratiemodus. Je kunt het gebruiken om alle ECU-parameters te lezen,
+ maar je mag geen gebruik maken van de knoppen of de <i>Verwijder DTC</i> functie.
+ <br> Je kunt het ontgrendelen door me de aanvraagcode te sturen. Ik stuur je een activeringscode
+ terug.<br> <b>Pas op, bij grootse mogelijkheden hoort een grote verantwoordelijkheid, je gebruikt het op
+ eigen risico. De ontwikkelaar wijst alle verantwoordelijkheden af, <u>u bent de enige verantwoordelijke
+ voor wat u met deze software doet.</u></b>"</string>]]></string>
+    <string name="DIAG_VERSION">diagnostische versie</string>
+    <string name="DTC_CLEAR_OK">Verwijderen DTC succesvol</string>
+    <string name="ECU_FOUND">ECU gevonden</string>
+    <string name="ECU_MATCH">ECU file komt overeen</string>
+    <string name="ECU_PART_MATCH">ECU komt gedeeltelijk overeen (pas op met gebruik)</string>
+    <string name="ELM_RESPONSE">ELM respons</string>
+    <string name="FRAME_COMPUTE_FAILED">Kan frame niet berekenen</string>
+    <string name="FRAME_NOT_SENT">Frame niet verzonden (Bluetooth niet verbonden)</string>
+    <string name="INDEXING_DB">Indexeren Database...</string>
+    <string name="INFORMATION">Informatie</string>
+    <string name="INVALID_VALUE">verkeerde waarde, controleer ingave</string>
+    <string name="LOGFILE_DELETED">Log file successvol verwijderd</string>
+    <string name="LOGFILE_DELETE_FAILED">verwijderen log file niet geslaagd</string>
+    <string name="LOGS">Bekijk Logs</string>
+    <string name="LONGPRESS_TO_DELETE">Lang indrukken om te wissen</string>
+    <string name="NEGATIVE_RESPONSE">Negatieve reactie</string>
+    <string name="NEW_DEVICE">Nieuw apparaat gevonden</string>
+    <string name="NO">Nee</string>
+    <string name="NO_CHAT_SESSION">Probeer opdracht te verzenden zonder Bluetooth-chatsessie</string>
+    <string name="NO_DTC_STORED">ECU heeft geen DTC opgeslagen</string>
+    <string name="NO_ELM_RESPONSE">Geen ELM-reactie</string>
+    <string name="OK">OK</string>
+    <string name="SCREEN_CHOOSE">Kies een scherm</string>
+    <string name="SOFT_VERSION">soft version</string>
+    <string name="SUPPLIER_VERSION">Leveranciers-versie</string>
+    <string name="TO_REQUEST">vragen</string>
+    <string name="USER_REQUEST_CODE">Uw aangevraagde code</string>
+    <string name="USER_USES_DEMO_MODE">U gebruikt de demoversie, schrijffuncties zijn gedeactiveerd.</string>
+    <string name="VERSION">versie</string>
+    <string name="WRONG_CODE">Verkeerde code, sorry !</string>
+    <string name="YES">Ja</string>
+    <string name="bt_not_enabled_leaving">Bluetooth was niet ingeschakeld. Bluetooth-chat verlaten.</string>
+    <string name="button_scan">Zoek naar apparaten</string>
+    <string name="none_found">Geen apparaten gevonden</string>
+    <string name="none_paired">Er zijn geen apparaten gepaired</string>
+    <string name="not_connected">U bent niet met een apparaat verbonden</string>
+    <string name="scanning">Zoeken naar apparaten…</string>
+    <string name="select_device">Kies een apparaat om mee te verbinden</string>
+    <string name="send">Verzenden</string>
+    <string name="title_connected_to">Verbonden met %1$s</string>
+    <string name="title_connecting">Verbinden…</string>
+    <string name="title_not_connected">Niet verbonden</string>
+    <string name="title_other_devices">Andere beschikbare apparaten</string>
+    <string name="title_paired_devices">Gepairde apparaten</string>
+</resources>

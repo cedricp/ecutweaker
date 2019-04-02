@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
+    <!-- BluetoothChat -->
+    <string name="send">Odeslat</string>
+    <string name="not_connected">Nejste připojeni k zařízení</string>
+    <string name="bt_not_enabled_leaving">Bluetooth nebyl povolený.Odchod z Bluetooth</string>
+    <string name="title_connecting">Připojení..</string>
+    <string name="title_connected_to">Připojeno k <xliff:g id="device_name">%1$s</xliff:g></string>
+    <string name="title_not_connected">Nepřipojeno</string>
+
+    <!-- DeviceListActivity -->
+    <string name="scanning">Skenování zařízení..</string>
+    <string name="select_device">Vybrat zařízení pro připojení</string>
+    <string name="none_paired">Žádné spárované zařízení</string>
+    <string name="none_found">Nenašlo se zařízení</string>
+    <string name="title_paired_devices">Spárované zařízení</string>
+    <string name="title_other_devices">Jiné dostupné zařízení</string>
+    <string name="button_scan">Kontrola zařízení</string>
+
+    <!-- Application strings -->
+    <string name="INDEXING_DB">Index databáze..</string>
+    <string name="DB_NOT_FOUND">Žádná databáze</string>
+    <string name="WRONG_CODE">Nesprávný kód,promiň!</string>
+    <string name="APP_UNLOCKED">Aplikace odemčená</string>
+    <string name="APP_ENTER_CODE">Zadejte aktivační kód</string>
+    <string name="USER_REQUEST_CODE">Váš kód požadavky</string>
+    <string name="OK">Ano</string>
+    <string name="CANCEL">Zrušit</string>
+    <string name="USER_USES_DEMO_MODE">Používáte DEMO verzi, funkce zápisu jsou deaktivovány.</string>
+    <string name="BT_MANAGER_MESSAGE">Správa správce ELM</string>
+    <string name="ECU_PART_MATCH">ECU částečně odpovídá souboru (použijte opatrně)</string>
+    <string name="ECU_MATCH">ECU se dokonale shoduje se souborem</string>
+    <string name="ECU_FOUND">Nalezené ECU</string>
+    <string name="DIAG_VERSION">Diagnostická verze</string>
+    <string name="VERSION">Verze</string>
+    <string name="SOFT_VERSION">Prog. verze</string>
+    <string name="SUPPLIER_VERSION">Verze dodavatele</string>
+    <string name="CHOOSE_PROJECT">Vyberte projekt</string>
+    <string name="INFORMATION">Informace</string>
+    <string name="DEMO_MESSAGE"><![CDATA[Vítejte v <b>ECU TWEAKER</b>,<br> Používáte aplikaci v demo režimu.
+Můžete jej použít ke čtení všech parametrů ECU, ale nemáte povolení
+použít tlačítka zápisu nebo <i>CLEAR DTC</i> funkce.<br>
+Můžete ho odemknout zasláním kódu požadavky, pošlu Vám aktivační kód.
+<b>Dejte si pozor, s velkou silou přichází velká zodpovědnost, budete ji používat na vlastní
+riziko. Vývojář odmítá veškerou zodpovědnost, <u>jste výhradně zodpovědní,
+co děláte s tímto softwarem.</u></b>]]></string>
+    <string name="BAD_RESPONSE">Chybná odpověď</string>
+    <string name="TO_REQUEST">Na vyžádání</string>
+    <string name="INVALID_VALUE">Neplatná hodnota, zkontrolujte vstupy</string>
+    <string name="FRAME_COMPUTE_FAILED">Nelze vypočítat obraz</string>
+    <string name="COMPUTED_FRAME">Vypočtený obraz</string>
+    <string name="CATEGORY_CHOOSE">Vyberte kategorii</string>
+    <string name="SCREEN_CHOOSE">Vyberte obraz</string>
+    <string name="FRAME_NOT_SENT">Obraz nebyl odeslán (Bluetooth nepřipojený)</string>
+    <string name="NO_ELM_RESPONSE">Bez odpovědi ELM</string>
+    <string name="DTC_CLEAR_OK">Vymazat DTC úspěšný</string>
+    <string name="NEGATIVE_RESPONSE">Záporná odpověď</string>
+    <string name="ELM_RESPONSE">ELM Odpověď</string>
+    <string name="BAD_ELM_RESPONSE">Odpověď BAD ELM</string>
+    <string name="CLEAR_ALL_DTC">Odstranit kódy DTC?</string>
+    <string name="YES">Ano</string>
+    <string name="NO">Ne</string>
+    <string name="NO_DTC_STORED">ECU nemá uložen DTC</string>
+    <string name="NEW_DEVICE">Nalezené nové zařízení</string>
+    <string name="CHOOSE_BT_DEVICE">VYBER BT ZAŘÍZENÍ</string>
+    <string name="AUTO_IDENTIFY">AUTO IDENTIFIKACE</string>
+    <string name="AUTO_IDENT_RESULT">Výsledek Autoidentu</string>
+    <string name="NO_CHAT_SESSION">Pokus o odeslání příkazu bez relace Bluetooth</string>
+    <string name="LOGS">ZOBRAZ LOG</string>
+    <string name="COPY_TO_CLIPBOARD">Kopírovat do schránky</string>
+    <string name="CLEAR_LOG">VYMAŽ LOG</string>
+    <string name="LOGFILE_DELETED">Soubor log úspěšně odstraněn</string>
+    <string name="LOGFILE_DELETE_FAILED">Nelze odstranit log</string>
+    <string name="LONGPRESS_TO_DELETE">Dlouhým stiskem smažete</string>
+</resources>
