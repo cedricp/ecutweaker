@@ -431,9 +431,9 @@ public class EcuDatabase {
     }
 
     public String searchEcuFile(File dir) {
-        if (!dir.exists())
+        if (!dir.exists()) {
             return "";
-        String searchFile = "ECU.ZIP";
+        }
         File listFile[] = dir.listFiles();
         if (listFile != null) {
             for (File f : listFile) {
@@ -442,7 +442,7 @@ public class EcuDatabase {
                     if (!res.isEmpty())
                         return res;
                 } else {
-                    if (f.getName().toUpperCase().equals(searchFile)) {
+                    if (f.getName().equals("ecu.zip")) {
                         return f.getAbsolutePath();
                     }
                 }

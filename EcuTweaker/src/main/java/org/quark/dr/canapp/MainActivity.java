@@ -78,6 +78,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String PREF_DEVICE_ADDRESS = "btAdapterAddress";
     public static final String PREF_LICENSE_CODE = "licenseCode";
     public static final String PREF_GLOBAL_SCALE = "globalScale";
+    public static final String PREF_FONT_SCALE = "fontScale";
     public static final String PREF_ECUZIPFILE = "ecuZipFile";
     public static final String PREF_PROJECT = "project";
     public static final String PREF_LINK_MODE =  "BT";
@@ -101,6 +102,10 @@ public class MainActivity extends AppCompatActivity {
     private LicenseLock mLicenseLock;
     private int mLinkMode;
     private boolean mActivateBluetoothAsked;
+
+    public void displayLog(String message){
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -166,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
         mLogView.setGravity(Gravity.BOTTOM);
         mLogView.setMovementMethod(new ScrollingMovementMethod());
         mLogView.setBackgroundResource(R.drawable.edittextroundgreen);
+        mLogView.setTextIsSelectable(true);
 
         mBtIconImage.setColorFilter(Color.RED);
 

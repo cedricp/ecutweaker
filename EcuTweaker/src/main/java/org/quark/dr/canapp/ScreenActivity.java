@@ -54,6 +54,7 @@ import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTED;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTING;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_DISCONNECTED;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_NONE;
+import static org.quark.dr.canapp.MainActivity.PREF_FONT_SCALE;
 import static org.quark.dr.canapp.MainActivity.PREF_GLOBAL_SCALE;
 import static org.quark.dr.ecu.Ecu.hexStringToByteArray;
 
@@ -84,6 +85,7 @@ public class ScreenActivity extends AppCompatActivity {
     private Handler mHandler = null;
 
     private int mCanTimeOut;
+    private int mFontSizeOverride;
 
     // Intent request codes
     private static final int    REQUEST_CONNECT_DEVICE = 1;
@@ -107,7 +109,7 @@ public class ScreenActivity extends AppCompatActivity {
     }
 
     public float convertFontToPixel(int val){
-        return val * 1.0f * mGlobalScale;
+        return val * ((float)mFontSizeOverride / 100.0f) * mGlobalScale;
     }
 
     @Override
@@ -125,8 +127,11 @@ public class ScreenActivity extends AppCompatActivity {
         m_autoReload = false;
         SharedPreferences defaultPrefs = this.getSharedPreferences(MainActivity.DEFAULT_PREF_TAG,
                 MODE_PRIVATE);
+
         String globalScalePref = defaultPrefs.getString(PREF_GLOBAL_SCALE, "1.3");
+        mFontSizeOverride = defaultPrefs.getInt(PREF_FONT_SCALE, 100);
         mGlobalScale = Float.valueOf(globalScalePref);
+
         mLastSDSTime = 0;
         int linkMode = MainActivity.LINK_WIFI;
 
@@ -162,6 +167,28 @@ public class ScreenActivity extends AppCompatActivity {
                 AlertDialog alert = alertDialog.create();
                 SeekBar canSeekBar = view.findViewById(R.id.canTimeoutSeekBar);
                 canSeekBar.setProgress(mCanTimeOut);
+
+                SeekBar fontSeekBar = view.findViewById(R.id.fontSizeBar);
+                fontSeekBar.setProgress(mFontSizeOverride);
+                fontSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                        mFontSizeOverride = progress;
+                        if (mFontSizeOverride < 20)
+                            mFontSizeOverride = 20;
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+
+                    }
+                });
+
                 final TextView canTimeoutReport = view.findViewById(R.id.canTimeOutReport);
                 canSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                     @Override
@@ -185,7 +212,8 @@ public class ScreenActivity extends AppCompatActivity {
                         new DialogInterface.OnClickListener(){
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                applyCanSettings();
+                                applySettings();
+                                drawScreen(m_currentScreenName);
                             }
                         });
                 alert.show();
@@ -305,10 +333,14 @@ public class ScreenActivity extends AppCompatActivity {
         }
     }
 
-    void applyCanSettings(){
+    void applySettings(){
         if(isChatConnected()){
             mChatService.setTimeOut(mCanTimeOut);
         }
+        SharedPreferences defaultPrefs = this.getSharedPreferences(MainActivity.DEFAULT_PREF_TAG, MODE_PRIVATE);
+        SharedPreferences.Editor edit = defaultPrefs.edit();
+        edit.putInt(PREF_FONT_SCALE, mFontSizeOverride);
+        edit.apply();
     }
 
     void stopAutoReload(){
