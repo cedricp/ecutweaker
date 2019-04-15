@@ -1,6 +1,7 @@
 package org.quark.dr.canapp;
 
 import android.content.Context;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,7 +49,7 @@ public class CustomAdapter extends ArrayAdapter<String> {
         TextView tv = convertView.findViewById(android.R.id.text1);
         tv.setText(items[position]);
         tv.setTextColor(color);
-        tv.setTextSize(textSize);
+        tv.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
         return convertView;
     }
 

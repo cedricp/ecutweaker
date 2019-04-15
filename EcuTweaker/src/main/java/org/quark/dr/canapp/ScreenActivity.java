@@ -19,6 +19,7 @@ import android.text.method.ScrollingMovementMethod;
 import android.util.Pair;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -109,7 +110,7 @@ public class ScreenActivity extends AppCompatActivity {
     }
 
     public float convertFontToPixel(int val){
-        return val * ((float)mFontSizeOverride / 100.0f) * mGlobalScale;
+        return val * 2 * ((float)mFontSizeOverride / 100.0f) * mGlobalScale;
     }
 
     @Override
@@ -446,8 +447,7 @@ public class ScreenActivity extends AppCompatActivity {
                 textView.setText(labelData.text);
                 textView.setBackgroundColor(labelData.color.get());
                 textView.setTextColor(labelData.font.color.get());
-                //textView.setTextColor(Color.BLACK);
-                textView.setTextSize(convertFontToPixel(labelData.font.size));
+                textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, convertFontToPixel(labelData.font.size));
                 if (labelData.alignment == 2) {
                     textView.setGravity(Gravity.CENTER_HORIZONTAL);
                 } else if (labelData.alignment == 1) {
@@ -467,7 +467,7 @@ public class ScreenActivity extends AppCompatActivity {
                 textView.setText(displaydata.text);
                 textView.setTextColor(displaydata.font.color.get());
                 textView.setBackgroundColor(displaydata.color.get());
-                textView.setTextSize(convertFontToPixel(displaydata.font.size));
+                textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, convertFontToPixel(displaydata.font.size));
                 textView.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
                 m_layoutView.addView(textView);
             }
@@ -478,7 +478,7 @@ public class ScreenActivity extends AppCompatActivity {
             textEdit.setY(convertToPixel(displaydata.rect.y));
             textEdit.setWidth((int) convertToPixel(displaydata.rect.w - displaydata.width));
             textEdit.setHeight((int) convertToPixel(displaydata.rect.h));
-            textEdit.setTextSize(convertFontToPixel(displaydata.font.size));
+            textEdit.setTextSize(TypedValue.COMPLEX_UNIT_PX, convertFontToPixel(displaydata.font.size));
             textEdit.setEnabled(false);
             textEdit.setText("---");
             textEdit.setPadding(3,3,3,3);
@@ -509,7 +509,7 @@ public class ScreenActivity extends AppCompatActivity {
                 textEdit.setY(convertToPixel(inputdata.rect.y));
                 textEdit.setWidth((int) convertToPixel(inputdata.rect.w - inputdata.width));
                 textEdit.setHeight((int) convertToPixel(inputdata.rect.h));
-                textEdit.setTextSize(convertFontToPixel(inputdata.font.size));
+                textEdit.setTextSize(TypedValue.COMPLEX_UNIT_PX, convertFontToPixel(inputdata.font.size));
                 textEdit.setPadding(3, 3, 3, 3);
                 textEdit.setTextColor(inputdata.font.color.get());
                 textEdit.setBackgroundColor(inputdata.color.get());
@@ -596,7 +596,7 @@ public class ScreenActivity extends AppCompatActivity {
                 buttonView.setLayoutParams(params);
                 buttonView.setPadding(0, 0, 0, 0);
                 buttonView.setText(buttondata.text);
-                buttonView.setTextSize(convertFontToPixel(buttondata.font.size));
+                buttonView.setTextSize(TypedValue.COMPLEX_UNIT_PX, convertFontToPixel(buttondata.font.size));
                 buttonView.setOnClickListener(buttonClickListener);
                 m_buttonsCommand.put(buttonView, buttondata.uniqueName);
                 m_layoutView.addView(buttonView);
