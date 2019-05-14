@@ -29,10 +29,15 @@ public class ElmWifi extends ElmBase{
     private ElmWifi.ConnectedThread mConnectedThread;
     private ElmWifi.ConnectThread mConnectThread;
 
-    public ElmWifi(Context context, Handler handler, String logDir, boolean testerPresent) {
+    private ElmWifi(Context context, Handler handler, String logDir, boolean testerPresent) {
         super(handler, logDir, testerPresent);
         this.mContext = context;
         mWIFIHandler = handler;
+    }
+
+    static public ElmBase createSingleton(Context context, Handler handler, String logDir, boolean testerPresent){
+        mSingleton = new ElmWifi(context, handler, logDir, testerPresent);
+        return mSingleton;
     }
 
     @Override

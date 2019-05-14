@@ -453,9 +453,12 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            mChatService = new ElmBluetooth(mHandler,
+            mChatService = ElmBluetooth.createSingleton(mHandler,
                     getApplicationContext().getFilesDir().getAbsolutePath(),
                     false);
+                    //new ElmBluetooth(mHandler,
+                    //getApplicationContext().getFilesDir().getAbsolutePath(),
+                    //false);
             // address is the device MAC address
             // Get the BluetoothDevice object
             if (btAdapter == null || mBtDeviceAddress.isEmpty() || isChatConnected())
@@ -467,8 +470,10 @@ public class MainActivity extends AppCompatActivity {
             // Attempt to connect to the device
             mChatService.connect(mBtDeviceAddress);
         } else {
-            mChatService = new ElmWifi(getApplicationContext(), mHandler, getApplicationContext().
+            mChatService = ElmWifi.createSingleton(getApplicationContext(), mHandler, getApplicationContext().
                     getFilesDir().getAbsolutePath(), false);
+                    //new ElmWifi(getApplicationContext(), mHandler, getApplicationContext().
+                    //getFilesDir().getAbsolutePath(), false);
             mChatService.connect("");
         }
     }

@@ -315,14 +315,18 @@ public class ScreenActivity extends AppCompatActivity {
         }
 
         mHandler = new messageHandler(this);
-        if (linkMode == MainActivity.LINK_BLUETOOTH) {
-            mChatService = new ElmBluetooth(mHandler,
-                    getApplicationContext().getFilesDir().getAbsolutePath(),
-                    true);
-        } else {
-            mChatService = new ElmWifi(getApplicationContext(), mHandler,
-                    getApplicationContext().getFilesDir().getAbsolutePath(),
-                    true);
+        mChatService = ElmBase.getSingleton();
+        if (mChatService == null) {
+            // In case singleton is lost...
+            if (MainActivity.LINK_BLUETOOTH == linkMode) {
+                mChatService = ElmBluetooth.createSingleton(mHandler,
+                        getApplicationContext().getFilesDir().getAbsolutePath(),
+                        true);
+            } else {
+                mChatService = ElmWifi.createSingleton(getApplicationContext(), mHandler,
+                        getApplicationContext().getFilesDir().getAbsolutePath(),
+                        true);
+            }
         }
         connectDevice();
 
@@ -947,11 +951,11 @@ public class ScreenActivity extends AppCompatActivity {
     }
 
     private boolean isChatConnected(){
-        return (mChatService.getState() == STATE_CONNECTED);
+        return mChatService != null && (mChatService.getState() == STATE_CONNECTED);
     }
 
     private boolean isChatConnecting(){
-        return (mChatService.getState() == STATE_CONNECTING);
+        return mChatService != null &&  (mChatService.getState() == STATE_CONNECTING);
     }
 
     private void initELM() {

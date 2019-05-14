@@ -21,11 +21,16 @@ public class ElmBluetooth extends ElmBase {
     private ConnectedThread mConnectedThread;
     private int mState;
 
-    public ElmBluetooth(Handler handler, String logDir, boolean testerPresent) {
+    private ElmBluetooth(Handler handler, String logDir, boolean testerPresent) {
         super(handler, logDir, testerPresent);
         mState = STATE_NONE;
         mTxa = mRxa = -1;
         buildMaps();
+    }
+
+    static public ElmBase createSingleton(Handler handler, String logDir, boolean testerPresent){
+        mSingleton = new ElmBluetooth(handler, logDir, testerPresent);
+        return mSingleton;
     }
 
     @Override

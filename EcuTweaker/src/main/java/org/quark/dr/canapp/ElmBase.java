@@ -30,6 +30,12 @@ public abstract class ElmBase {
     protected String mLogDir;
     protected volatile boolean mRunningStatus;
     private boolean mTesterPresentFlag;
+    static protected ElmBase mSingleton;
+
+    static public ElmBase getSingleton(){
+        return mSingleton;
+    }
+
     protected static final String mEcuErrorCodeString =
                     "10:General Reject," +
                     "11:Service Not Supported," +
