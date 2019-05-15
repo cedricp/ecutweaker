@@ -1,6 +1,8 @@
 package org.quark.dr.canapp;
 
+import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 
 import org.quark.dr.ecu.IsoTPDecode;
 import org.quark.dr.ecu.IsoTPEncode;
@@ -94,7 +96,6 @@ public abstract class ElmBase {
     public abstract boolean connect(String address);
     public abstract int getState();
     protected abstract String writeRaw(String raw_buffer);
-    protected abstract void logInfo(String log);
 
     public ElmBase(Handler handler, String logDir, boolean testerPresent) {
         mMessages = new ArrayList<>();
@@ -104,6 +105,14 @@ public abstract class ElmBase {
         mRxa = mTxa = -1;
         mTesterPresentFlag = testerPresent;
         buildMaps();
+    }
+
+    protected void logInfo(String log){
+        Message msg = mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_TOAST);
+        Bundle bundle = new Bundle();
+        bundle.putString(ScreenActivity.TOAST, log);
+        msg.setData(bundle);
+        mConnectionHandler.sendMessage(msg);
     }
 
     protected void createLogFile() {

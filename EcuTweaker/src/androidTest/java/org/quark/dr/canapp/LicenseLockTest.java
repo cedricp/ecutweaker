@@ -23,7 +23,7 @@ public class LicenseLockTest {
 
     @Test
     public void test_Ident(){
-        byte[] unarmor = LicenseLock.removeArmor("fv3svtfhbd");
+        byte[] unarmor = LicenseLock.removeArmor("2jpgyt7gvb");
         String hexString = new String(unarmor);
         long id = Long.parseLong(hexString, 16);
         LicenseLock lock = new LicenseLock(id);
@@ -31,9 +31,4 @@ public class LicenseLockTest {
         System.out.println("?? Private " + lock.generatePrivateCode());
     }
 
-    @Test
-    public void test_df(){
-
-        System.out.println("?? DF " + df.format(125.5651231));
-    }
 }

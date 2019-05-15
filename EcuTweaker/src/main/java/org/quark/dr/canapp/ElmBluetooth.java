@@ -33,15 +33,6 @@ public class ElmBluetooth extends ElmBase {
         return mSingleton;
     }
 
-    @Override
-    protected void logInfo(String info){
-        Message msg = mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_TOAST);
-        Bundle bundle = new Bundle();
-        bundle.putString(ScreenActivity.TOAST, info);
-        msg.setData(bundle);
-        mConnectionHandler.sendMessage(msg);
-    }
-
     private synchronized void setState(int state) {
         mState = state;
 

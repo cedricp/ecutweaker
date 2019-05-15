@@ -17,7 +17,6 @@ import java.net.Socket;
 public class ElmWifi extends ElmBase{
     private static final String TAG = "ElmWifiThread";
     private final Context mContext;
-    private final Handler mWIFIHandler;
     private Socket mSocket;
     private boolean mConnecting = false;
     private WifiManager.WifiLock wifiLock;
@@ -32,21 +31,11 @@ public class ElmWifi extends ElmBase{
     private ElmWifi(Context context, Handler handler, String logDir, boolean testerPresent) {
         super(handler, logDir, testerPresent);
         this.mContext = context;
-        mWIFIHandler = handler;
     }
 
     static public ElmBase createSingleton(Context context, Handler handler, String logDir, boolean testerPresent){
         mSingleton = new ElmWifi(context, handler, logDir, testerPresent);
         return mSingleton;
-    }
-
-    @Override
-    protected void logInfo(String info){
-        Message msg = mWIFIHandler.obtainMessage(ScreenActivity.MESSAGE_TOAST);
-        Bundle bundle = new Bundle();
-        bundle.putString(ScreenActivity.TOAST, info);
-        msg.setData(bundle);
-        mWIFIHandler.sendMessage(msg);
     }
 
     private void connectionLost(String message) {
@@ -64,7 +53,7 @@ public class ElmWifi extends ElmBase{
     private synchronized void setState(int state) {
         mState = state;
         // Give the new state to the Handler so the UI Activity can update
-        mWIFIHandler.obtainMessage(ScreenActivity.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
+        mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
     }
 
     public boolean connect(String address) {
@@ -96,7 +85,7 @@ public class ElmWifi extends ElmBase{
             mConnecting = true;
             mDeviceName = name.replace("\"","");
 
-            mWIFIHandler.removeCallbacksAndMessages(null);
+            mConnectionHandler.removeCallbacksAndMessages(null);
 
             if(!isConnected() && mConnecting)
             {
@@ -129,7 +118,7 @@ public class ElmWifi extends ElmBase{
 
         mMessages.clear();
 
-        mWIFIHandler.removeCallbacksAndMessages(null);
+        mConnectionHandler.removeCallbacksAndMessages(null);
         mConnecting = false;
 
         setState(STATE_NONE);
@@ -274,11 +263,11 @@ public class ElmWifi extends ElmBase{
                 mConnecting = false;
 
                 // Send the name of the connected device back to the UI Activity
-                Message msg = mWIFIHandler.obtainMessage(ScreenActivity.MESSAGE_DEVICE_NAME);
+                Message msg = mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_DEVICE_NAME);
                 Bundle bundle = new Bundle();
                 bundle.putString(ScreenActivity.DEVICE_NAME, mDeviceName);
                 msg.setData(bundle);
-                mWIFIHandler.sendMessage(msg);
+                mConnectionHandler.sendMessage(msg);
 
                 if (mConnectedThread != null) {
                     mConnectedThread.cancel();

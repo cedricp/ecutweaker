@@ -631,9 +631,9 @@ public class MainActivity extends AppCompatActivity {
     void startScreen(String ecuFile, String ecuHREFName){
         stopConnectionTimer();
 
-        if (mChatService != null)
-            mChatService.disconnect();
-        setConnectionStatus(STATE_DISCONNECTED);
+//        if (mChatService != null)
+//            mChatService.disconnect();
+//        setConnectionStatus(STATE_DISCONNECTED);
 
         try {
             Intent serverIntent = new Intent(this, ScreenActivity.class);
