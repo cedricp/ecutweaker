@@ -56,6 +56,7 @@ import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTING;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_DISCONNECTED;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_NONE;
 import static org.quark.dr.canapp.ScreenActivity.MESSAGE_DEVICE_NAME;
+import static org.quark.dr.canapp.ScreenActivity.MESSAGE_LOG;
 import static org.quark.dr.canapp.ScreenActivity.MESSAGE_QUEUE_STATE;
 import static org.quark.dr.canapp.ScreenActivity.MESSAGE_READ;
 import static org.quark.dr.canapp.ScreenActivity.MESSAGE_STATE_CHANGE;
@@ -453,7 +454,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            mChatService = ElmBluetooth.createSingleton(mHandler,
+            mChatService = ElmBase.createBluetoothSingleton(mHandler,
                     getApplicationContext().getFilesDir().getAbsolutePath(),
                     false);
                     //new ElmBluetooth(mHandler,
@@ -470,7 +471,7 @@ public class MainActivity extends AppCompatActivity {
             // Attempt to connect to the device
             mChatService.connect(mBtDeviceAddress);
         } else {
-            mChatService = ElmWifi.createSingleton(getApplicationContext(), mHandler, getApplicationContext().
+            mChatService = ElmBase.createWifiSingleton(getApplicationContext(), mHandler, getApplicationContext().
                     getFilesDir().getAbsolutePath(), false);
                     //new ElmWifi(getApplicationContext(), mHandler, getApplicationContext().
                     //getFilesDir().getAbsolutePath(), false);
@@ -631,9 +632,8 @@ public class MainActivity extends AppCompatActivity {
     void startScreen(String ecuFile, String ecuHREFName){
         stopConnectionTimer();
 
-//        if (mChatService != null)
-//            mChatService.disconnect();
-//        setConnectionStatus(STATE_DISCONNECTED);
+        // Remove handler
+        mChatService.changeHandler(null);
 
         try {
             Intent serverIntent = new Intent(this, ScreenActivity.class);
@@ -711,13 +711,16 @@ public class MainActivity extends AppCompatActivity {
     {
         super.onStop();
         stopConnectionTimer();
-        if (mChatService != null)
-            mChatService.disconnect();
     }
 
     @Override
     public void onStart() {
         super.onStart();
+        mChatService = ElmBase.getSingleton();
+        if (mChatService != null){
+            mChatService.changeHandler(mHandler);
+            mChatService.initElm();
+        }
         startConnectionTimer();
     }
 
@@ -727,7 +730,8 @@ public class MainActivity extends AppCompatActivity {
             case REQUEST_CONNECT_DEVICE:
                 // When DeviceListActivity returns with a device to connect
                 if (resultCode == Activity.RESULT_OK) {
-                    String address = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
+                    String address =
+                            data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
                     SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG,
                             MODE_PRIVATE);
                     SharedPreferences.Editor edit = defaultPrefs.edit();
@@ -744,7 +748,6 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case REQUEST_SCREEN:
                 setConnectionStatus(STATE_DISCONNECTED);
-                startConnectionTimer();
                 break;
         }
     }
@@ -1010,10 +1013,14 @@ public class MainActivity extends AppCompatActivity {
                     }
                     break;
                 case MESSAGE_DEVICE_NAME:
-
                     break;
                 case MESSAGE_TOAST:
-                    activity.mLogView.append(activity.getResources().getString(R.string.BT_MANAGER_MESSAGE) + " : " + msg.getData().getString(TOAST) + "\n");
+                    Toast.makeText(activity.getApplicationContext(), msg.getData().getString(TOAST),
+                            Toast.LENGTH_SHORT).show();
+                    break;
+                case MESSAGE_LOG:
+                    activity.mLogView.append(activity.getResources().getString(R.string.BT_MANAGER_MESSAGE) + " : "
+                            + msg.getData().getString(TOAST) + "\n");
                     break;
                 case MESSAGE_QUEUE_STATE:
                     int queue_len = msg.arg1;

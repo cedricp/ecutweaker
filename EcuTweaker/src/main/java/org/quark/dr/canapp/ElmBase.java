@@ -1,5 +1,6 @@
 package org.quark.dr.canapp;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -27,74 +28,88 @@ public abstract class ElmBase {
     protected ArrayList<String> mMessages;
     protected int mRxa, mTxa;
     protected HashMap<String, String> mEcuErrorCodeMap;
-    protected final Handler mConnectionHandler;
+    protected volatile Handler mConnectionHandler;
     protected OutputStreamWriter mLogFile;
     protected String mLogDir;
     protected volatile boolean mRunningStatus;
     private boolean mTesterPresentFlag;
-    static protected ElmBase mSingleton;
+    static protected ElmBase mSingleton = null;
+    protected boolean mConnecting = false;
+    private int mState;
+    protected boolean mSessionActive;
 
-    static public ElmBase getSingleton(){
+    static public ElmBase getSingleton() {
+        return mSingleton;
+    }
+
+    static public ElmBase createBluetoothSingleton(Handler handler, String logDir, boolean testerPresent){
+        mSingleton = new ElmBluetooth(handler, logDir, testerPresent);
+        return mSingleton;
+    }
+
+    static public ElmBase createWifiSingleton(Context context, Handler handler, String logDir, boolean testerPresent){
+        mSingleton = new ElmWifi(context, handler, logDir, testerPresent);
         return mSingleton;
     }
 
     protected static final String mEcuErrorCodeString =
-                    "10:General Reject," +
-                    "11:Service Not Supported," +
-                    "12:SubFunction Not Supported," +
-                    "13:Incorrect Message Length Or Invalid Format," +
-                    "21:Busy Repeat Request," +
-                    "22:Conditions Not Correct Or Request Sequence Error," +
-                    "23:Routine Not Complete," +
-                    "24:Request Sequence Error," +
-                    "31:Request Out Of Range," +
-                    "33:Security Access Denied- Security Access Requested," +
-                    "35:Invalid Key," +
-                    "36:Exceed Number Of Attempts," +
-                    "37:Required Time Delay Not Expired," +
-                    "40:Download not accepted," +
-                    "41:Improper download type," +
-                    "42:Can not download to specified address," +
-                    "43:Can not download number of bytes requested," +
-                    "50:Upload not accepted," +
-                    "51:Improper upload type," +
-                    "52:Can not upload from specified address," +
-                    "53:Can not upload number of bytes requested," +
-                    "70:Upload Download NotAccepted," +
-                    "71:Transfer Data Suspended," +
-                    "72:General Programming Failure," +
-                    "73:Wrong Block Sequence Counter," +
-                    "74:Illegal Address In Block Transfer," +
-                    "75:Illegal Byte Count In Block Transfer," +
-                    "76:Illegal Block Transfer Type," +
-                    "77:Block Transfer Data Checksum Error," +
-                    "78:Request Correctly Received-Response Pending," +
-                    "79:Incorrect ByteCount During Block Transfer," +
-                    "7E:SubFunction Not Supported In Active Session," +
-                    "7F:Service Not Supported In Active Session," +
-                    "80:Service Not Supported In Active Diagnostic Mode," +
-                    "81:Rpm Too High," +
-                    "82:Rpm Too Low," +
-                    "83:Engine Is Running," +
-                    "84:Engine Is Not Running," +
-                    "85:Engine RunTime TooLow," +
-                    "86:Temperature Too High," +
-                    "87:Temperature Too Low," +
-                    "88:Vehicle Speed Too High," +
-                    "89:Vehicle Speed Too Low," +
-                    "8A:Throttle/Pedal Too High," +
-                    "8B:Throttle/Pedal Too Low," +
-                    "8C:Transmission Range In Neutral," +
-                    "8D:Transmission Range In Gear," +
-                    "8F:Brake Switch(es)NotClosed (brake pedal not pressed or not applied)," +
-                    "90:Shifter Lever Not In Park ," +
-                    "91:Torque Converter Clutch Locked," +
-                    "92:Voltage Too High," +
-                    "93:Voltage Too Low";
+            "10:General Reject," +
+            "11:Service Not Supported," +
+            "12:SubFunction Not Supported," +
+            "13:Incorrect Message Length Or Invalid Format," +
+            "21:Busy Repeat Request," +
+            "22:Conditions Not Correct Or Request Sequence Error," +
+            "23:Routine Not Complete," +
+            "24:Request Sequence Error," +
+            "31:Request Out Of Range," +
+            "33:Security Access Denied- Security Access Requested," +
+            "35:Invalid Key," +
+            "36:Exceed Number Of Attempts," +
+            "37:Required Time Delay Not Expired," +
+            "40:Download not accepted," +
+            "41:Improper download type," +
+            "42:Can not download to specified address," +
+            "43:Can not download number of bytes requested," +
+            "50:Upload not accepted," +
+            "51:Improper upload type," +
+            "52:Can not upload from specified address," +
+            "53:Can not upload number of bytes requested," +
+            "70:Upload Download NotAccepted," +
+            "71:Transfer Data Suspended," +
+            "72:General Programming Failure," +
+            "73:Wrong Block Sequence Counter," +
+            "74:Illegal Address In Block Transfer," +
+            "75:Illegal Byte Count In Block Transfer," +
+            "76:Illegal Block Transfer Type," +
+            "77:Block Transfer Data Checksum Error," +
+            "78:Request Correctly Received-Response Pending," +
+            "79:Incorrect ByteCount During Block Transfer," +
+            "7E:SubFunction Not Supported In Active Session," +
+            "7F:Service Not Supported In Active Session," +
+            "80:Service Not Supported In Active Diagnostic Mode," +
+            "81:Rpm Too High," +
+            "82:Rpm Too Low," +
+            "83:Engine Is Running," +
+            "84:Engine Is Not Running," +
+            "85:Engine RunTime TooLow," +
+            "86:Temperature Too High," +
+            "87:Temperature Too Low," +
+            "88:Vehicle Speed Too High," +
+            "89:Vehicle Speed Too Low," +
+            "8A:Throttle/Pedal Too High," +
+            "8B:Throttle/Pedal Too Low," +
+            "8C:Transmission Range In Neutral," +
+            "8D:Transmission Range In Gear," +
+            "8F:Brake Switch(es)NotClosed (brake pedal not pressed or not applied)," +
+            "90:Shifter Lever Not In Park ," +
+            "91:Torque Converter Clutch Locked," +
+            "92:Voltage Too High," +
+            "93:Voltage Too Low";
 
     public abstract void disconnect();
     public abstract boolean connect(String address);
-    public abstract int getState();
+    public abstract boolean reconnect();
+
     protected abstract String writeRaw(String raw_buffer);
 
     public ElmBase(Handler handler, String logDir, boolean testerPresent) {
@@ -104,15 +119,59 @@ public abstract class ElmBase {
         mLogDir = logDir;
         mRxa = mTxa = -1;
         mTesterPresentFlag = testerPresent;
+        mSessionActive = false;
+        mState = STATE_NONE;
+        mTxa = mRxa = -1;
         buildMaps();
     }
 
-    protected void logInfo(String log){
-        Message msg = mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_TOAST);
-        Bundle bundle = new Bundle();
-        bundle.putString(ScreenActivity.TOAST, log);
-        msg.setData(bundle);
-        mConnectionHandler.sendMessage(msg);
+    public void changeHandler(Handler h) {
+        synchronized (this) {
+            if (mConnectionHandler != null) {
+                mConnectionHandler.removeCallbacksAndMessages(null);
+            }
+
+            mSessionActive = false;
+            mConnectionHandler = h;
+        }
+
+        // Force UI to recover connection status
+        if (h != null) {
+            if (mState == STATE_CONNECTING) {
+                setState(STATE_CONNECTING);
+            } else if (mState == STATE_CONNECTED) {
+                setState(STATE_CONNECTED);
+            } else {
+                setState(STATE_DISCONNECTED);
+            }
+        }
+    }
+
+    protected void setState(int state) {
+        mState = state;
+        // Give the new state to the Handler so the UI Activity can update
+        synchronized (this) {
+            if (mConnectionHandler != null) {
+                mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_STATE_CHANGE, state, -1)
+                        .sendToTarget();
+            }
+        }
+    }
+
+    public int getState() {
+        return mState;
+    }
+
+    protected void logInfo(String log) {
+        synchronized (this) {
+            if (mConnectionHandler != null) {
+                Message msg = mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_LOG);
+                Bundle bundle = new Bundle();
+                bundle.putString(ScreenActivity.TOAST, log);
+                msg.setData(bundle);
+                mConnectionHandler.sendMessage(msg);
+            }
+        }
     }
 
     protected void createLogFile() {
@@ -132,11 +191,22 @@ public abstract class ElmBase {
         }
     }
 
-    protected String getTimeStamp(){
-        return new String("[" + new SimpleDateFormat("dd-MM-yyyy-hh-mm-ss").format(new Date()) + "] ");
+    protected String getTimeStamp() {
+        return new String("[" + new SimpleDateFormat("dd-MM-yyyy-hh-mm-ss")
+                .format(new Date()) + "] ");
     }
 
-    public void initCan(String rxa, String txa){
+    public void initElm() {
+        write("AT Z");        // reset ELM
+        write("AT E1");
+        write("AT S0");
+        write("AT H0");
+        write("AT L0");
+        write("AT AL");
+        write("AT CAF0");
+    }
+
+    public void initCan(String rxa, String txa) {
         write("AT SP 6");
         write("AT SH " + txa);
         write("AT CRA " + rxa.toUpperCase());
@@ -147,17 +217,7 @@ public abstract class ElmBase {
         mTxa = Integer.parseInt(txa, 16);
     }
 
-    public void initElm(){
-        write("AT Z");        // reset ELM
-        write("AT E1");
-        write("AT S0");
-        write("AT H0");
-        write("AT L0");
-        write("AT AL");
-        write("AT CAF0");
-    }
-
-    public void initKwp(String addr, boolean fastInit){
+    public void initKwp(String addr, boolean fastInit) {
         write("AT SH 81 " + addr + " F1");
         write("AT SW 96");
         write("AT WM 81 " + addr + " F1 3E");
@@ -174,29 +234,29 @@ public abstract class ElmBase {
         }
     }
 
-    public void setTimeOut(int timeOut){
+    public void setTimeOut(int timeOut) {
         int timeout = (timeOut / 4);
         if (timeout > 255)
             timeout = 255;
         write("AT ST " + Integer.toHexString(timeout));
     }
 
-    public void buildMaps(){
+    public void buildMaps() {
         mEcuErrorCodeMap = new HashMap<>();
         String[] ERRC = mEcuErrorCodeString.replace(" ", "").split(",");
-        for (String erc : ERRC){
+        for (String erc : ERRC) {
             String[] idToAddr = erc.split(":");
             mEcuErrorCodeMap.put(idToAddr[0], idToAddr[1]);
         }
     }
 
-    public String getEcuErrorCode(String hexError){
+    public String getEcuErrorCode(String hexError) {
         return mEcuErrorCodeMap.get(hexError);
     }
 
     public boolean isHexadecimal(String text) {
-        char[] hexDigits = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-                'a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F' };
+        char[] hexDigits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                'a', 'b', 'c', 'd', 'e', 'f', 'A', 'B', 'C', 'D', 'E', 'F'};
 
         for (char symbol : text.toCharArray()) {
             boolean found = false;
@@ -206,20 +266,20 @@ public abstract class ElmBase {
                     break;
                 }
             }
-            if(!found)
+            if (!found)
                 return false;
         }
         return true;
     }
 
-    protected void connectedThreadMainLoop(){
+    protected void connectedThreadMainLoop() {
         long timer = System.currentTimeMillis();
         mRunningStatus = true;
 
         /*
-          * Keep listening to the InputStream while connected
-          * Thread can be stopped by switching the running status member
-          */
+         * Keep listening to the InputStream while connected
+         * Thread can be stopped by switching the running status member
+         */
         while (mRunningStatus) {
 
             if (ElmBase.this.mMessages.size() > 0) {
@@ -244,12 +304,23 @@ public abstract class ElmBase {
 
                     int result_length = result.length();
                     byte[] tmpbuf = new byte[result_length];
-                    System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);  //Make copy for not to rewrite in other thread
-                    mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, mTxa, tmpbuf).sendToTarget();
-                    mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_QUEUE_STATE, num_queue, -1, null).sendToTarget();
+                    System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);
+                    synchronized (this) {
+                        if (mConnectionHandler != null) {
+                            mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_READ,
+                                    result_length, mTxa, tmpbuf).sendToTarget();
+                            mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_QUEUE_STATE,
+                                    num_queue, -1, null).sendToTarget();
+                        }
+                    }
                 } else {
                     sendCan(message);
-                    mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_QUEUE_STATE, num_queue, -1, null).sendToTarget();
+                    synchronized (this) {
+                        if (mConnectionHandler != null) {
+                            mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_QUEUE_STATE,
+                                    num_queue, -1, null).sendToTarget();
+                        }
+                    }
                 }
             }
 
@@ -260,11 +331,15 @@ public abstract class ElmBase {
             }
 
             // Keep session alive
-            if (mTesterPresentFlag && ((System.currentTimeMillis() - timer) > 1500)  && mRxa > 0) {
+            if (mSessionActive && mTesterPresentFlag && ((System.currentTimeMillis() - timer) > 1500) && mRxa > 0) {
                 timer = System.currentTimeMillis();
                 writeRaw("013E");
             }
         }
+    }
+
+    void setSessionActive(boolean active) {
+        mSessionActive = active;
     }
 
     protected void sendCan(String message){
@@ -326,7 +401,11 @@ public abstract class ElmBase {
         byte[] tmpbuf = new byte[result_length];
         //Make copy for not to rewrite in other thread
         System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);
-        mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, -1, tmpbuf).sendToTarget();
+        synchronized (this) {
+            if (mConnectionHandler != null) {
+                mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, -1, tmpbuf).sendToTarget();
+            }
+        }
     }
 
     public synchronized void write(String out) {

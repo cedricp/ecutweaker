@@ -1,0 +1,71 @@
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <!-- BluetoothChat -->
+    <string name="send">Enviar</string>
+    <string name="not_connected">No estàs connectat a cap dispositiu</string>
+    <string name="bt_not_enabled_leaving">El Bluetooth no estava encès. Sortint del xat.</string>
+    <string name="title_connecting">Connectant…</string>
+    <string name="title_connected_to">Connectat a <xliff:g id="device_name">%1$s</xliff:g></string>
+    <string name="title_not_connected">no connectat</string>
+
+    <!-- DeviceListActivity -->
+    <string name="scanning">Cercant dispositius…</string>
+    <string name="select_device">selecciona un dispositiu per connectar</string>
+    <string name="none_paired">Cap dispositiu emparellat</string>
+    <string name="none_found">No s\'ha trobat cap dispositiu</string>
+    <string name="title_paired_devices">Dispositius emparellats</string>
+    <string name="title_other_devices">Altres dispositius disponibles</string>
+    <string name="button_scan">Cercar dispositius</string>
+
+    <!-- Application strings -->
+    <string name="INDEXING_DB">INDEXANT BASE DE DADES...</string>
+    <string name="DB_NOT_FOUND">BASE DE DADES NO TROBADA</string>
+    <string name="WRONG_CODE">Codi erroni!</string>
+    <string name="APP_UNLOCKED">Aplicació desbloquejada</string>
+    <string name="APP_ENTER_CODE">Intrdoueix el codi d\'activació</string>
+    <string name="USER_REQUEST_CODE">El teu codi de solicitud</string>
+    <string name="OK">OK</string>
+    <string name="CANCEL">Cancelar</string>
+    <string name="USER_USES_DEMO_MODE">Estàs utilitzant la versió demo, funcions d\'escriptura desactivades.</string>
+    <string name="BT_MANAGER_MESSAGE">Missatge del gestor ELM</string>
+    <string name="ECU_PART_MATCH">La ECU encaixa parcialment en l\'arxiu (utilitzar amb precaució)</string>
+    <string name="ECU_MATCH">La ECU encaixa perfectament amb l\'arxiu</string>
+    <string name="ECU_FOUND">ECU trobada</string>
+    <string name="DIAG_VERSION">versió de diagnòstic </string>
+    <string name="VERSION">versió</string>
+    <string name="SOFT_VERSION">versió soft</string>
+    <string name="SUPPLIER_VERSION">versió de proveidor</string>
+    <string name="CHOOSE_PROJECT">Escull un projecte</string>
+    <string name="INFORMATION">Informació</string>
+    <string name="DEMO_MESSAGE"><![CDATA[Benvingut a <b>ECU TWEAKER</b>,<br> Utilitzes l\'aplicació en mode demo.
+Pots fer-la servir per llegir tots els paràmetres de la ECU, però no podràs fer servir els botons o la funció <i>CLEAR DTC</i>.<br>
+La pots desbloquejar enviantme el codi de solicitud, et respondré amb el codi d\'activació.<br>
+<b>Tingues present que un gran poder suposa una gran responsabilitat, fes-la servir sota el teu risc. El desenvolupador nega qualsevol responsabilitat, tu ets l'únic responsable del que facis amb aquest software.</u></b>]]></string>
+    <string name="BAD_RESPONSE">Resposta dolenta</string>
+    <string name="TO_REQUEST">a solicitar</string>
+    <string name="INVALID_VALUE">Valor invàlid, comprova les dades</string>
+    <string name="FRAME_COMPUTE_FAILED">Error al computar el frame</string>
+    <string name="COMPUTED_FRAME">Frame computat</string>
+    <string name="CATEGORY_CHOOSE">Escull una categoria</string>
+    <string name="SCREEN_CHOOSE">Escull una pantalla</string>
+    <string name="FRAME_NOT_SENT">Frame no enviada (Bluetooth desconnectat)</string>
+    <string name="NO_ELM_RESPONSE">Cap resposta del ELM</string>
+    <string name="DTC_CLEAR_OK">Neteja del DTC exitosa</string>
+    <string name="NEGATIVE_RESPONSE">Resposta negativa</string>
+    <string name="ELM_RESPONSE">Resposta del ELM</string>
+    <string name="BAD_ELM_RESPONSE">Mala resposta del ELM</string>
+    <string name="CLEAR_ALL_DTC">Netejar tot el DTC ?</string>
+    <string name="YES">Si</string>
+    <string name="NO">No</string>
+    <string name="NO_DTC_STORED">La ECU no disposa de DTC desat</string>
+    <string name="NEW_DEVICE">Nou dispositiu trobat</string>
+    <string name="CHOOSE_BT_DEVICE">Selecciona dispositiu Bluetooth</string>
+    <string name="AUTO_IDENTIFY">AUTO IDENTIFICA</string>
+    <string name="AUTO_IDENT_RESULT">AutoIdent el resultat</string>
+    <string name="NO_CHAT_SESSION">Intentant enviar el commandament sense sessió de chat Bluetooth</string>
+    <string name="LOGS">Veure LOGS</string>
+    <string name="COPY_TO_CLIPBOARD">Copiar al porta-retalls</string>
+    <string name="CLEAR_LOG">Netejar logs</string>
+    <string name="LOGFILE_DELETED">Arxiu log eliminat exitosament</string>
+    <string name="LOGFILE_DELETE_FAILED">Error eliminant arxiu log</string>
+    <string name="LONGPRESS_TO_DELETE">Long press per netejar</string>
+</resources>

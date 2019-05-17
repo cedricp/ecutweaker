@@ -19,32 +19,13 @@ public class ElmBluetooth extends ElmBase {
     private static final UUID SPP_UUID = UUID.fromString("0001101-0000-1000-8000-00805F9B34FB");
     private ConnectThread mConnectThread;
     private ConnectedThread mConnectedThread;
-    private int mState;
+    private String mBtAddress;
 
-    private ElmBluetooth(Handler handler, String logDir, boolean testerPresent) {
+    protected ElmBluetooth(Handler handler, String logDir, boolean testerPresent) {
         super(handler, logDir, testerPresent);
-        mState = STATE_NONE;
-        mTxa = mRxa = -1;
-        buildMaps();
-    }
-
-    static public ElmBase createSingleton(Handler handler, String logDir, boolean testerPresent){
-        mSingleton = new ElmBluetooth(handler, logDir, testerPresent);
-        return mSingleton;
-    }
-
-    private synchronized void setState(int state) {
-        mState = state;
-
-        // Give the new state to the Handler so the UI Activity can update
-        mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
     }
 
     @Override
-    public synchronized int getState() {
-            return mState;
-    }
-
     public boolean connect(String address) {
         synchronized (this) {
             setState(STATE_CONNECTING);
@@ -57,8 +38,15 @@ public class ElmBluetooth extends ElmBase {
             // Start the thread to connect with the given device
             mConnectThread = new ConnectThread(device);
             mConnectThread.start();
+            mBtAddress = address;
         }
         return true;
+    }
+
+    @Override
+    public boolean reconnect(){
+        disconnect();
+        return connect(mBtAddress);
     }
 
     public synchronized void createConnectedThread(BluetoothSocket socket, BluetoothDevice
@@ -78,13 +66,16 @@ public class ElmBluetooth extends ElmBase {
         // Start the thread to manage the connection and perform transmissions
         mConnectedThread = new ConnectedThread(socket, socketType);
         mConnectedThread.start();
-
-        // Send the name of the connected device back to the UI Activity
-        Message msg = mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_DEVICE_NAME);
-        Bundle bundle = new Bundle();
-        bundle.putString(ScreenActivity.DEVICE_NAME, device.getName());
-        msg.setData(bundle);
-        mConnectionHandler.sendMessage(msg);
+        synchronized (this) {
+            if (mConnectionHandler != null) {
+                // Send the name of the connected device back to the UI Activity
+                Message msg = mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_DEVICE_NAME);
+                Bundle bundle = new Bundle();
+                bundle.putString(ScreenActivity.DEVICE_NAME, device.getName());
+                msg.setData(bundle);
+                mConnectionHandler.sendMessage(msg);
+            }
+        }
 
         setState(STATE_CONNECTED);
     }
@@ -103,8 +94,11 @@ public class ElmBluetooth extends ElmBase {
         mConnectedThread = null;
 
         setState(STATE_NONE);
-
-        mConnectionHandler.removeCallbacksAndMessages(null);
+        synchronized (this) {
+            if (mConnectionHandler != null) {
+                mConnectionHandler.removeCallbacksAndMessages(null);
+            }
+        }
 
         if (mLogFile != null){
             try {

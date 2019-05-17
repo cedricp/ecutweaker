@@ -98,6 +98,7 @@ public class ScreenActivity extends AppCompatActivity {
     public static final int     MESSAGE_DEVICE_NAME     = 4;
     public static final int     MESSAGE_TOAST           = 5;
     public static final int     MESSAGE_QUEUE_STATE     = 6;
+    public static final int     MESSAGE_LOG             = 7;
     public static final String  DEVICE_NAME = "device_name";
     public static final String  TOAST       = "toast";
     private String              mConnectedDeviceName = null;
@@ -319,14 +320,16 @@ public class ScreenActivity extends AppCompatActivity {
         if (mChatService == null) {
             // In case singleton is lost...
             if (MainActivity.LINK_BLUETOOTH == linkMode) {
-                mChatService = ElmBluetooth.createSingleton(mHandler,
+                mChatService = ElmBase.createBluetoothSingleton(mHandler,
                         getApplicationContext().getFilesDir().getAbsolutePath(),
                         true);
             } else {
-                mChatService = ElmWifi.createSingleton(getApplicationContext(), mHandler,
+                mChatService = ElmBase.createWifiSingleton(getApplicationContext(), mHandler,
                         getApplicationContext().getFilesDir().getAbsolutePath(),
                         true);
             }
+        } else {
+            mChatService.changeHandler(mHandler);
         }
         connectDevice();
 
@@ -342,7 +345,8 @@ public class ScreenActivity extends AppCompatActivity {
         if(isChatConnected()){
             mChatService.setTimeOut(mCanTimeOut);
         }
-        SharedPreferences defaultPrefs = this.getSharedPreferences(MainActivity.DEFAULT_PREF_TAG, MODE_PRIVATE);
+        SharedPreferences defaultPrefs =
+                this.getSharedPreferences(MainActivity.DEFAULT_PREF_TAG, MODE_PRIVATE);
         SharedPreferences.Editor edit = defaultPrefs.edit();
         edit.putInt(PREF_FONT_SCALE, mFontSizeOverride);
         edit.apply();
@@ -451,7 +455,8 @@ public class ScreenActivity extends AppCompatActivity {
                 textView.setText(labelData.text);
                 textView.setBackgroundColor(labelData.color.get());
                 textView.setTextColor(labelData.font.color.get());
-                textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, convertFontToPixel(labelData.font.size));
+                textView.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                        convertFontToPixel(labelData.font.size));
                 if (labelData.alignment == 2) {
                     textView.setGravity(Gravity.CENTER_HORIZONTAL);
                 } else if (labelData.alignment == 1) {
@@ -471,7 +476,8 @@ public class ScreenActivity extends AppCompatActivity {
                 textView.setText(displaydata.text);
                 textView.setTextColor(displaydata.font.color.get());
                 textView.setBackgroundColor(displaydata.color.get());
-                textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, convertFontToPixel(displaydata.font.size));
+                textView.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                        convertFontToPixel(displaydata.font.size));
                 textView.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
                 m_layoutView.addView(textView);
             }
@@ -482,7 +488,8 @@ public class ScreenActivity extends AppCompatActivity {
             textEdit.setY(convertToPixel(displaydata.rect.y));
             textEdit.setWidth((int) convertToPixel(displaydata.rect.w - displaydata.width));
             textEdit.setHeight((int) convertToPixel(displaydata.rect.h));
-            textEdit.setTextSize(TypedValue.COMPLEX_UNIT_PX, convertFontToPixel(displaydata.font.size));
+            textEdit.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                    convertFontToPixel(displaydata.font.size));
             textEdit.setEnabled(false);
             textEdit.setText("---");
             textEdit.setPadding(3,3,3,3);
@@ -513,7 +520,8 @@ public class ScreenActivity extends AppCompatActivity {
                 textEdit.setY(convertToPixel(inputdata.rect.y));
                 textEdit.setWidth((int) convertToPixel(inputdata.rect.w - inputdata.width));
                 textEdit.setHeight((int) convertToPixel(inputdata.rect.h));
-                textEdit.setTextSize(TypedValue.COMPLEX_UNIT_PX, convertFontToPixel(inputdata.font.size));
+                textEdit.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                        convertFontToPixel(inputdata.font.size));
                 textEdit.setPadding(3, 3, 3, 3);
                 textEdit.setTextColor(inputdata.font.color.get());
                 textEdit.setBackgroundColor(inputdata.color.get());
@@ -600,7 +608,8 @@ public class ScreenActivity extends AppCompatActivity {
                 buttonView.setLayoutParams(params);
                 buttonView.setPadding(0, 0, 0, 0);
                 buttonView.setText(buttondata.text);
-                buttonView.setTextSize(TypedValue.COMPLEX_UNIT_PX, convertFontToPixel(buttondata.font.size));
+                buttonView.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                        convertFontToPixel(buttondata.font.size));
                 buttonView.setOnClickListener(buttonClickListener);
                 m_buttonsCommand.put(buttonView, buttondata.uniqueName);
                 m_layoutView.addView(buttonView);
@@ -628,6 +637,9 @@ public class ScreenActivity extends AppCompatActivity {
             sendCmd(m_ecu.getDefaultSDS());
             mLastSDSTime = System.currentTimeMillis();
         }
+
+        // Enable tester-present frame periodically
+        mChatService.setSessionActive(true);
 
         // screen pre-send data
         for (Pair<Integer, String> pair : m_currentScreenData.getPreSendData()){
@@ -707,14 +719,16 @@ public class ScreenActivity extends AppCompatActivity {
 
                 for (String key : mapValues.keySet()) {
                     if (m_displayViews.containsKey(key)) {
-                        m_displayViews.get(key).setText(mapValues.get(key).first + " " + mapValues.get(key).second);
+                        m_displayViews.get(key).setText(mapValues.get(key).first
+                                + " " + mapValues.get(key).second);
                     }
                     if (m_editTextViews.containsKey(key)) {
                         m_editTextViews.get(key).setText(mapValues.get(key).first);
                     }
                     if (m_spinnerViews.containsKey(key)) {
                         Spinner spinner = m_spinnerViews.get(key);
-                        spinner.setSelection(((CustomAdapter) spinner.getAdapter()).getPosition(mapValues.get(key).first));
+                        spinner.setSelection(((CustomAdapter) spinner.getAdapter())
+                                .getPosition(mapValues.get(key).first));
                     }
                 }
             }
@@ -847,7 +861,6 @@ public class ScreenActivity extends AppCompatActivity {
             case REQUEST_ENABLE_BT:
                 // When the request to enable Bluetooth returns
                 if (resultCode == Activity.RESULT_OK) {
-                    // Bluetooth/Wifi is now enabled, so set up a chat session
                 }
                 break;
         }
@@ -859,20 +872,28 @@ public class ScreenActivity extends AppCompatActivity {
         Log.e(TAG, "+ ON DESTROY +");
         super.onDestroy();
         stopAutoReload();
-        mChatService.disconnect();
+        if (mChatService != null)
+            mChatService.changeHandler(null);
     }
 
     @Override
     public void onStop()
     {
-        super.onStop();
-        stopAutoReload();
-        mChatService.disconnect();
-
-        SharedPreferences defaultPrefs = this.getSharedPreferences(MainActivity.DEFAULT_PREF_TAG, MODE_PRIVATE);
+        SharedPreferences defaultPrefs =
+                this.getSharedPreferences(MainActivity.DEFAULT_PREF_TAG, MODE_PRIVATE);
         SharedPreferences.Editor edit = defaultPrefs.edit();
         edit.putString(PREF_GLOBAL_SCALE, String.valueOf(mGlobalScale));
         edit.apply();
+        super.onStop();
+    }
+
+    @Override
+    public void onBackPressed() {
+        stopAutoReload();
+        if (mChatService != null) {
+            mChatService.changeHandler(null);
+        }
+        super.onBackPressed();
     }
 
     void setConnectionStatus(int c){
@@ -997,7 +1018,7 @@ public class ScreenActivity extends AppCompatActivity {
         }
 
         // Send command
-        mChatService.write("DELAY:" + Integer.toString(delay));
+        mChatService.write("DELAY:" + delay);
     }
 
     private void setElMWorking(boolean isQueueEmpty){
@@ -1079,7 +1100,8 @@ public class ScreenActivity extends AppCompatActivity {
         if (dtcRequest == null)
             dtcRequest = m_ecu.getRequest("ReadDTC");
         if (dtcRequest == null){
-            Toast.makeText(getApplicationContext(), "No READ_DTC request in this file", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "No READ_DTC request in this file",
+                    Toast.LENGTH_SHORT).show();
             return;
         }
         m_currentDtcRequestName = dtcRequest.name;
@@ -1199,12 +1221,17 @@ public class ScreenActivity extends AppCompatActivity {
                     break;
                 case MESSAGE_DEVICE_NAME:
                     activity.mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
-                    activity.m_logView.append(activity.getResources().getString(R.string.NEW_DEVICE) +
-                            " : " + activity.mConnectedDeviceName + "\n");
+                    activity.m_logView.append(activity.getResources().getString(R.string.NEW_DEVICE)
+                            + " : " + activity.mConnectedDeviceName + "\n");
                     break;
                 case MESSAGE_TOAST:
                     Toast.makeText(activity.getApplicationContext(), msg.getData().getString(TOAST),
                             Toast.LENGTH_SHORT).show();
+                    break;
+                case MESSAGE_LOG:
+                    activity.m_logView.append(activity.getResources()
+                            .getString(R.string.BT_MANAGER_MESSAGE) + " : " +
+                            msg.getData().getString(TOAST) + "\n");
                     break;
                 case MESSAGE_QUEUE_STATE:
                     int queue_len = msg.arg1;
