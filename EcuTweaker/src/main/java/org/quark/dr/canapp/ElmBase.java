@@ -272,6 +272,10 @@ public abstract class ElmBase {
         return true;
     }
 
+    public synchronized void clearMessages(){
+        mMessages.clear();
+    }
+
     protected void connectedThreadMainLoop() {
         long timer = System.currentTimeMillis();
         mRunningStatus = true;

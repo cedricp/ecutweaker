@@ -93,7 +93,6 @@ public class ElmWifi extends ElmBase{
 
     @Override
     public boolean reconnect(){
-        disconnect();
         return connect(mServerIPAddress);
     }
 
@@ -108,7 +107,8 @@ public class ElmWifi extends ElmBase{
         if (wifiLock != null && wifiLock.isHeld())
             wifiLock.release();
 
-        mMessages.clear();
+        clearMessages();
+
         synchronized (this) {
             if (mConnectionHandler != null) {
                 mConnectionHandler.removeCallbacksAndMessages(null);

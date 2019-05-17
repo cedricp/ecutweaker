@@ -45,7 +45,6 @@ public class ElmBluetooth extends ElmBase {
 
     @Override
     public boolean reconnect(){
-        disconnect();
         return connect(mBtAddress);
     }
 
@@ -92,6 +91,8 @@ public class ElmBluetooth extends ElmBase {
 
         mConnectThread = null;
         mConnectedThread = null;
+
+        clearMessages();
 
         setState(STATE_NONE);
         synchronized (this) {

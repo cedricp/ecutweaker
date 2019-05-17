@@ -385,6 +385,10 @@ public class ScreenActivity extends AppCompatActivity {
 
     void drawScreen(String screenName)
     {
+        // In case the user clicked multiple times on zoom button
+        // and there are messages pending
+        mChatService.clearMessages();
+
         m_displayViews = new HashMap<>();
         m_editTextViews = new HashMap<>();
         m_spinnerViews = new HashMap<>();
@@ -954,21 +958,7 @@ public class ScreenActivity extends AppCompatActivity {
         if (isChatConnected() || isChatConnecting())
             return;
 
-        if (mChatService instanceof ElmBluetooth) {
-            BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
-            if (btAdapter == null || m_deviceAddressPref.isEmpty())
-                return;
-
-            // address is the device MAC address
-            // Get the BluetoothDevice object
-            BluetoothDevice device = btAdapter.getRemoteDevice(m_deviceAddressPref);
-            if (device == null)
-                return;
-            // Attempt to connect to the device
-            mChatService.connect(m_deviceAddressPref);
-        } else {
-            mChatService.connect("");
-        }
+        mChatService.reconnect();
     }
 
     private boolean isChatConnected(){
