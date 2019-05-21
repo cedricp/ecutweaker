@@ -51,6 +51,8 @@ import java.util.Collections;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static org.quark.dr.canapp.ElmBase.MODE_BT;
+import static org.quark.dr.canapp.ElmBase.MODE_WIFI;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTED;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTING;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_DISCONNECTED;
@@ -280,6 +282,7 @@ public class MainActivity extends AppCompatActivity {
                 for (EcuDatabase.EcuInfo ecuinfo : mCurrentEcuInfoList){
                     if (stringToSearch.equals(ecuinfo.ecuName)){
                         startScreen(mEcuFilePath, ecuinfo.href);
+                        break;
                     }
                 }
             }
@@ -445,8 +448,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void connectDevice() {
-        if (mChatService != null)
-            mChatService.disconnect();
+        Log.e(TAG, "?? Trying reconnect 1 ...");
+        if (mChatService != null){
+            if ((mChatService.getMode() == MODE_BT) && (mLinkMode == LINK_BLUETOOTH)){
+                // No need to recreate ELM manager instance
+                // Address may have changed, though
+                mChatService.connect(mBtDeviceAddress);
+                return;
+            }
+
+            if ((mChatService.getMode() == MODE_WIFI) && (mLinkMode == LINK_WIFI)){
+                // No need to recreate ELM manager instance
+                Log.e(TAG, "?? Trying reconnect 2...");
+                mChatService.reconnect();
+                return;
+            }
+        }
 
         if (mLinkMode == LINK_BLUETOOTH) {
             BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -457,9 +474,6 @@ public class MainActivity extends AppCompatActivity {
             mChatService = ElmBase.createBluetoothSingleton(mHandler,
                     getApplicationContext().getFilesDir().getAbsolutePath(),
                     false);
-                    //new ElmBluetooth(mHandler,
-                    //getApplicationContext().getFilesDir().getAbsolutePath(),
-                    //false);
             // address is the device MAC address
             // Get the BluetoothDevice object
             if (btAdapter == null || mBtDeviceAddress.isEmpty() || isChatConnected())
@@ -473,8 +487,6 @@ public class MainActivity extends AppCompatActivity {
         } else {
             mChatService = ElmBase.createWifiSingleton(getApplicationContext(), mHandler, getApplicationContext().
                     getFilesDir().getAbsolutePath(), false);
-                    //new ElmWifi(getApplicationContext(), mHandler, getApplicationContext().
-                    //getFilesDir().getAbsolutePath(), false);
             mChatService.connect("");
         }
     }
@@ -529,12 +541,12 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Select an ECU type to auto identify", Toast.LENGTH_SHORT).show();
             return;
         }
-
+        mChatService.changeHandler(mHandler);
         mChatService.initElm();
         initBus("CAN");
         mChatService.setTimeOut(1000);
         /*
-         * (old) ECUs gives their identifiers with 2180 command
+         * (older) ECUs gives their identifiers with 2180 command
          */
         sendCmd("10C0");
         sendCmd("2180");
@@ -632,8 +644,13 @@ public class MainActivity extends AppCompatActivity {
     void startScreen(String ecuFile, String ecuHREFName){
         stopConnectionTimer();
 
+        if (mEcuDatabase == null){
+            return;
+        }
+
         // Remove handler
         mChatService.changeHandler(null);
+        mChatService.setDB(mEcuDatabase);
 
         try {
             Intent serverIntent = new Intent(this, ScreenActivity.class);
@@ -656,6 +673,9 @@ public class MainActivity extends AppCompatActivity {
                 != PackageManager.PERMISSION_GRANTED) {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                Toast.makeText(this,
+                        "You need external storage permission to use this application",
+                        Toast.LENGTH_SHORT).show();
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
                         PERMISSIONS_ACCESS_EXTERNAL_STORAGE);
@@ -670,9 +690,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void askLocationPermission(){
-        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
+        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION);
         if (permissionCheck != PackageManager.PERMISSION_GRANTED){
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)){
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)){
                 Toast.makeText(this, "You need location permission to connect to WiFi", Toast.LENGTH_SHORT).show();
             }else{
                 ActivityCompat.requestPermissions(this,
@@ -716,10 +736,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onStart() {
         super.onStart();
-        mChatService = ElmBase.getSingleton();
+        if (mChatService == null)
+            mChatService = ElmBase.getSingleton();
         if (mChatService != null){
             mChatService.changeHandler(mHandler);
-            mChatService.initElm();
         }
         startConnectionTimer();
     }
@@ -1021,6 +1041,7 @@ public class MainActivity extends AppCompatActivity {
                 case MESSAGE_LOG:
                     activity.mLogView.append(activity.getResources().getString(R.string.BT_MANAGER_MESSAGE) + " : "
                             + msg.getData().getString(TOAST) + "\n");
+                    Log.e(TAG, "?? Message : " + msg.getData().getString(TOAST));
                     break;
                 case MESSAGE_QUEUE_STATE:
                     int queue_len = msg.arg1;

@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 
+import org.quark.dr.ecu.EcuDatabase;
 import org.quark.dr.ecu.IsoTPDecode;
 import org.quark.dr.ecu.IsoTPEncode;
 
@@ -25,6 +26,9 @@ public abstract class ElmBase {
     public static final int STATE_CONNECTED = 2;
     public static final int STATE_DISCONNECTED = 3;
 
+    public static final int MODE_WIFI = 0;
+    public static final int MODE_BT = 1;
+
     protected ArrayList<String> mMessages;
     protected int mRxa, mTxa;
     protected HashMap<String, String> mEcuErrorCodeMap;
@@ -37,6 +41,7 @@ public abstract class ElmBase {
     protected boolean mConnecting = false;
     private int mState;
     protected boolean mSessionActive;
+    private EcuDatabase mEcuDatabase;
 
     static public ElmBase getSingleton() {
         return mSingleton;
@@ -50,6 +55,14 @@ public abstract class ElmBase {
     static public ElmBase createWifiSingleton(Context context, Handler handler, String logDir, boolean testerPresent){
         mSingleton = new ElmWifi(context, handler, logDir, testerPresent);
         return mSingleton;
+    }
+
+    EcuDatabase getDB(){
+        return mEcuDatabase;
+    }
+
+    void setDB(EcuDatabase db){
+        mEcuDatabase = db;
     }
 
     protected static final String mEcuErrorCodeString =
@@ -109,6 +122,7 @@ public abstract class ElmBase {
     public abstract void disconnect();
     public abstract boolean connect(String address);
     public abstract boolean reconnect();
+    public abstract int getMode();
 
     protected abstract String writeRaw(String raw_buffer);
 
@@ -129,6 +143,7 @@ public abstract class ElmBase {
         synchronized (this) {
             if (mConnectionHandler != null) {
                 mConnectionHandler.removeCallbacksAndMessages(null);
+                mConnectionHandler = null;
             }
 
             mSessionActive = false;
@@ -136,7 +151,7 @@ public abstract class ElmBase {
         }
 
         // Force UI to recover connection status
-        if (h != null) {
+        if (mConnectionHandler != null) {
             if (mState == STATE_CONNECTING) {
                 setState(STATE_CONNECTING);
             } else if (mState == STATE_CONNECTED) {
@@ -325,6 +340,9 @@ public abstract class ElmBase {
                                     num_queue, -1, null).sendToTarget();
                         }
                     }
+                    // Reset tester_present timer
+                    // This can speed up things
+                    timer = System.currentTimeMillis();
                 }
             }
 
@@ -340,6 +358,8 @@ public abstract class ElmBase {
                 writeRaw("013E");
             }
         }
+        mRunningStatus = false;
+        setState(STATE_DISCONNECTED);
     }
 
     void setSessionActive(boolean active) {

@@ -51,6 +51,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static org.quark.dr.canapp.ElmBase.mEcuErrorCodeString;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTED;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTING;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_DISCONNECTED;
@@ -311,12 +312,16 @@ public class ScreenActivity extends AppCompatActivity {
         m_btIconStatus.setColorFilter(Color.RED);
         m_btIconStatus.setImageResource(R.drawable.ic_link_nok);
 
-        if (!ecuFile.isEmpty()){
-            openEcu(ecuFile, ecuHref);
-        }
-
         mHandler = new messageHandler(this);
         mChatService = ElmBase.getSingleton();
+
+        if (mChatService != null && mChatService.getDB() != null) {
+            m_ecuDatabase = mChatService.getDB();
+        } else {
+            m_ecuDatabase = new EcuDatabase();
+            Log.e(TAG, "?? No singleton database, continuing safely");
+        }
+
         if (mChatService == null) {
             // In case singleton is lost...
             if (MainActivity.LINK_BLUETOOTH == linkMode) {
@@ -331,6 +336,11 @@ public class ScreenActivity extends AppCompatActivity {
         } else {
             mChatService.changeHandler(mHandler);
         }
+
+        if (!ecuFile.isEmpty()){
+            openEcu(ecuFile, ecuHref);
+        }
+
         connectDevice();
 
         if (savedInstanceState != null && savedInstanceState.containsKey("screen_name")){
@@ -360,7 +370,6 @@ public class ScreenActivity extends AppCompatActivity {
     void openEcu(String ecuFile, String ecuName){
         String layoutFileName = ecuName + ".layout";
 
-        m_ecuDatabase = new EcuDatabase();
         String appDir = getApplicationContext().getFilesDir().getAbsolutePath();
         try {
             m_ecuDatabase.loadDatabase(ecuFile, appDir);
@@ -874,10 +883,8 @@ public class ScreenActivity extends AppCompatActivity {
     public void onDestroy()
     {
         Log.e(TAG, "+ ON DESTROY +");
-        super.onDestroy();
         stopAutoReload();
-        if (mChatService != null)
-            mChatService.changeHandler(null);
+        super.onDestroy();
     }
 
     @Override

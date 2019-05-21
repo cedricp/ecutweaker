@@ -2,6 +2,7 @@ package org.quark.dr.ecu;
 
 import android.os.Environment;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -308,7 +309,10 @@ public class EcuDatabase {
     }
 
     public String loadDatabase(String ecuFilename, String appDir) throws DatabaseException {
-        // Reset if not found
+        if (m_loaded) {
+            Log.e("EcuDatabase", "Database already loaded");
+            return m_ecuFilePath;
+        }
         File checkEcuFile = new File(ecuFilename);
         if (!checkEcuFile.exists())
             ecuFilename = "";

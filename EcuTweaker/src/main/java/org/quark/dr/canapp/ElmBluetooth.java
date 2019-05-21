@@ -26,9 +26,16 @@ public class ElmBluetooth extends ElmBase {
     }
 
     @Override
+    public int getMode(){
+        return MODE_BT;
+    }
+
+    @Override
     public boolean connect(String address) {
         setState(STATE_CONNECTING);
         BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (btAdapter == null)
+            return false;
         BluetoothDevice device = btAdapter.getRemoteDevice(address);
 
         disconnect();
@@ -267,6 +274,11 @@ public class ElmBluetooth extends ElmBase {
             } catch (IOException e) {
                 connectionLost();
                 // Start the service over to restart listening mode
+                try {
+                    mmSocket.close();
+                } catch (IOException ioe){
+
+                }
                 return "ERROR : DISCONNECTED";
             }
 

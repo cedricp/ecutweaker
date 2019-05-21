@@ -39,13 +39,14 @@ public class ElmWifi extends ElmBase{
     }
 
     @Override
+    public int getMode(){
+        return MODE_WIFI;
+    }
+
+    @Override
     public boolean connect(String address) {
         if (!address.isEmpty()) {
             mServerIPAddress = address;
-        }
-
-        if (mConnecting || isConnected()) {
-            return false;
         }
 
         disconnect();
@@ -73,19 +74,14 @@ public class ElmWifi extends ElmBase{
                 }
             }
 
-            if(!isConnected() && mConnecting)
-            {
-                mConnectThread = new ElmWifi.ConnectThread(mServerIPAddress, mServerPort);
-                mConnectThread.start();
-            }
+            mConnectThread = new ElmWifi.ConnectThread(mServerIPAddress, mServerPort);
+            mConnectThread.start();
 
             return true;
-        } else {
-            System.out.println("?? Cannot connect to " + name);
         }
 
         logInfo("Unable to connect wifi device");
-        setState(STATE_NONE);
+        setState(STATE_DISCONNECTED);
 
         mConnecting = false;
         return false;
@@ -127,7 +123,7 @@ public class ElmWifi extends ElmBase{
     }
 
     public boolean isConnected() {
-        return (mSocket != null && mSocket.isConnected());
+        return (mSocket != null) && mSocket.isConnected() && mRunningStatus == true;
     }
 
     @Override
@@ -184,6 +180,11 @@ public class ElmWifi extends ElmBase{
                 }
             } catch (Exception localIOException1) {
                 connectionLost(localIOException1.getMessage());
+                try {
+                    mmSocket.close();
+                } catch (IOException e){
+
+                }
             }
         }
 
@@ -192,16 +193,24 @@ public class ElmWifi extends ElmBase{
                 try {
                     if(mmSocket != null)
                     {
-                        String rawData;
                         byte b;
                         StringBuilder res = new StringBuilder();
+                        int charCount = 0;
                         while ((char) (b = (byte) mInStream.read()) != '>') {
+                            if (++charCount > 32768){
+                                try {
+                                    mmSocket.close();
+                                } catch (IOException e){
+
+                                }
+                                connectionLost("WiFi Socket overflow");
+                                return "";
+                            }
                             if (b == 0x0d)
                                 b = 0x0a;
                             res.append((char) b);
                         }
-                        rawData = res.toString();
-                        return rawData;
+                        return res.toString();
                     }
 
                 } catch (IOException localIOException) {
@@ -253,7 +262,7 @@ public class ElmWifi extends ElmBase{
                 mLocalSocket = new Socket();
                 mLocalSocket.connect(new InetSocketAddress(mServerIp, mServerPort), 6000);
                 mLocalSocket.setKeepAlive(true);
-                mLocalSocket.setSoTimeout(2000);
+                mLocalSocket.setSoTimeout(4000);
                 setState(STATE_CONNECTED);
                 mConnecting = false;
 
@@ -279,6 +288,7 @@ public class ElmWifi extends ElmBase{
 
                 // Start the thread to manage the connection and perform transmissions
                 createConnectedThread(mLocalSocket);
+                mConnecting = false;
                 return;
             } catch (IOException e) {
                 System.out.println(">>> Except");
