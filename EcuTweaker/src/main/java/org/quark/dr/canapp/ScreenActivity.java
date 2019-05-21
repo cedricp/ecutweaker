@@ -983,6 +983,12 @@ public class ScreenActivity extends AppCompatActivity {
         }
     }
 
+    public void reconnect(){
+        if(mChatService != null){
+            mChatService.reconnect();
+        }
+    }
+
     private void initBus(){
         if (isChatConnected()) {
             String txa = m_ecu.getTxId();
@@ -1203,6 +1209,7 @@ public class ScreenActivity extends AppCompatActivity {
                         case STATE_NONE:
                         case STATE_DISCONNECTED:
                             activity.setConnectionStatus(STATE_DISCONNECTED);
+                            activity.reconnect();
                             break;
                     }
                     break;
