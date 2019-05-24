@@ -150,6 +150,9 @@ public abstract class ElmBase {
             mConnectionHandler = h;
         }
 
+        if (mConnectionHandler == null)
+            clearMessages();
+
         // Force UI to recover connection status
         if (mConnectionHandler != null) {
             if (mState == STATE_CONNECTING) {
@@ -300,15 +303,21 @@ public abstract class ElmBase {
          * Thread can be stopped by switching the running status member
          */
         while (mRunningStatus) {
+            String message = "";
+            int num_queue = 0;
+            boolean messagePresent = false;
 
-            if (ElmBase.this.mMessages.size() > 0) {
-                String message;
-                int num_queue;
-                synchronized (this) {
+            // Synchronized message extraction
+            synchronized (this) {
+                if ( ! ElmBase.this.mMessages.isEmpty() ) {
                     message = mMessages.get(0);
                     mMessages.remove(0);
                     num_queue = mMessages.size();
+                    messagePresent = true;
                 }
+            }
+
+            if (messagePresent){
                 int message_len = message.length();
                 if ((message_len > 6) && message.substring(0, 6).toUpperCase().equals("DELAY:")) {
                     int delay = Integer.parseInt(message.substring(6));
