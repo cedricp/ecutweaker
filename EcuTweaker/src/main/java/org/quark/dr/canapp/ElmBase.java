@@ -28,6 +28,7 @@ public abstract class ElmBase {
 
     public static final int MODE_WIFI = 0;
     public static final int MODE_BT = 1;
+    public static final int MODE_USB = 1;
 
     protected ArrayList<String> mMessages;
     protected int mRxa, mTxa;

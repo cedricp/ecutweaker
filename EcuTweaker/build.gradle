@@ -15,7 +15,7 @@ android {
         minSdkVersion 19
         targetSdkVersion 26
         versionCode 1
-        versionName "1.74"
+        versionName "1.74b"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -45,5 +45,6 @@ dependencies {
     testImplementation 'junit:junit:4.12'
 
     implementation project(':ecu')
+    implementation project(path: ':usbserial')
 }
 
