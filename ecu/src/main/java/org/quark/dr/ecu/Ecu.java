@@ -13,11 +13,13 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -52,6 +54,15 @@ public class Ecu {
                 e.printStackTrace();
             }
         }
+    }
+
+    public HashMap<String, String> getSdsrequests(){
+        return sdsrequests;
+    }
+
+    public void setDefautSDS(String sdsname){
+        if (sdsrequests.containsKey(sdsname))
+            m_defaultSDS = sdsrequests.get(sdsname);
     }
 
     private class EcuDevice {
@@ -198,6 +209,9 @@ public class Ecu {
                     } else if (value instanceof Float) {
                         floatval = (float) value;
                     } else if (value instanceof String) {
+                        // Replace comma with point and remove spaces
+                        value = ((String) value).replace(",", ".");
+                        value = ((String) value).replace(" ", "");
                         floatval = Float.valueOf((String)value);
                     } else {
                         throw new ClassCastException("Value must be an integer or float");
@@ -355,9 +369,9 @@ public class Ecu {
         public String fmt(double d)
         {
             if(d == (long) d)
-                return String.format("%d",(long)d);
+                return String.format(Locale.US, "%d",(long)d);
             else
-                return String.format("%s",d);
+                return String.format(Locale.US, "%.2f",d);
         }
 
         public String getDisplayValueWithUnit(byte[] resp, EcuDataItem dataitem){
@@ -409,7 +423,8 @@ public class Ecu {
 
             if (!format.isEmpty()) {
                 try {
-                    DecimalFormat df = new DecimalFormat(format);
+
+                    DecimalFormat df = new DecimalFormat(format, new DecimalFormatSymbols(Locale.US));
                     return df.format(res);
                 } catch (Exception e){
                     e.printStackTrace();
@@ -776,18 +791,22 @@ public class Ecu {
             if (upperReqName.contains("START")
                     && upperReqName.contains("DIAG")
                     && upperReqName.contains("SESSION")){
+                // Case StartDiagnosticSession.Extended
                 EcuRequest request = requests.get(requestName);
+                if (upperReqName.contains("EXTENDED") && !request.sentbytes.isEmpty()){
+                    m_defaultSDS = request.sentbytes;
+                }
                 for (String sdsDataItemName : request.sendbyte_dataitems.keySet()){
 
                     EcuDataItem ecuDataItem = request.sendbyte_dataitems.get(sdsDataItemName);
                     String upperSdsDataItemName = sdsDataItemName.toUpperCase();
 
                     if (upperSdsDataItemName.contains("SESSION") && upperSdsDataItemName.contains("NAME")){
-                        for (String dataitem: data.get(sdsDataItemName).items.keySet()) {
+                        for (String dataItemName: data.get(sdsDataItemName).items.keySet()) {
                             HashMap sdsBuildValues = new HashMap();
-                            sdsBuildValues.put(ecuDataItem.name, dataitem);
+                            sdsBuildValues.put(ecuDataItem.name, dataItemName);
                             byte[] dataStream = setRequestValues(requestName, sdsBuildValues);
-                            sdsrequests.put(ecuDataItem.name, byteArrayToHex(dataStream).toUpperCase());
+                            sdsrequests.put(dataItemName, byteArrayToHex(dataStream).toUpperCase());
                             if (ecuDataItem.name.toUpperCase().contains("EXTENDED")){
                                 m_defaultSDS = byteArrayToHex(dataStream).toUpperCase();
                             }

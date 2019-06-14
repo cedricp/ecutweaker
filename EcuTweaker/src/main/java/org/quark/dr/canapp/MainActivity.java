@@ -3,6 +3,7 @@ package org.quark.dr.canapp;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.ClipData;
@@ -28,6 +29,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -51,6 +53,7 @@ import java.util.Collections;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static android.view.Window.FEATURE_INDETERMINATE_PROGRESS;
 import static org.quark.dr.canapp.ElmBase.MODE_BT;
 import static org.quark.dr.canapp.ElmBase.MODE_WIFI;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTED;
@@ -105,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
     private LicenseLock mLicenseLock;
     private int mLinkMode;
     private boolean mActivateBluetoothAsked;
+    private ProgressDialog mScanProgressDialog;
 
     public void displayLog(String message){
 
@@ -451,6 +455,8 @@ public class MainActivity extends AppCompatActivity {
         Log.e(TAG, "?? Trying reconnect 1 ...");
         if (mChatService != null){
             if ((mChatService.getMode() == MODE_BT) && (mLinkMode == LINK_BLUETOOTH)){
+                if (!mBtDeviceAddress.isEmpty())
+                    return;
                 // No need to recreate ELM manager instance
                 // Address may have changed, though
                 mChatService.connect(mBtDeviceAddress);
@@ -507,6 +513,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    void showWaitDialog(){
+        mScanProgressDialog = new ProgressDialog(this);
+        mScanProgressDialog.setTitle("Scanning");
+        mScanProgressDialog.setMessage("Please wait...");
+        mScanProgressDialog.setButton(DialogInterface.BUTTON_NEGATIVE, getResources().getString(R.string.CANCEL), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // Fast recovery, clear message queue to
+                // avoid lags
+                mChatService.clearMessages();
+                stopProgressDialog();
+            }
+        });
+        mScanProgressDialog.show();
+    }
+
     void onScanBus(){
         if(!isChatConnected()){
             Toast.makeText(this, "No ELM connection", Toast.LENGTH_SHORT).show();
@@ -517,6 +539,7 @@ public class MainActivity extends AppCompatActivity {
         alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "CAN",
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
+                        showWaitDialog();
                         scanBus();
                         scanBusNew();
                     }
@@ -525,6 +548,7 @@ public class MainActivity extends AppCompatActivity {
         alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "KWP",
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
+                        showWaitDialog();
                         scanBusKWP();
                     }
                 });
@@ -559,7 +583,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (mCurrentEcuInfoList == null || mCurrentEcuInfoList.isEmpty())
             return;
-
+        mChatService.changeHandler(mHandler);
         mChatService.initElm();
         initBus("KWP2000");
         mChatService.setTimeOut(1000);
@@ -579,7 +603,7 @@ public class MainActivity extends AppCompatActivity {
             return;
 
         mEcuIdentifierNew.reInit(mCurrentEcuAddressId);
-
+        mChatService.changeHandler(mHandler);
         mChatService.initElm();
         initBus("CAN");
         mChatService.setTimeOut(1000);
@@ -1014,6 +1038,7 @@ public class MainActivity extends AppCompatActivity {
                         case STATE_NONE:
                         case STATE_DISCONNECTED:
                             activity.setConnectionStatus(STATE_DISCONNECTED);
+                            activity.stopProgressDialog();
                             break;
                     }
                     break;
@@ -1045,8 +1070,17 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case MESSAGE_QUEUE_STATE:
                     int queue_len = msg.arg1;
+                    if (queue_len == 0){
+                        activity.stopProgressDialog();
+                    }
                     break;
             }
+        }
+    }
+
+    void stopProgressDialog(){
+        if (mScanProgressDialog != null) {
+            mScanProgressDialog.dismiss();
         }
     }
 

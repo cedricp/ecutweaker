@@ -37,6 +37,8 @@ public class ElmBluetooth extends ElmBase {
         if (btAdapter == null)
             return false;
         BluetoothDevice device = btAdapter.getRemoteDevice(address);
+        if (device == null)
+            return false;
 
         disconnect();
         createLogFile();
@@ -172,6 +174,8 @@ public class ElmBluetooth extends ElmBase {
 
             // Always cancel discovery because it will slow down a connection
             BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+            if (btAdapter == null)
+                return;
             btAdapter.cancelDiscovery();
 
             // Make a connection to the BluetoothSocket

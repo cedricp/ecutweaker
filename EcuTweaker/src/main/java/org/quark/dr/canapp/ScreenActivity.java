@@ -26,6 +26,8 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -163,6 +165,10 @@ public class ScreenActivity extends AppCompatActivity {
             public void onClick(View v) {
                 LayoutInflater inflater= LayoutInflater.from(ScreenActivity.this);
                 View view = inflater.inflate(R.layout.can_settings, null);
+                ArrayList<String> sdsList = new ArrayList<>();
+                for (String key : m_ecu.getSdsrequests().keySet()) {
+                    sdsList.add(key);
+                }
 
                 AlertDialog.Builder alertDialog = new AlertDialog.Builder(ScreenActivity.this);
                 alertDialog.setTitle("CAN Settings");
@@ -170,6 +176,22 @@ public class ScreenActivity extends AppCompatActivity {
                 AlertDialog alert = alertDialog.create();
                 SeekBar canSeekBar = view.findViewById(R.id.canTimeoutSeekBar);
                 canSeekBar.setProgress(mCanTimeOut);
+                Spinner sdsSpinner = view.findViewById(R.id.sdsSpinner);
+                ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(ScreenActivity.this,
+                        android.R.layout.simple_list_item_1, sdsList);
+                sdsSpinner.setAdapter(dataAdapter);
+                sdsSpinner.setOnItemSelectedListener(new Spinner.OnItemSelectedListener(){
+                    @Override
+                    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                        String sdsname = ((TextView) view).getText().toString();
+                        m_ecu.setDefautSDS(sdsname);
+                        m_logView.append("Defaut diag session switched to " + m_ecu.getDefaultSDS() + "\n");
+                    }
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parent){
+
+                    }
+                });
 
                 SeekBar fontSeekBar = view.findViewById(R.id.fontSizeBar);
                 fontSeekBar.setProgress(mFontSizeOverride);
@@ -349,6 +371,7 @@ public class ScreenActivity extends AppCompatActivity {
         } else {
             chooseCategory();
         }
+        m_logView.append("Default diag session : " + m_ecu.getDefaultSDS());
     }
 
     void applySettings(){
@@ -632,6 +655,8 @@ public class ScreenActivity extends AppCompatActivity {
 
         m_scrollView.requestLayout();
         updateDisplays();
+        // test data
+        //updateScreen("222130", "62213021000115293D55");
     }
 
     void updateDisplays(){
