@@ -478,8 +478,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             mChatService = ElmBase.createBluetoothSingleton(mHandler,
-                    getApplicationContext().getFilesDir().getAbsolutePath(),
-                    false);
+                    getApplicationContext().getFilesDir().getAbsolutePath());
             // address is the device MAC address
             // Get the BluetoothDevice object
             if (btAdapter == null || mBtDeviceAddress.isEmpty() || isChatConnected())
@@ -491,8 +490,9 @@ public class MainActivity extends AppCompatActivity {
             // Attempt to connect to the device
             mChatService.connect(mBtDeviceAddress);
         } else {
-            mChatService = ElmBase.createWifiSingleton(getApplicationContext(), mHandler, getApplicationContext().
-                    getFilesDir().getAbsolutePath(), false);
+            mChatService = ElmBase.createWifiSingleton(getApplicationContext(), mHandler,
+                    getApplicationContext().
+                    getFilesDir().getAbsolutePath());
             mChatService.connect("");
         }
     }
@@ -566,6 +566,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         mChatService.changeHandler(mHandler);
+        mChatService.setSessionActive(false);
         mChatService.initElm();
         initBus("CAN");
         mChatService.setTimeOut(1000);
@@ -584,6 +585,7 @@ public class MainActivity extends AppCompatActivity {
         if (mCurrentEcuInfoList == null || mCurrentEcuInfoList.isEmpty())
             return;
         mChatService.changeHandler(mHandler);
+        mChatService.setSessionActive(false);
         mChatService.initElm();
         initBus("KWP2000");
         mChatService.setTimeOut(1000);
@@ -604,6 +606,7 @@ public class MainActivity extends AppCompatActivity {
 
         mEcuIdentifierNew.reInit(mCurrentEcuAddressId);
         mChatService.changeHandler(mHandler);
+        mChatService.setSessionActive(false);
         mChatService.initElm();
         initBus("CAN");
         mChatService.setTimeOut(1000);
@@ -764,6 +767,7 @@ public class MainActivity extends AppCompatActivity {
             mChatService = ElmBase.getSingleton();
         if (mChatService != null){
             mChatService.changeHandler(mHandler);
+            mChatService.setSessionActive(false);
         }
         startConnectionTimer();
     }
@@ -930,6 +934,11 @@ public class MainActivity extends AppCompatActivity {
          * Old method auto identification
          */
         if (ecuResponse.length() > 39 && ecuResponse.substring(0,4).equals("6180")) {
+            // We get our data, stop scanning
+            mChatService.clearMessages();
+            stopProgressDialog();
+
+            // Search best ECU file
             String supplier = new String(Ecu.hexStringToByteArray(ecuResponse.substring(16, 22)));
             String soft_version = ecuResponse.substring(32, 36);
             String version = ecuResponse.substring(36, 40);

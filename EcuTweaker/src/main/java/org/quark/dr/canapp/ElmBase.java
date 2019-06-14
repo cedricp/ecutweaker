@@ -36,7 +36,6 @@ public abstract class ElmBase {
     protected OutputStreamWriter mLogFile;
     protected String mLogDir;
     protected volatile boolean mRunningStatus;
-    private boolean mTesterPresentFlag;
     static protected ElmBase mSingleton = null;
     protected boolean mConnecting = false;
     private int mState;
@@ -47,13 +46,13 @@ public abstract class ElmBase {
         return mSingleton;
     }
 
-    static public ElmBase createBluetoothSingleton(Handler handler, String logDir, boolean testerPresent){
-        mSingleton = new ElmBluetooth(handler, logDir, testerPresent);
+    static public ElmBase createBluetoothSingleton(Handler handler, String logDir){
+        mSingleton = new ElmBluetooth(handler, logDir);
         return mSingleton;
     }
 
-    static public ElmBase createWifiSingleton(Context context, Handler handler, String logDir, boolean testerPresent){
-        mSingleton = new ElmWifi(context, handler, logDir, testerPresent);
+    static public ElmBase createWifiSingleton(Context context, Handler handler, String logDir){
+        mSingleton = new ElmWifi(context, handler, logDir);
         return mSingleton;
     }
 
@@ -126,13 +125,12 @@ public abstract class ElmBase {
 
     protected abstract String writeRaw(String raw_buffer);
 
-    public ElmBase(Handler handler, String logDir, boolean testerPresent) {
+    public ElmBase(Handler handler, String logDir) {
         mMessages = new ArrayList<>();
         mConnectionHandler = handler;
         mLogFile = null;
         mLogDir = logDir;
         mRxa = mTxa = -1;
-        mTesterPresentFlag = testerPresent;
         mSessionActive = false;
         mState = STATE_NONE;
         mTxa = mRxa = -1;
@@ -362,7 +360,7 @@ public abstract class ElmBase {
             }
 
             // Keep session alive
-            if (mSessionActive && mTesterPresentFlag && ((System.currentTimeMillis() - timer) > 1500) && mRxa > 0) {
+            if (mSessionActive && ((System.currentTimeMillis() - timer) > 1500) && mRxa > 0) {
                 timer = System.currentTimeMillis();
                 writeRaw("013E");
             }

@@ -21,8 +21,8 @@ public class ElmBluetooth extends ElmBase {
     private ConnectedThread mConnectedThread;
     private String mBtAddress;
 
-    protected ElmBluetooth(Handler handler, String logDir, boolean testerPresent) {
-        super(handler, logDir, testerPresent);
+    protected ElmBluetooth(Handler handler, String logDir) {
+        super(handler, logDir);
     }
 
     @Override

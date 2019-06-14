@@ -26,8 +26,8 @@ public class ElmWifi extends ElmBase{
     private ElmWifi.ConnectedThread mConnectedThread;
     private ElmWifi.ConnectThread mConnectThread;
 
-    protected ElmWifi(Context context, Handler handler, String logDir, boolean testerPresent) {
-        super(handler, logDir, testerPresent);
+    protected ElmWifi(Context context, Handler handler, String logDir) {
+        super(handler, logDir);
         mContext = context;
     }
 

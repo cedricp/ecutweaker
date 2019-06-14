@@ -348,12 +348,10 @@ public class ScreenActivity extends AppCompatActivity {
             // In case singleton is lost...
             if (MainActivity.LINK_BLUETOOTH == linkMode) {
                 mChatService = ElmBase.createBluetoothSingleton(mHandler,
-                        getApplicationContext().getFilesDir().getAbsolutePath(),
-                        true);
+                        getApplicationContext().getFilesDir().getAbsolutePath());
             } else {
                 mChatService = ElmBase.createWifiSingleton(getApplicationContext(), mHandler,
-                        getApplicationContext().getFilesDir().getAbsolutePath(),
-                        true);
+                        getApplicationContext().getFilesDir().getAbsolutePath());
             }
         } else {
             mChatService.changeHandler(mHandler);
