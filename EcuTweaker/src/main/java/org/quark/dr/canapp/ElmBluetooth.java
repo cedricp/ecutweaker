@@ -36,7 +36,13 @@ public class ElmBluetooth extends ElmBase {
         BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
         if (btAdapter == null)
             return false;
-        BluetoothDevice device = btAdapter.getRemoteDevice(address);
+
+        BluetoothDevice device;
+        try {
+            device = btAdapter.getRemoteDevice(address);
+        } catch (Exception e){
+            return false;
+        }
         if (device == null)
             return false;
 

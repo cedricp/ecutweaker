@@ -455,7 +455,7 @@ public class MainActivity extends AppCompatActivity {
         Log.e(TAG, "?? Trying reconnect 1 ...");
         if (mChatService != null){
             if ((mChatService.getMode() == MODE_BT) && (mLinkMode == LINK_BLUETOOTH)){
-                if (!mBtDeviceAddress.isEmpty())
+                if (mBtDeviceAddress.isEmpty())
                     return;
                 // No need to recreate ELM manager instance
                 // Address may have changed, though
