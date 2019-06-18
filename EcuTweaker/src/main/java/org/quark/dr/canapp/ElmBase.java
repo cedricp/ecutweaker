@@ -222,6 +222,16 @@ public abstract class ElmBase {
         }
     }
 
+    protected void closeLogFile(){
+        if (mLogFile != null){
+            try {
+                mLogFile.close();
+            } catch (IOException e){
+                e.printStackTrace();
+            }
+        }
+    }
+
     protected String getTimeStamp() {
         return new String("[" + new SimpleDateFormat("dd-MM-yyyy-hh-mm-ss")
                 .format(new Date()) + "] ");

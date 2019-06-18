@@ -112,14 +112,6 @@ public class ElmBluetooth extends ElmBase {
                 mConnectionHandler.removeCallbacksAndMessages(null);
             }
         }
-
-        if (mLogFile != null){
-            try {
-                mLogFile.close();
-            } catch (IOException e){
-                e.printStackTrace();
-            }
-        }
     }
 
     @Override

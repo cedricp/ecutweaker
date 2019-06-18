@@ -6,13 +6,17 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -110,10 +114,6 @@ public class MainActivity extends AppCompatActivity {
     private int mLinkMode;
     private boolean mActivateBluetoothAsked;
     private ProgressDialog mScanProgressDialog;
-
-    public void displayLog(String message){
-
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -1099,7 +1099,7 @@ public class MainActivity extends AppCompatActivity {
                         dlgAlert.setTitle("Exception caught");
                         dlgAlert.setPositiveButton("OK", null);
                         dlgAlert.create().show();
-                        e.printStackTrace();
+                        activity.mLogView.append("Exception : " + e.getMessage() + "\n");
                     }
                     break;
                 case MESSAGE_DEVICE_NAME:
@@ -1111,7 +1111,6 @@ public class MainActivity extends AppCompatActivity {
                 case MESSAGE_LOG:
                     activity.mLogView.append(activity.getResources().getString(R.string.BT_MANAGER_MESSAGE) + " : "
                             + msg.getData().getString(TOAST) + "\n");
-                    Log.e(TAG, "?? Message : " + msg.getData().getString(TOAST));
                     break;
                 case MESSAGE_QUEUE_STATE:
                     int queue_len = msg.arg1;
