@@ -31,7 +31,7 @@
     <string name="NO">Non</string>
     <string name="NO_DTC_STORED">Pas de DTC enregistré</string>
     <string name="NEW_DEVICE">Nouvel appareil Bluetooth</string>
-    <string name="CHOOSE_BT_DEVICE">CHOISIR APPAREIL BLUETOOTH</string>
+    <string name="CHOOSE_BT_DEVICE">CHOISIR APPAREIL</string>
     <string name="AUTO_IDENTIFY">AUTO IDENTIFICATION</string>
     <string name="AUTO_IDENT_RESULT">Résultat auto identification</string>
     <string name="USER_REQUEST_CODE">Votre code de requête</string>

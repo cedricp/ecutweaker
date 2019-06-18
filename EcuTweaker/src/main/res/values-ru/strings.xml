@@ -62,7 +62,7 @@
 <string name="NO">Нет</string>
 <string name="NO_DTC_STORED">В блоке нет сохраненных DTC</string>
 <string name="NEW_DEVICE">Блок найден</string>
-<string name="CHOOSE_BT_DEVICE">Выберите устройство BT</string>
+<string name="CHOOSE_BT_DEVICE">Выберите устройство</string>
 <string name="AUTO_IDENTIFY">Авто-определение</string>
 <string name="AUTO_IDENT_RESULT">Результат авто-определения</string>
 <string name="NO_CHAT_SESSION">Попытка отправить команду при неактивном BT</string>

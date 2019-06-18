@@ -58,7 +58,7 @@ La pots desbloquejar enviantme el codi de solicitud, et respondré amb el codi d
     <string name="NO">No</string>
     <string name="NO_DTC_STORED">La ECU no disposa de DTC desat</string>
     <string name="NEW_DEVICE">Nou dispositiu trobat</string>
-    <string name="CHOOSE_BT_DEVICE">Selecciona dispositiu Bluetooth</string>
+    <string name="CHOOSE_BT_DEVICE">Selecciona dispositiu</string>
     <string name="AUTO_IDENTIFY">AUTO IDENTIFICA</string>
     <string name="AUTO_IDENT_RESULT">AutoIdent el resultat</string>
     <string name="NO_CHAT_SESSION">Intentant enviar el commandament sense sessió de chat Bluetooth</string>

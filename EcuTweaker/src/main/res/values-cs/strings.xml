@@ -63,7 +63,7 @@ co děláte s tímto softwarem.</u></b>]]></string>
     <string name="NO">Ne</string>
     <string name="NO_DTC_STORED">ECU nemá uložen DTC</string>
     <string name="NEW_DEVICE">Nalezené nové zařízení</string>
-    <string name="CHOOSE_BT_DEVICE">VYBER BT ZAŘÍZENÍ</string>
+    <string name="CHOOSE_BT_DEVICE">VYBER ZAŘÍZENÍ</string>
     <string name="AUTO_IDENTIFY">AUTO IDENTIFIKACE</string>
     <string name="AUTO_IDENT_RESULT">Výsledek Autoidentu</string>
     <string name="NO_CHAT_SESSION">Pokus o odeslání příkazu bez relace Bluetooth</string>

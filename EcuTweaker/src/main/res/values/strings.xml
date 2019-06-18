@@ -66,7 +66,7 @@ what you do with this Software.</u></b>]]></string>
     <string name="NO">No</string>
     <string name="NO_DTC_STORED">ECU has no DTC stored</string>
     <string name="NEW_DEVICE">New device found</string>
-    <string name="CHOOSE_BT_DEVICE">Select Bluetooth device</string>
+    <string name="CHOOSE_BT_DEVICE">Select device</string>
     <string name="AUTO_IDENTIFY">AUTO IDENTIFY</string>
     <string name="AUTO_IDENT_RESULT">AutoIdent result</string>
     <string name="NO_CHAT_SESSION">Trying to send command without Bluetooth chat session</string>

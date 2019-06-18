@@ -56,7 +56,7 @@
     <string name="NO">Hayır</string>
     <string name="NO_DTC_STORED">Arıza Kaydı Bulunamadı</string>
     <string name="NEW_DEVICE">Yeni cihaz bulundu</string>
-    <string name="CHOOSE_BT_DEVICE">Bluetooth Cihazı Seçin</string>
+    <string name="CHOOSE_BT_DEVICE">Cihazı Seçin</string>
     <string name="AUTO_IDENTIFY">Otomatik Tanımlama</string>
     <string name="AUTO_IDENT_RESULT">Oto Tanımlama Sonucu</string>
     <string name="NO_CHAT_SESSION">Trying to send command without Bluetooth chat session</string>

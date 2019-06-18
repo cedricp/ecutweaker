@@ -62,7 +62,7 @@ El desarrollador declina toda responsabilidad, <u>Tu eres el unico responsable d
     <string name="NO">No</string>
     <string name="NO_DTC_STORED">ECU no tiene DTC guardados</string>
     <string name="NEW_DEVICE">Nuevo dispositivo encontrado</string>
-    <string name="CHOOSE_BT_DEVICE">SELECCIONAR DISPOSITIVO BT</string>
+    <string name="CHOOSE_BT_DEVICE">SELECCIONAR DISPOSITIVO</string>
     <string name="AUTO_IDENTIFY">AUTO IDENTIFICACION</string>
     <string name="AUTO_IDENT_RESULT">Resultado de AutoIdent</string>
     <string name="NO_CHAT_SESSION">Intentando enviar comando sin sesion chat bluetooth</string>

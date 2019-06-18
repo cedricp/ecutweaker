@@ -28,7 +28,7 @@ public abstract class ElmBase {
 
     public static final int MODE_WIFI = 0;
     public static final int MODE_BT = 1;
-    public static final int MODE_USB = 1;
+    public static final int MODE_USB = 2;
 
     protected ArrayList<String> mMessages;
     protected int mRxa, mTxa;
@@ -54,6 +54,11 @@ public abstract class ElmBase {
 
     static public ElmBase createWifiSingleton(Context context, Handler handler, String logDir){
         mSingleton = new ElmWifi(context, handler, logDir);
+        return mSingleton;
+    }
+
+    static public ElmBase createSerialSingleton(Context context, Handler handler, String logDir){
+        mSingleton = new ElmUsbSerial(context, handler, logDir);
         return mSingleton;
     }
 
@@ -135,6 +140,7 @@ public abstract class ElmBase {
         mSessionActive = false;
         mState = STATE_NONE;
         mTxa = mRxa = -1;
+        createLogFile();
         buildMaps();
     }
 
@@ -197,6 +203,7 @@ public abstract class ElmBase {
             try {
                 file.createNewFile();
             } catch (IOException e) {
+                logInfo("Log file create error : " + e.getMessage());
                 e.printStackTrace();
             }
         }
@@ -204,6 +211,13 @@ public abstract class ElmBase {
             FileOutputStream fileOutputStream = new FileOutputStream(file, true);
             mLogFile = new OutputStreamWriter(fileOutputStream);
         } catch (FileNotFoundException e) {
+            logInfo("Log file output stream error : " + e.getMessage());
+            e.printStackTrace();
+        }
+        try {
+            mLogFile.write(getTimeStamp() + " Log file created open");
+        } catch (Exception e){
+            logInfo("Log file write error : " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -425,6 +439,7 @@ public abstract class ElmBase {
                 mLogFile.append("RECV: " + getTimeStamp() + result + "\n");
             }
         } catch (IOException e) {
+            logInfo("Log error : " + e.getMessage());
             e.printStackTrace();
         }
 

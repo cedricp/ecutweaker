@@ -23,6 +23,7 @@ package org.quark.dr.usbserial.driver;
 
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbManager;
+import android.util.Log;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -65,15 +66,19 @@ public class UsbSerialProber {
      * @return a list, possibly empty, of all compatible drivers
      */
     public List<UsbSerialDriver> findAllDrivers(final UsbManager usbManager) {
-        final List<UsbSerialDriver> result = new ArrayList<UsbSerialDriver>();
-
-        for (final UsbDevice usbDevice : usbManager.getDeviceList().values()) {
-            final UsbSerialDriver driver = probeDevice(usbDevice);
-            if (driver != null) {
-                result.add(driver);
+        final List<UsbSerialDriver> result = new ArrayList<>();
+        try {
+            for (final UsbDevice usbDevice : usbManager.getDeviceList().values()) {
+                final UsbSerialDriver driver = probeDevice(usbDevice);
+                if (driver != null) {
+                    result.add(driver);
+                }
             }
+        } catch (Exception e){
+            Log.e("USBMANAGER", "Cannot enumerate USB devices");
         }
         return result;
+
     }
     
     /**

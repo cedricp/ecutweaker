@@ -62,7 +62,7 @@ Puoi sbloccarlo inviandomi una richiesta con il tuo codice, ti invierò il codic
     <string name="NO">No</string>
     <string name="NO_DTC_STORED">La ECU non ha un DTC salvato</string>
     <string name="NEW_DEVICE">Nuovo dispositivo trovato</string>
-    <string name="CHOOSE_BT_DEVICE">SELEZIONA DISPOSITIVO BT</string>
+    <string name="CHOOSE_BT_DEVICE">SELEZIONA DISPOSITIVO</string>
     <string name="AUTO_IDENTIFY">RILEVAZIONE AUTOMATICA</string>
     <string name="AUTO_IDENT_RESULT">AutoIdent result</string>
     <string name="NO_CHAT_SESSION">Prova ad inviare comando senza Bluetooth nella sessione chat</string>

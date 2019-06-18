@@ -9,7 +9,7 @@
     <string name="BT_MANAGER_MESSAGE">ELM Mitteilung</string>
     <string name="CANCEL">Abbrechen</string>
     <string name="CATEGORY_CHOOSE">Kategorieauswahl</string>
-    <string name="CHOOSE_BT_DEVICE">Bluetooth Geraet auswaehlen</string>
+    <string name="CHOOSE_BT_DEVICE">Geraet auswaehlen</string>
     <string name="CHOOSE_PROJECT">Fahrzeugtypauswahl</string>
     <string name="CLEAR_ALL_DTC">Alle DTC Fehler loeschen?</string>
     <string name="CLEAR_LOG">Logdaten loeschen</string>

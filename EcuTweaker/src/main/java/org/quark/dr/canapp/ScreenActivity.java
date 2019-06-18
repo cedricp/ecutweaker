@@ -333,6 +333,7 @@ public class ScreenActivity extends AppCompatActivity {
         m_logView.setBackgroundResource(R.drawable.edittextroundgreen);
         m_btIconStatus.setColorFilter(Color.RED);
         m_btIconStatus.setImageResource(R.drawable.ic_link_nok);
+        m_logView.setTextIsSelectable(true);
 
         mHandler = new messageHandler(this);
         mChatService = ElmBase.getSingleton();

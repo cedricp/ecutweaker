@@ -47,7 +47,6 @@ public class ElmBluetooth extends ElmBase {
             return false;
 
         disconnect();
-        createLogFile();
 
         // Start the thread to connect with the given device
         mConnectThread = new ConnectThread(device);

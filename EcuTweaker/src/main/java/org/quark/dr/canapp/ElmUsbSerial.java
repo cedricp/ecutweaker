@@ -5,16 +5,21 @@ import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Handler;
 
+import org.quark.dr.usbserial.driver.UsbSerialDriver;
 import org.quark.dr.usbserial.driver.UsbSerialPort;
+import org.quark.dr.usbserial.driver.UsbSerialProber;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
-public class ElmSerial extends ElmBase {
+public class ElmUsbSerial extends ElmBase {
     private static UsbSerialPort msPort = null;
     private final Context mContext;
     private ConnectedThread mConnectedThread;
+    private String mUsbSerial;
 
-    ElmSerial(Context context, Handler handler, String logDir) {
+    ElmUsbSerial(Context context, Handler handler, String logDir) {
         super(handler, logDir);
         mContext = context;
     }
@@ -25,8 +30,33 @@ public class ElmSerial extends ElmBase {
     }
 
     @Override
-    public boolean connect(String address) {
+    public boolean connect(String serial) {
+        mUsbSerial = serial;
+        msPort = null;
         final UsbManager usbManager = (UsbManager) mContext.getApplicationContext().getSystemService(Context.USB_SERVICE);
+
+        if (usbManager == null)
+            return false;
+
+        final List<UsbSerialDriver> drivers =
+                UsbSerialProber.getDefaultProber().findAllDrivers(usbManager);
+
+        final List<UsbSerialPort> result = new ArrayList<>();
+        for (final UsbSerialDriver driver : drivers) {
+            final List<UsbSerialPort> ports = driver.getPorts();
+            result.addAll(ports);
+            for (UsbSerialPort port : ports){
+                if (port.getSerial().equals(mUsbSerial)) {
+                    msPort = port;
+                    break;
+                }
+            }
+        }
+
+        if (msPort == null){
+            return false;
+        }
+
         UsbDeviceConnection connection = usbManager.openDevice(msPort.getDriver().getDevice());
         if (connection == null) {
             return false;
@@ -34,7 +64,7 @@ public class ElmSerial extends ElmBase {
 
         try {
             msPort.open(connection);
-            msPort.setParameters(115200, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
+            msPort.setParameters(38400, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
         }catch (IOException e) {
             try {
                 msPort.close();
@@ -54,7 +84,7 @@ public class ElmSerial extends ElmBase {
     @Override
     public boolean reconnect(){
         disconnect();
-        return connect("");
+        return connect(mUsbSerial);
     }
 
     @Override
@@ -76,12 +106,13 @@ public class ElmSerial extends ElmBase {
 
     @Override
     protected String writeRaw(String raw_buffer) {
-        return "";
+        raw_buffer += "\r";
+        return mConnectedThread.write(raw_buffer.getBytes());
     }
 
     private void connectionLost(String message) {
         // Send a failure message back to the Activity;
-        logInfo("Wifi device connection was lost : " + message);
+        logInfo("USB device connection was lost : " + message);
         mRunningStatus = false;
         setState(STATE_DISCONNECTED);
     }
@@ -128,13 +159,16 @@ public class ElmSerial extends ElmBase {
         public String readFromElm() {
             while (true) {
                 try {
+                    byte b[] = new byte[1];
                     if(mUsbSerialPort != null)
                     {
-                        byte b[] = new byte[1];
                         StringBuilder res = new StringBuilder();
                         int charCount = 0;
                         int numCharRead;
-                        while ((char) (numCharRead = mUsbSerialPort.read(b, 700)) != '>') {
+                        while (true) {
+                            numCharRead = mUsbSerialPort.read(b, 700);
+                            if (b[0] == '>')
+                                break;
                             if (numCharRead == 0 || ++charCount > 32768){
                                 try {
                                     mUsbSerialPort.close();
@@ -148,7 +182,7 @@ public class ElmSerial extends ElmBase {
                                 b[0] = 0x0a;
                             res.append((char) b[0]);
                         }
-                        return "";
+                        return res.toString();
                     }
 
                 } catch (IOException localIOException) {

@@ -29,7 +29,6 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -53,8 +52,8 @@ import java.util.Collections;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static android.view.Window.FEATURE_INDETERMINATE_PROGRESS;
 import static org.quark.dr.canapp.ElmBase.MODE_BT;
+import static org.quark.dr.canapp.ElmBase.MODE_USB;
 import static org.quark.dr.canapp.ElmBase.MODE_WIFI;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTED;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTING;
@@ -80,8 +79,10 @@ public class MainActivity extends AppCompatActivity {
 
     public static final int     LINK_WIFI=0;
     public static final int     LINK_BLUETOOTH=1;
+    public static final int     LINK_USB=2;
 
     public static final String PREF_DEVICE_ADDRESS = "btAdapterAddress";
+    public static final String PREF_DEVICE_USBSERIAL = "usbSerialNumber";
     public static final String PREF_LICENSE_CODE = "licenseCode";
     public static final String PREF_GLOBAL_SCALE = "globalScale";
     public static final String PREF_FONT_SCALE = "fontScale";
@@ -97,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageView mBtIconImage;
     private ListView mEcuListView, mSpecificEcuListView;
     private ArrayList<EcuDatabase.EcuInfo> mCurrentEcuInfoList;
-    private String mEcuFilePath, mBtDeviceAddress, mCurrentProject;
+    private String mEcuFilePath, mBtDeviceAddress, mUsbSerialNumber, mCurrentProject;
     private int mCurrentEcuAddressId;
     private TextView mViewSupplier, mViewDiagVersion, mViewVersion, mViewSoft, mLogView;
 
@@ -184,8 +185,10 @@ public class MainActivity extends AppCompatActivity {
 
         if (linkMode.equals("BT")) {
             mLinkMode = LINK_BLUETOOTH;
-        } else {
+        } else if (linkMode.equals("WIFI")){
             mLinkMode = LINK_WIFI;
+        } else {
+            mLinkMode = LINK_USB;
         }
         setLink();
 
@@ -312,14 +315,18 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if (mLinkMode == LINK_WIFI) {
                     mLinkMode = LINK_BLUETOOTH;
+                } else if (mLinkMode == LINK_BLUETOOTH) {
+                    mLinkMode = LINK_USB;
                 } else {
                     mLinkMode = LINK_WIFI;
                 }
                 setLink();
+                System.out.println("?? " + mLinkMode);
             }
         });
 
         mBtDeviceAddress = defaultPrefs.getString(PREF_DEVICE_ADDRESS, "");
+        mUsbSerialNumber = defaultPrefs.getString(PREF_DEVICE_USBSERIAL, "");
 
         mEcuDatabase = new EcuDatabase();
         mEcuIdentifierNew = mEcuDatabase.new EcuIdentifierNew();
@@ -361,11 +368,11 @@ public class MainActivity extends AppCompatActivity {
         if (mChatService != null)
             mChatService.disconnect();
 
+        SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
+        SharedPreferences.Editor edit = defaultPrefs.edit();
         if (mLinkMode == LINK_BLUETOOTH){
             mLinkChooser.setImageResource(R.drawable.ic_bt_connected);
             mBtButton.setEnabled(true);
-            SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
-            SharedPreferences.Editor edit = defaultPrefs.edit();
             edit.putString(PREF_LINK_MODE, "BT");
             edit.apply();
 
@@ -375,13 +382,17 @@ public class MainActivity extends AppCompatActivity {
                 Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
             }
-        } else {
+        } else if (mLinkMode == LINK_WIFI){
             mActivateBluetoothAsked = false;
             mLinkChooser.setImageResource(R.drawable.ic_wifi);
             mBtButton.setEnabled(false);
-            SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
-            SharedPreferences.Editor edit = defaultPrefs.edit();
             edit.putString(PREF_LINK_MODE, "WIFI");
+            edit.apply();
+        }  else {
+            mActivateBluetoothAsked = false;
+            mLinkChooser.setImageResource(R.drawable.ic_usb);
+            mBtButton.setEnabled(true);
+            edit.putString(PREF_LINK_MODE, "USB");
             edit.apply();
         }
     }
@@ -465,10 +476,16 @@ public class MainActivity extends AppCompatActivity {
 
             if ((mChatService.getMode() == MODE_WIFI) && (mLinkMode == LINK_WIFI)){
                 // No need to recreate ELM manager instance
-                Log.e(TAG, "?? Trying reconnect 2...");
+                Log.e(TAG, "?? Trying reconnect WIFI...");
                 mChatService.reconnect();
                 return;
             }
+
+            if ((mChatService.getMode() == MODE_USB) && (mLinkMode == LINK_USB)){{
+                Log.e(TAG, "?? Trying reconnect USB...");
+                mChatService.connect(mUsbSerialNumber);
+                return;
+            }}
         }
 
         if (mLinkMode == LINK_BLUETOOTH) {
@@ -489,10 +506,15 @@ public class MainActivity extends AppCompatActivity {
                 return;
             // Attempt to connect to the device
             mChatService.connect(mBtDeviceAddress);
-        } else {
+        } else if (mLinkMode == LINK_WIFI) {
             mChatService = ElmBase.createWifiSingleton(getApplicationContext(), mHandler,
                     getApplicationContext().
                     getFilesDir().getAbsolutePath());
+            mChatService.connect("");
+        } else {
+            mChatService = ElmBase.createSerialSingleton(getApplicationContext(), mHandler,
+                    getApplicationContext().
+                            getFilesDir().getAbsolutePath());
             mChatService.connect("");
         }
     }
@@ -660,8 +682,13 @@ public class MainActivity extends AppCompatActivity {
         if (bluetoothAdapter.isEnabled()) {
             stopConnectionTimer();
             try {
-                Intent serverIntent = new Intent(this, DeviceListActivity.class);
-                startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+                if (mLinkMode == LINK_BLUETOOTH) {
+                    Intent serverIntent = new Intent(this, DeviceListActivity.class);
+                    startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+                } else if (mLinkMode == LINK_USB) {
+                    Intent serverIntent = new Intent(this, UsbDeviceActivity.class);
+                    startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+                }
             } catch (android.content.ActivityNotFoundException e) {
 
             }
@@ -778,15 +805,24 @@ public class MainActivity extends AppCompatActivity {
             case REQUEST_CONNECT_DEVICE:
                 // When DeviceListActivity returns with a device to connect
                 if (resultCode == Activity.RESULT_OK) {
-                    String address =
-                            data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
                     SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG,
                             MODE_PRIVATE);
                     SharedPreferences.Editor edit = defaultPrefs.edit();
-                    edit.putString(PREF_DEVICE_ADDRESS, address);
-                    edit.commit();
-                    mBtDeviceAddress = address;
-                    startConnectionTimer();
+                    if (data.getExtras().containsKey(DeviceListActivity.EXTRA_DEVICE_ADDRESS)) {
+                        String address =
+                                data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
+                        edit.putString(PREF_DEVICE_ADDRESS, address);
+                        edit.commit();
+                        mBtDeviceAddress = address;
+                        startConnectionTimer();
+                    } else if (data.getExtras().containsKey(UsbDeviceActivity.EXTRA_DEVICE_SERIAL)){
+                        String serial =
+                                data.getExtras().getString(UsbDeviceActivity.EXTRA_DEVICE_SERIAL);
+
+                        edit.putString(PREF_DEVICE_USBSERIAL, serial);
+                        edit.commit();
+                        mUsbSerialNumber = serial;
+                    }
                 }
                 break;
             case REQUEST_ENABLE_BT:

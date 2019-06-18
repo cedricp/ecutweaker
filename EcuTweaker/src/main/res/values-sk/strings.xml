@@ -63,7 +63,7 @@ riziko. Vyvojár odmieta všetku zodpovednosť, <u>ste výhradne zodpovední,
     <string name="NO">Nie</string>
     <string name="NO_DTC_STORED">ECU nemá uložený DTC</string>
     <string name="NEW_DEVICE">Najdené nové zariadenie</string>
-    <string name="CHOOSE_BT_DEVICE">VYBER BT ZARIADENIE</string>
+    <string name="CHOOSE_BT_DEVICE">VYBER ZARIADENIE</string>
     <string name="AUTO_IDENTIFY">AUTO IDENTIFIKACIA</string>
     <string name="AUTO_IDENT_RESULT">Výsledok Autoidentu</string>
     <string name="NO_CHAT_SESSION">Pokus o odoslanie príkazu bez Bluetooth</string>

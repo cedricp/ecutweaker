@@ -9,7 +9,7 @@
     <string name="BT_MANAGER_MESSAGE">ELM manager bericht</string>
     <string name="CANCEL">Afbreken</string>
     <string name="CATEGORY_CHOOSE">Kies een catagorie</string>
-    <string name="CHOOSE_BT_DEVICE">Selecteer BT apparaat</string>
+    <string name="CHOOSE_BT_DEVICE">Selecteer apparaat</string>
     <string name="CHOOSE_PROJECT">Kies een project</string>
     <string name="CLEAR_ALL_DTC">Verwijder alle DTC ?</string>
     <string name="CLEAR_LOG">Verwijder Logs</string>

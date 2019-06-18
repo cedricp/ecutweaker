@@ -31,7 +31,10 @@
         <activity
             android:name=".DeviceListActivity"
             android:label="@string/activity_screen">
-
+        </activity>
+        <activity
+            android:name=".UsbDeviceActivity"
+            android:label="USB">
         </activity>
         <activity
             android:name=".ScreenActivity"

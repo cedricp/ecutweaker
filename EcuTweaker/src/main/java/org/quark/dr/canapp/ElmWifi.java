@@ -51,7 +51,6 @@ public class ElmWifi extends ElmBase{
 
         disconnect();
         setState(STATE_CONNECTING);
-        createLogFile();
 
         WifiManager wifi = (WifiManager) mContext.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         if (wifiLock == null) {
