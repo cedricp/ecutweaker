@@ -11,32 +11,22 @@
         android:layout_margin="5dp"
         android:orientation="vertical">
 
-        <LinearLayout
+        <View
+            android:id="@+id/divider6"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="3dp"
             android:layout_weight="1"
-            android:orientation="horizontal">
+            android:background="?android:attr/listDivider" />
 
-            <TextView
-                android:id="@+id/canTimeoutText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="CAN TIMEOUT (ms)" />
-
-            <SeekBar
-                android:id="@+id/canTimeoutSeekBar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:max="1020"
-                android:progress="0" />
-
-            <TextView
-                android:id="@+id/canTimeOutReport"
-                android:layout_width="60dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0" />
-        </LinearLayout>
+        <TextView
+            android:id="@+id/textView3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="UI SETTINGS"
+            android:textAlignment="center"
+            android:textAllCaps="false"
+            android:textStyle="bold" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -60,6 +50,50 @@
                 android:max="200" />
         </LinearLayout>
 
+        <View
+            android:id="@+id/divider5"
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:background="?android:attr/listDivider" />
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="CAN SETTINGS"
+            android:textAlignment="center"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/canTimeoutText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="CAN TIMEOUT (ms)" />
+
+            <SeekBar
+                android:id="@+id/canTimeoutSeekBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:max="1020"
+                android:progress="0" />
+
+            <TextView
+                android:id="@+id/canTimeOutReport"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0" />
+        </LinearLayout>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -75,6 +109,26 @@
 
             <Spinner
                 android:id="@+id/sdsSpinner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="0" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/textViewFC"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Software flow control" />
+
+            <CheckBox
+                android:id="@+id/checkBoxSFC"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="0" />

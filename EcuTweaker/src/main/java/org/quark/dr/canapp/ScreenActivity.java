@@ -29,6 +29,8 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
@@ -60,6 +62,7 @@ import static org.quark.dr.canapp.ElmBluetooth.STATE_DISCONNECTED;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_NONE;
 import static org.quark.dr.canapp.MainActivity.PREF_FONT_SCALE;
 import static org.quark.dr.canapp.MainActivity.PREF_GLOBAL_SCALE;
+import static org.quark.dr.canapp.MainActivity.PREF_SOFTFLOW;
 import static org.quark.dr.ecu.Ecu.hexStringToByteArray;
 
 public class ScreenActivity extends AppCompatActivity {
@@ -107,7 +110,7 @@ public class ScreenActivity extends AppCompatActivity {
     private String              mConnectedDeviceName = null;
     private float               mGlobalScale;
     private long                mLastSDSTime;
-    private boolean             mDemoMode;
+    private boolean             mDemoMode, mSoftFlowControl;
 
     public float convertToPixel(float val){
         return (val / 8.0f) * mGlobalScale;
@@ -136,6 +139,7 @@ public class ScreenActivity extends AppCompatActivity {
         String globalScalePref = defaultPrefs.getString(PREF_GLOBAL_SCALE, "1.3");
         mFontSizeOverride = defaultPrefs.getInt(PREF_FONT_SCALE, 100);
         mGlobalScale = Float.valueOf(globalScalePref);
+        mSoftFlowControl = defaultPrefs.getBoolean(PREF_SOFTFLOW, false);
 
         mLastSDSTime = 0;
         int linkMode = MainActivity.LINK_WIFI;
@@ -171,9 +175,17 @@ public class ScreenActivity extends AppCompatActivity {
                 }
 
                 AlertDialog.Builder alertDialog = new AlertDialog.Builder(ScreenActivity.this);
-                alertDialog.setTitle("CAN Settings");
+                alertDialog.setTitle("Settings");
                 alertDialog.setView(view);
                 AlertDialog alert = alertDialog.create();
+                CheckBox softflowcheckbox = view.findViewById(R.id.checkBoxSFC);
+                softflowcheckbox.setChecked(mSoftFlowControl);
+                softflowcheckbox.setOnCheckedChangeListener(new CheckBox.OnCheckedChangeListener(){
+                    @Override
+                    public void onCheckedChanged(CompoundButton btn, boolean b){
+                        mSoftFlowControl = b;
+                    }
+                });
                 SeekBar canSeekBar = view.findViewById(R.id.canTimeoutSeekBar);
                 canSeekBar.setProgress(mCanTimeOut);
                 Spinner sdsSpinner = view.findViewById(R.id.sdsSpinner);
@@ -358,6 +370,8 @@ public class ScreenActivity extends AppCompatActivity {
             mChatService.changeHandler(mHandler);
         }
 
+        mChatService.setSoftFlowControl(mSoftFlowControl);
+
         if (!ecuFile.isEmpty()){
             openEcu(ecuFile, ecuHref);
         }
@@ -381,6 +395,7 @@ public class ScreenActivity extends AppCompatActivity {
                 this.getSharedPreferences(MainActivity.DEFAULT_PREF_TAG, MODE_PRIVATE);
         SharedPreferences.Editor edit = defaultPrefs.edit();
         edit.putInt(PREF_FONT_SCALE, mFontSizeOverride);
+        edit.putBoolean(PREF_SOFTFLOW, mSoftFlowControl);
         edit.apply();
     }
 

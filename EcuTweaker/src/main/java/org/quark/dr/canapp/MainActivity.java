@@ -93,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String PREF_ECUZIPFILE = "ecuZipFile";
     public static final String PREF_PROJECT = "project";
     public static final String PREF_LINK_MODE =  "BT";
+    public static final String PREF_SOFTFLOW = "softFlowControl";
 
     public static String mLastLog;
     private EcuDatabase mEcuDatabase;
@@ -515,7 +516,7 @@ public class MainActivity extends AppCompatActivity {
             mChatService = ElmBase.createSerialSingleton(getApplicationContext(), mHandler,
                     getApplicationContext().
                             getFilesDir().getAbsolutePath());
-            mChatService.connect("");
+            mChatService.connect(mUsbSerialNumber);
         }
     }
 

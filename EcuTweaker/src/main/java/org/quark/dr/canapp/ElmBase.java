@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
+import static java.lang.Math.min;
+
 public abstract class ElmBase {
     // Constants that indicate the current connection state
     public static final int STATE_NONE = 0;
@@ -42,6 +44,7 @@ public abstract class ElmBase {
     private int mState;
     protected boolean mSessionActive;
     private EcuDatabase mEcuDatabase;
+    private boolean mCFC0;
 
     static public ElmBase getSingleton() {
         return mSingleton;
@@ -140,8 +143,13 @@ public abstract class ElmBase {
         mSessionActive = false;
         mState = STATE_NONE;
         mTxa = mRxa = -1;
+        mCFC0 = true;
         createLogFile();
         buildMaps();
+    }
+
+    public void setSoftFlowControl(boolean b){
+        mCFC0 = b;
     }
 
     public void changeHandler(Handler h) {
@@ -256,6 +264,8 @@ public abstract class ElmBase {
         write("AT FC SM 1");
         mRxa = Integer.parseInt(rxa, 16);
         mTxa = Integer.parseInt(txa, 16);
+        if (mCFC0)
+            write("AT CFC0");
     }
 
     public void initKwp(String addr, boolean fastInit) {
@@ -365,7 +375,10 @@ public abstract class ElmBase {
                         }
                     }
                 } else {
-                    sendCan(message);
+                    if (mCFC0)
+                        sendCanCFC0(message);
+                    else
+                        sendCan(message);
                     synchronized (this) {
                         if (mConnectionHandler != null) {
                             mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_QUEUE_STATE,
@@ -396,6 +409,209 @@ public abstract class ElmBase {
 
     void setSessionActive(boolean active) {
         mSessionActive = active;
+    }
+
+    protected void sendCanCFC0(String message){
+        IsoTPEncode isotpm = new IsoTPEncode(message);
+        // Encode ISO_TP data
+        ArrayList<String> raw_command = isotpm.getFormattedArray();
+        ArrayList<String> responses = new ArrayList<>();
+        boolean noerrors = true;
+        String errorMsg = "";
+        boolean ATR1 = true;
+
+        int BS = 1; // Burst size
+        int ST = 0; // Frame interval
+        int Fc = 0; // Current frame
+        int Fn = raw_command.size();
+
+        // Set ELM timeout to 300ms for first frame response
+        if (Fn > 1 && raw_command.get(0).length() > 15){
+            writeRaw("AT ST 4B");
+        }
+
+        while(Fc < Fn){
+            String frsp;
+            if (!ATR1){
+                writeRaw("ATR1");
+                ATR1 = true;
+            }
+            long tb = System.currentTimeMillis();
+
+            if (Fn > 1 && Fc == (Fn - 1)){
+                writeRaw("AT ST FF");
+                writeRaw("ATAT1");
+            }
+
+            String currentRawCommand = raw_command.get(Fc);
+            if (currentRawCommand.length() == 16){
+                // We'll get only 1 frame: nr, fc, ff or sf
+                frsp = writeRaw(currentRawCommand);
+            } else {
+                frsp = writeRaw(currentRawCommand + '1');
+            }
+
+            ++Fc;
+
+            for (String s: frsp.split("\n")){
+                s = s.replace(" ", "");
+                if (s.isEmpty()){
+                    continue;
+                }
+
+                if (isHexNumber(s)){
+                    // Some data
+                    if (s.charAt(0) == '3'){
+                        // Flow control frame
+
+                        // Extract burst size
+                        String bs;
+                        if (s.length() > 3)
+                            bs = s.substring(2, 4);
+                        else
+                            bs = "03";
+
+                        BS = Integer.parseInt(bs, 16);
+
+                        // Extract frame interval
+                        String frameInterval;
+                        if (s.length() > 5)
+                            frameInterval = s.substring(4, 6);
+                        else
+                            frameInterval = "EF";
+                        if (frameInterval.toUpperCase().charAt(0) == 'F'){
+                            ST = Integer.parseInt(frameInterval.substring(1,2), 16) * 100;
+                        } else {
+                            ST = Integer.parseInt(frameInterval, 16);
+                        }
+                        break;
+                    } else {
+                        responses.add(s);
+                        continue;
+                    }
+                }
+            }
+
+            // Number of frames to send without response
+            int cf = min(BS - 1, (Fn - Fc) - 1);
+
+            if (cf > 0){
+                writeRaw("AT R0");
+                ATR1 = false;
+            }
+
+            while (cf > 0){
+                --cf;
+
+                long tc = System.currentTimeMillis();
+                if ((tc - tb) < ST){
+                    try {
+                        Thread.sleep(ST - (tc - tb));
+                    } catch (InterruptedException ie){
+                        return;
+                    }
+                }
+                tb = tc;
+
+                writeRaw(raw_command.get(Fc));
+                ++Fc;
+            }
+        }
+
+        String result = "";
+        if (responses.size() != 1){
+            noerrors = false;
+            errorMsg = "Cannot send CAN frame with software flow control";
+        } else {
+            int nbytes = 0;
+            String response0 = responses.get(0);
+            if (response0.charAt(0) == '0'){
+                // Single frame
+                nbytes = Integer.parseInt(response0.substring(1,2), 16);
+                result = responses.get(0).substring(2, 2 + (nbytes*2));
+            } else if (response0.charAt(0) == '1') {
+                nbytes = Integer.parseInt(response0.substring(1, 4), 16);
+                int nframes = nbytes / 7 + 1;
+                int cframe = 1;
+                result = response0.substring(4, 16);
+
+                while (responses.size() < nframes){
+                    String sBS =  String.format("%x", min(nframes - responses.size(), 0xf));
+                    String frsp = writeRaw("300" + sBS + "00" + sBS);
+
+                    // Analyse response
+                    boolean nodataflag = false;
+                    for (String s: frsp.split("\n")){
+                        // Echo cancel
+                        if (s.substring(0, raw_command.get(Fc -1 ).length()) == raw_command.get(Fc - 1)){
+                            continue;
+                        }
+
+                        if (s.contains("NO DATA")){
+                            nodataflag = true;
+                            break;
+                        }
+
+                        s = s.replace(" ", "");
+                        if (s.isEmpty()){
+                            continue;
+                        }
+
+                        if (isHexadecimal(s)){
+                            responses.add(s);
+                            if (s.charAt(0) == '2'){
+                                // Consecutive frame
+                                int tmp_fn = Integer.parseInt(s.substring(1,2), 16);
+                                if (tmp_fn != (cframe % 16)){
+                                    noerrors = false;
+                                    continue;
+                                }
+                                ++cframe;
+                                result += s.substring(2, 16);
+                            }
+                            continue;
+                        }
+
+                        if (nodataflag){
+                            break;
+                        }
+                    }
+                }
+            } else {
+                noerrors = false;
+                errorMsg = "CFC0 first frame omitted";
+            }
+        }
+
+        if (!noerrors){
+            message = "ERROR : " + errorMsg;
+        } else {
+            // Decode received ISO_TP data
+            IsoTPDecode isotpdec = new IsoTPDecode(responses);
+            result = isotpdec.decodeCan();
+        }
+
+        result = message + ";" + result;
+        int result_length = result.length();
+        byte[] tmpbuf = new byte[result_length];
+        //Make copy for not to rewrite in other thread
+        System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);
+        synchronized (this) {
+            if (mConnectionHandler != null) {
+                mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, -1, tmpbuf).sendToTarget();
+            }
+        }
+    }
+
+    private static boolean isHexNumber (String cadena) {
+        try {
+            Long.parseLong(cadena, 16);
+            return true;
+        }
+        catch (NumberFormatException ex) {
+            // Error handling code...
+            return false;
+        }
     }
 
     protected void sendCan(String message){
