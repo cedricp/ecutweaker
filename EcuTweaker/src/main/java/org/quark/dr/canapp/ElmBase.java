@@ -444,51 +444,65 @@ public abstract class ElmBase {
             }
 
             String currentRawCommand = raw_command.get(Fc);
-            if (currentRawCommand.length() == 16){
+            if (Fc == 0 || Fc == (Fn-1) && currentRawCommand.length() < 16){
                 // We'll get only 1 frame: nr, fc, ff or sf
-                frsp = writeRaw(currentRawCommand);
-            } else {
                 frsp = writeRaw(currentRawCommand + '1');
+            } else {
+                frsp = writeRaw(currentRawCommand );
             }
 
             ++Fc;
 
+            ArrayList<String> s0 = new ArrayList<>();
             for (String s: frsp.split("\n")){
-                s = s.replace(" ", "");
-                if (s.isEmpty()){
+                if (s.substring(0, raw_command.get(Fc-1).length()).equals(raw_command.get(Fc-1)))
                     continue;
-                }
+                s = s.replace(" ", "");
+                if(s.isEmpty())
+                    continue;
 
-                if (isHexNumber(s)){
-                    // Some data
-                    if (s.charAt(0) == '3'){
-                        // Flow control frame
+                if (isHexadecimal(s))
+                    s0.add(s);
+            }
 
-                        // Extract burst size
-                        String bs;
-                        if (s.length() > 3)
-                            bs = s.substring(2, 4);
-                        else
-                            bs = "03";
+            for (String s: s0){
+                // Some data
+                if (s.charAt(0) == '3'){
+                    // Flow control frame
 
-                        BS = Integer.parseInt(bs, 16);
+                    // Extract burst size
+                    String bs;
+                    if (s.length() >= 3)
+                        bs = s.substring(2, 4);
+                    else
+                        bs = "03";
 
-                        // Extract frame interval
-                        String frameInterval;
-                        if (s.length() > 5)
-                            frameInterval = s.substring(4, 6);
-                        else
-                            frameInterval = "EF";
-                        if (frameInterval.toUpperCase().charAt(0) == 'F'){
-                            ST = Integer.parseInt(frameInterval.substring(1,2), 16) * 100;
-                        } else {
-                            ST = Integer.parseInt(frameInterval, 16);
-                        }
-                        break;
+                    BS = Integer.parseInt(bs, 16);
+
+                    // Extract frame interval
+                    String frameInterval;
+                    if (s.length() >= 5)
+                        frameInterval = s.substring(4, 6);
+                    else
+                        frameInterval = "EF";
+                    if (frameInterval.toUpperCase().charAt(0) == 'F'){
+                        ST = Integer.parseInt(frameInterval.substring(1,2), 16) * 100;
                     } else {
-                        responses.add(s);
+                        ST = Integer.parseInt(frameInterval, 16);
+                    }
+                    break;
+                } else if (s.substring(0, 4).equals("037F") && s.substring(6, 8).equals("78")) {
+                    if (s0.size() > 0 && s.equals(s0.get(s0.size()-1))){
+                        noerrors = false;
+                        errorMsg = "Cannot handle 037F78 yet !";
+                        break;
+                        // Heavy method here !!
+                    } else {
                         continue;
                     }
+                } else {
+                    responses.add(s);
+                    continue;
                 }
             }
 
@@ -513,7 +527,7 @@ public abstract class ElmBase {
                 }
                 tb = tc;
 
-                writeRaw(raw_command.get(Fc));
+                frsp = writeRaw(raw_command.get(Fc));
                 ++Fc;
             }
         }
@@ -531,11 +545,14 @@ public abstract class ElmBase {
                 result = responses.get(0).substring(2, 2 + (nbytes*2));
             } else if (response0.charAt(0) == '1') {
                 nbytes = Integer.parseInt(response0.substring(1, 4), 16);
-                int nframes = nbytes / 7 + 1;
+                // We assume that it should be more then 7
+                nbytes -= 6;
+                int z = nbytes%7 > 0 ? 1 : 0;
+                int nframes = 1 + nbytes / 7 + z;
                 int cframe = 1;
                 result = response0.substring(4, 16);
 
-                while (responses.size() < nframes){
+                while (cframe < nframes){
                     String sBS =  String.format("%x", min(nframes - responses.size(), 0xf));
                     String frsp = writeRaw("300" + sBS + "00" + sBS);
 
@@ -543,7 +560,7 @@ public abstract class ElmBase {
                     boolean nodataflag = false;
                     for (String s: frsp.split("\n")){
                         // Echo cancel
-                        if (s.substring(0, raw_command.get(Fc -1 ).length()) == raw_command.get(Fc - 1)){
+                        if (s.substring(0, raw_command.get(Fc -1 ).length()).equals(raw_command.get(Fc - 1))){
                             continue;
                         }
 
@@ -564,6 +581,7 @@ public abstract class ElmBase {
                                 int tmp_fn = Integer.parseInt(s.substring(1,2), 16);
                                 if (tmp_fn != (cframe % 16)){
                                     noerrors = false;
+                                    errorMsg = "Multiline software flow control lost frame";
                                     continue;
                                 }
                                 ++cframe;
