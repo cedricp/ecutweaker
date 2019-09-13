@@ -185,8 +185,8 @@ public class ElmUsbSerial extends ElmBase {
                             Thread.sleep(400);
                         } else {
                             String res = new String(bytes);
+                            res = res.substring(0, bytes_count);
                             final_res.append(res);
-                            logInfo("USB : Read " + res + " last char : " + res.charAt(res.length() - 1) + " " + res.charAt(res.length() - 2));
                             if (res.charAt(res.length() - 1) == '>') {
                                 break;
                             }
@@ -202,6 +202,7 @@ public class ElmUsbSerial extends ElmBase {
                     break;
                 }
             }
+            logInfo("USBREAD : " + final_res.toString());
             return final_res.toString();
         }
 
