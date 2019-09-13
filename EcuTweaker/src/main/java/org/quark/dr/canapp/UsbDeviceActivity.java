@@ -20,10 +20,13 @@ package org.quark.dr.canapp;
  * Project home page: https://github.com/mik3y/usb-serial-for-android
  */
 
+import android.Manifest;
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -46,6 +49,7 @@ import org.quark.dr.usbserial.driver.UsbSerialPort;
 import org.quark.dr.usbserial.driver.UsbSerialProber;
 import org.quark.dr.usbserial.util.HexDump;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,6 +69,7 @@ public class UsbDeviceActivity extends Activity {
     private TextView mProgressBarTitle;
     private ProgressBar mProgressBar;
 
+    private static PendingIntent mPermissionIntent;
     private static final int MESSAGE_REFRESH = 101;
     private static final long REFRESH_TIMEOUT_MILLIS = 5000;
 
@@ -92,6 +97,9 @@ public class UsbDeviceActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.usbmain);
 
+        mPermissionIntent = PendingIntent.getBroadcast(getApplicationContext(),
+                0,
+                new Intent("org.quark.dr.canapp.USB_PERMISSION"), 0);
         mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
         mListView = findViewById(R.id.deviceList);
         mProgressBar = findViewById(R.id.progressBar);
@@ -140,10 +148,37 @@ public class UsbDeviceActivity extends Activity {
 
                 // Create the result Intent and include the MAC address
                 Intent intent = new Intent();
-                intent.putExtra(EXTRA_DEVICE_SERIAL, port.getSerial());
+                String usbaddr = "";
 
+                mUsbManager.requestPermission(port.getDriver().getDevice(), mPermissionIntent);
+                if (mUsbManager.hasPermission(port.getDriver().getDevice())) {
+                    UsbDeviceConnection connection =
+                            mUsbManager.openDevice(port.getDriver().getDevice());
+
+                    if (connection != null) {
+                        try {
+                            port.open(connection);
+                            usbaddr = port.getSerial();
+                        } catch (IOException e) {
+                            Log.e("canapp", "USB Activity, connection failed");
+                            intent.putExtra(EXTRA_DEVICE_SERIAL, "CONNECTION FAILED");
+                            setResult(Activity.RESULT_CANCELED, intent);
+                            finish();
+                        }
+                    } else {
+                        Log.e("canapp", "USB Activity, unable to create connection");
+                        intent.putExtra(EXTRA_DEVICE_SERIAL, "CANNOT CREATE CONNECTION");
+                        setResult(Activity.RESULT_CANCELED, intent);
+                        finish();
+                    }
+                } else {
+                    return;
+                }
+
+                intent.putExtra(EXTRA_DEVICE_SERIAL, usbaddr);
                 // Set result and finish this Activity
                 setResult(Activity.RESULT_OK, intent);
+                finish();
             }
         });
     }

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Handler;
+import android.util.Log;
 
 import org.quark.dr.usbserial.driver.UsbSerialDriver;
 import org.quark.dr.usbserial.driver.UsbSerialPort;
@@ -31,6 +32,7 @@ public class ElmUsbSerial extends ElmBase {
 
     @Override
     public boolean connect(String serial) {
+        setState(STATE_DISCONNECTED);
         mUsbSerial = serial;
         msPort = null;
         final UsbManager usbManager = (UsbManager) mContext.getApplicationContext().getSystemService(Context.USB_SERVICE);
@@ -46,38 +48,50 @@ public class ElmUsbSerial extends ElmBase {
             final List<UsbSerialPort> ports = driver.getPorts();
             result.addAll(ports);
             for (UsbSerialPort port : ports){
-                if (port.getSerial().equals(mUsbSerial)) {
-                    msPort = port;
-                    break;
+                if (!usbManager.hasPermission(port.getDriver().getDevice())){
+                    logInfo("No permission to access USB device " + serial);
+                }
+                UsbDeviceConnection connection = usbManager.openDevice(port.getDriver().getDevice());
+                if (connection == null){
+                    logInfo("USB : error opening device connection");
+                    continue;
+                }
+                try {
+                    port.open(connection);
+                    if (port.getSerial().equals(mUsbSerial)) {
+                        msPort = port;
+                        break;
+                    } else {
+                        port.close();
+                    }
+                } catch (IOException e) {
+                    logInfo("USB : error opening port");
                 }
             }
         }
 
         if (msPort == null){
-            return false;
-        }
-
-        UsbDeviceConnection connection = usbManager.openDevice(msPort.getDriver().getDevice());
-        if (connection == null) {
+            logInfo("error usb : no port found");
             return false;
         }
 
         try {
-            msPort.open(connection);
             msPort.setParameters(38400, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
         }catch (IOException e) {
             try {
                 msPort.close();
             } catch (IOException e2) {
-                // Ignore.
+
             }
+            logInfo("USB : error setting port parameters");
             msPort = null;
             return false;
         }
-
+        logInfo("USB : Interface successfully connected");
         // Launch thread
         mConnectedThread = new ConnectedThread(msPort);
         mConnectedThread.start();
+        setState(STATE_CONNECTED);
         return true;
     }
 
@@ -145,9 +159,10 @@ public class ElmUsbSerial extends ElmBase {
                 {
                     byte[] arrayOfBytes = buffer;
                     mUsbSerialPort.write(arrayOfBytes, 500);
+                    logInfo("USB : Wrote " + new String(buffer));
                 }
             } catch (Exception localIOException1) {
-                connectionLost(localIOException1.getMessage());
+                connectionLost("USBWRITE : " +  localIOException1.getMessage());
                 try {
                     mUsbSerialPort.close();
                 } catch (IOException e){
@@ -157,43 +172,37 @@ public class ElmUsbSerial extends ElmBase {
         }
 
         public String readFromElm() {
+            StringBuilder final_res = new StringBuilder();
             while (true) {
                 try {
-                    byte b[] = new byte[1];
+                    byte bytes[] = new byte[2048];
+                    int bytes_count = 0;
+                    int num_tries = 0;
                     if(mUsbSerialPort != null)
                     {
-                        StringBuilder res = new StringBuilder();
-                        int charCount = 0;
-                        int numCharRead;
-                        while (true) {
-                            numCharRead = mUsbSerialPort.read(b, 700);
-                            if (b[0] == '>')
+                        bytes_count = mUsbSerialPort.read(bytes, 1500);
+                        if (bytes_count == 0 && num_tries++ < 3){
+                            Thread.sleep(400);
+                        } else {
+                            String res = new String(bytes);
+                            final_res.append(res);
+                            logInfo("USB : Read " + res + " last char : " + res.charAt(res.length() - 1) + " " + res.charAt(res.length() - 2));
+                            if (res.charAt(res.length() - 1) == '>') {
                                 break;
-                            if (numCharRead == 0 || ++charCount > 32768){
-                                try {
-                                    mUsbSerialPort.close();
-                                } catch (IOException e){
-
-                                }
-                                connectionLost("USB Socket overflow");
-                                return "";
                             }
-                            if (b[0] == 0x0d)
-                                b[0] = 0x0a;
-                            res.append((char) b[0]);
                         }
-                        return res.toString();
                     }
 
+
                 } catch (IOException localIOException) {
-                    connectionLost(localIOException.getMessage());
+                    connectionLost("USBREAD1 : " + localIOException.getMessage());
                     break;
                 } catch (Exception e) {
-                    connectionLost(e.getMessage());
+                    connectionLost("USBREAD2 : " + e.getMessage());
                     break;
                 }
             }
-            return "";
+            return final_res.toString();
         }
 
         public void cancel() {

@@ -412,6 +412,9 @@ public abstract class ElmBase {
     }
 
     protected void sendCanCFC0(String message){
+        if (!isHexadecimal(message))
+            return;
+
         IsoTPEncode isotpm = new IsoTPEncode(message);
         // Encode ISO_TP data
         ArrayList<String> raw_command = isotpm.getFormattedArray();
@@ -427,7 +430,7 @@ public abstract class ElmBase {
 
         // Set ELM timeout to 300ms for first frame response
         if (Fn > 1 && raw_command.get(0).length() > 15){
-            writeRaw("AT ST 4B");
+            writeRaw("ATST4B");
         }
 
         while(Fc < Fn){
@@ -439,7 +442,7 @@ public abstract class ElmBase {
             long tb = System.currentTimeMillis();
 
             if (Fn > 1 && Fc == (Fn - 1)){
-                writeRaw("AT ST FF");
+                writeRaw("ATSTFF");
                 writeRaw("ATAT1");
             }
 
@@ -455,8 +458,14 @@ public abstract class ElmBase {
 
             ArrayList<String> s0 = new ArrayList<>();
             for (String s: frsp.split("\n")){
-                if (s.substring(0, raw_command.get(Fc-1).length()).equals(raw_command.get(Fc-1)))
+                // Echo cancellation
+                int raw_cmd_len = raw_command.get(Fc-1).length();
+                String subs = s ;
+                if (subs.length() > raw_cmd_len)
+                    subs = s.substring(0, raw_cmd_len);
+                if (subs.equals(raw_command.get(Fc-1)))
                     continue;
+
                 s = s.replace(" ", "");
                 if(s.isEmpty())
                     continue;
@@ -510,7 +519,7 @@ public abstract class ElmBase {
             int cf = min(BS - 1, (Fn - Fc) - 1);
 
             if (cf > 0){
-                writeRaw("AT R0");
+                writeRaw("ATR0");
                 ATR1 = false;
             }
 
@@ -545,10 +554,9 @@ public abstract class ElmBase {
                 result = responses.get(0).substring(2, 2 + (nbytes*2));
             } else if (response0.charAt(0) == '1') {
                 nbytes = Integer.parseInt(response0.substring(1, 4), 16);
-                // We assume that it should be more then 7
+                // We assume that it should be more than 7
                 nbytes -= 6;
-                int z = nbytes%7 > 0 ? 1 : 0;
-                int nframes = 1 + nbytes / 7 + z;
+                int nframes = 1 + nbytes / 7 + ((nbytes%7) > 0 ? 1 : 0);
                 int cframe = 1;
                 result = response0.substring(4, 16);
 
@@ -618,17 +626,6 @@ public abstract class ElmBase {
             if (mConnectionHandler != null) {
                 mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, -1, tmpbuf).sendToTarget();
             }
-        }
-    }
-
-    private static boolean isHexNumber (String cadena) {
-        try {
-            Long.parseLong(cadena, 16);
-            return true;
-        }
-        catch (NumberFormatException ex) {
-            // Error handling code...
-            return false;
         }
     }
 

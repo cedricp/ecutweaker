@@ -810,6 +810,7 @@ public class MainActivity extends AppCompatActivity {
                             MODE_PRIVATE);
                     SharedPreferences.Editor edit = defaultPrefs.edit();
                     if (data.getExtras().containsKey(DeviceListActivity.EXTRA_DEVICE_ADDRESS)) {
+                        // Bluetooth
                         String address =
                                 data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
                         edit.putString(PREF_DEVICE_ADDRESS, address);
@@ -817,12 +818,21 @@ public class MainActivity extends AppCompatActivity {
                         mBtDeviceAddress = address;
                         startConnectionTimer();
                     } else if (data.getExtras().containsKey(UsbDeviceActivity.EXTRA_DEVICE_SERIAL)){
+                        // USB
                         String serial =
                                 data.getExtras().getString(UsbDeviceActivity.EXTRA_DEVICE_SERIAL);
 
                         edit.putString(PREF_DEVICE_USBSERIAL, serial);
                         edit.commit();
                         mUsbSerialNumber = serial;
+                        startConnectionTimer();
+                        mLogView.append("Using USB HW # " + serial + "\n");
+                    }
+                } else if (resultCode == Activity.RESULT_CANCELED) {
+                    if (data.getExtras().containsKey(UsbDeviceActivity.EXTRA_DEVICE_SERIAL)) {
+                        String error_code =
+                                data.getExtras().getString(UsbDeviceActivity.EXTRA_DEVICE_SERIAL);
+                        mLogView.append("Using USB connection error : " + error_code + "\n");
                     }
                 }
                 break;
