@@ -178,27 +178,30 @@ public class ElmUsbSerial extends ElmBase {
                     if(mUsbSerialPort != null)
                     {
                         bytes_count = mUsbSerialPort.read(bytes, 1500);
-                        if (bytes_count == 0){
-                            Thread.sleep(5);
-                        } else {
+                        if (bytes_count > 0){
                             boolean eof = false;
-                            String res = new String(bytes);
+                            String res = new String(bytes, 0, bytes_count);
                             res = res.substring(0, bytes_count);
 
-                            // Only break when ELM has sent termination char
-                            if (res.charAt(res.length() - 1) == '>') {
-                                res = res.substring(0, res.length() - 2);
-                                eof = true;
+                            if(res.length() > 0) {
+                                // Only break when ELM has sent termination char
+                                if (res.charAt(res.length() - 1) == '>') {
+                                    res = res.substring(0, res.length() - 2);
+                                    eof = true;
+                                }
+                                res = res.replaceAll("\r", "\n");
+                                final_res.append(res);
+                                if (eof)
+                                    break;
                             }
-                            res = res.replaceAll("\r", "\n");
-                            final_res.append(res);
-                            if (eof)
-                                break;
+                        } else {
+                            Thread.sleep(5);
                         }
                         if ((System.currentTimeMillis() - millis) > 4000){
                             connectionLost("USBREAD : Timeout");
                             break;
                         }
+
                     }
                 } catch (IOException localIOException) {
                     connectionLost("USBREAD1 IO exception : " + localIOException.getMessage());

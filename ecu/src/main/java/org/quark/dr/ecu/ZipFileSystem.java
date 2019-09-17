@@ -26,14 +26,14 @@ import java.util.zip.ZipInputStream;
  *
  */
 
-public class ZipFastFileSystem {
+public class ZipFileSystem {
     class CustomZipEntry{
         public long compressedSize, pos, uncompressedSize;
     }
     private HashMap<String, CustomZipEntry> m_directoryEntries;
     private String m_zipFilePath, m_indexFile;
 
-    public ZipFastFileSystem(String zipFilePath, String applicationDirectory){
+    public ZipFileSystem(String zipFilePath, String applicationDirectory){
         m_directoryEntries = new HashMap<>();
         m_zipFilePath = zipFilePath;
         m_indexFile = applicationDirectory + "/ecu.idx";

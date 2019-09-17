@@ -23,7 +23,7 @@ public class EcuDatabase {
     private HashMap<Integer, String> m_ecuAddressing;
     private Set<String> m_projectSet;
     private String m_ecuFilePath;
-    private ZipFastFileSystem m_zipFileSystem;
+    private ZipFileSystem m_zipFileSystem;
 
     private HashMap<Integer, String> RXADDRMAP, TXADDRMAP;
     private HashMap<String, String> MODELSMAP;
@@ -344,7 +344,7 @@ public class EcuDatabase {
         }
         long indexTimeStamp = indexFile.lastModified();
         long ecuTimeStamp = ecuFile.lastModified();
-        m_zipFileSystem = new ZipFastFileSystem(m_ecuFilePath, appDir);
+        m_zipFileSystem = new ZipFileSystem(m_ecuFilePath, appDir);
 
         /*
          * If index is already made, use it
@@ -484,7 +484,7 @@ public class EcuDatabase {
         return TXADDRMAP.get(id);
     }
 
-    public ZipFastFileSystem getZipFileSystem(){
+    public ZipFileSystem getZipFileSystem(){
         return m_zipFileSystem;
     }
 }

@@ -251,15 +251,16 @@ public abstract class ElmBase {
 
     public void initElm() {
         write("AT Z");        // reset ELM
+    }
+
+    public void initCan(String rxa, String txa) {
         write("AT E1");
         write("AT S0");
         write("AT H0");
         write("AT L0");
         write("AT AL");
         write("AT CAF0");
-    }
 
-    public void initCan(String rxa, String txa) {
         write("AT SP 6");
         write("AT SH " + txa);
         write("AT CRA " + rxa.toUpperCase());
@@ -275,6 +276,14 @@ public abstract class ElmBase {
     public void initKwp(String addr, boolean fastInit) {
         mRxa = 0xF1;
         mTxa = Integer.parseInt(addr, 16);
+
+        write("AT WS");
+        write("AT E1");
+        write("AT L0");
+        write("AT D1");
+        write("AT H0");
+        write("AT AL");
+        write("AT KW0");
 
         write("AT SH 81 " + addr + " F1");
         write("AT SW 96");

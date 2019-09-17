@@ -1030,11 +1030,13 @@ public class ScreenActivity extends AppCompatActivity {
         if (isChatConnected()) {
             String txa = m_ecu.getTxId();
             String rxa = m_ecu.getRxId();
+            String fa = m_ecu.getFunctionnalAddress();
             if (m_ecu.getProtocol().equals("CAN")) {
                 mChatService.setEcuName(m_ecu.getName());
                 mChatService.initCan(rxa, txa);
             } else if (m_ecu.getProtocol().equals("KWP2000")){
-                mChatService.initKwp(m_ecu.getFunctionnalAddress(), m_ecu.getFastInit());
+
+                mChatService.initKwp(fa, m_ecu.getFastInit());
             }
             updateDisplays();
         }
