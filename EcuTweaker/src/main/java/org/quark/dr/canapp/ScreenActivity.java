@@ -2,8 +2,6 @@ package org.quark.dr.canapp;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -384,7 +382,7 @@ public class ScreenActivity extends AppCompatActivity {
         } else {
             chooseCategory();
         }
-        m_logView.append("Default diag session : " + m_ecu.getDefaultSDS());
+        m_logView.append("Default diag session : " + m_ecu.getDefaultSDS() + "\n");
     }
 
     void applySettings(){
@@ -740,7 +738,7 @@ public class ScreenActivity extends AppCompatActivity {
         if (requestHeader + 0x40 != responseHeader) {
             m_logView.append(getResources().getString(R.string.BAD_RESPONSE)
                     + " (" + responseHeader + ") " + getResources().getString(R.string.TO_REQUEST) +
-                    " : " + requestHeader);
+                    " : " + requestHeader + "\n");
             return;
         }
 

@@ -4,7 +4,6 @@ import android.content.Context;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Handler;
-import android.util.Log;
 
 import org.quark.dr.usbserial.driver.UsbSerialDriver;
 import org.quark.dr.usbserial.driver.UsbSerialPort;
@@ -71,7 +70,6 @@ public class ElmUsbSerial extends ElmBase {
         }
 
         if (msPort == null){
-            logInfo("error usb : no port found");
             return false;
         }
 
@@ -159,10 +157,9 @@ public class ElmUsbSerial extends ElmBase {
                 {
                     byte[] arrayOfBytes = buffer;
                     mUsbSerialPort.write(arrayOfBytes, 500);
-                    logInfo("USB : Wrote " + new String(buffer));
                 }
             } catch (Exception localIOException1) {
-                connectionLost("USBWRITE : " +  localIOException1.getMessage());
+                connectionLost("USBWRITE IO Exception : " +  localIOException1.getMessage());
                 try {
                     mUsbSerialPort.close();
                 } catch (IOException e){
@@ -177,32 +174,40 @@ public class ElmUsbSerial extends ElmBase {
                 try {
                     byte bytes[] = new byte[2048];
                     int bytes_count = 0;
-                    int num_tries = 0;
+                    long millis =System.currentTimeMillis();
                     if(mUsbSerialPort != null)
                     {
                         bytes_count = mUsbSerialPort.read(bytes, 1500);
-                        if (bytes_count == 0 && num_tries++ < 3){
-                            Thread.sleep(400);
+                        if (bytes_count == 0){
+                            Thread.sleep(5);
                         } else {
+                            boolean eof = false;
                             String res = new String(bytes);
                             res = res.substring(0, bytes_count);
-                            final_res.append(res);
+
+                            // Only break when ELM has sent termination char
                             if (res.charAt(res.length() - 1) == '>') {
-                                break;
+                                res = res.substring(0, res.length() - 2);
+                                eof = true;
                             }
+                            res = res.replaceAll("\r", "\n");
+                            final_res.append(res);
+                            if (eof)
+                                break;
+                        }
+                        if ((System.currentTimeMillis() - millis) > 4000){
+                            connectionLost("USBREAD : Timeout");
+                            break;
                         }
                     }
-
-
                 } catch (IOException localIOException) {
-                    connectionLost("USBREAD1 : " + localIOException.getMessage());
+                    connectionLost("USBREAD1 IO exception : " + localIOException.getMessage());
                     break;
                 } catch (Exception e) {
-                    connectionLost("USBREAD2 : " + e.getMessage());
+                    connectionLost("USBREAD2 Exception : " + e.getMessage());
                     break;
                 }
             }
-            logInfo("USBREAD : " + final_res.toString());
             return final_res.toString();
         }
 

@@ -20,11 +20,12 @@ package org.quark.dr.canapp;
  * Project home page: https://github.com/mik3y/usb-serial-for-android
  */
 
-import android.Manifest;
 import android.app.Activity;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
@@ -72,6 +73,8 @@ public class UsbDeviceActivity extends Activity {
     private static PendingIntent mPermissionIntent;
     private static final int MESSAGE_REFRESH = 101;
     private static final long REFRESH_TIMEOUT_MILLIS = 5000;
+    private static final String ACTION_USB_PERMISSION = "org.quark.dr.canapp.USB_PERMISSION";
+    private static UsbSerialPort mCurrentUsbSerial = null;
 
     private final Handler mHandler = new Handler() {
         @Override
@@ -89,6 +92,38 @@ public class UsbDeviceActivity extends Activity {
 
     };
 
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (mCurrentUsbSerial == null) {
+                return;
+            }
+            if (ACTION_USB_PERMISSION.equals(action)) {
+                synchronized (this) {
+                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                        UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                        UsbDeviceConnection connection =
+                                mUsbManager.openDevice(mCurrentUsbSerial.getDriver().getDevice());
+                        // Shouldn't happen, but who knows...
+                        if (connection == null)
+                            return;
+                        try{
+                            mCurrentUsbSerial.open(connection);
+                        } catch (IOException e){
+                            return;
+                        }
+
+                        Intent intentResult = new Intent();
+                        intentResult.putExtra(EXTRA_DEVICE_SERIAL, mCurrentUsbSerial.getSerial());
+                        // Set result and finish this Activity
+                        UsbDeviceActivity.this.setResult(Activity.RESULT_OK, intentResult);
+                        finish();
+                    }
+                }
+            }
+        }
+    };
+
     private List<UsbSerialPort> mEntries = new ArrayList<UsbSerialPort>();
     private ArrayAdapter<UsbSerialPort> mAdapter;
 
@@ -99,7 +134,7 @@ public class UsbDeviceActivity extends Activity {
 
         mPermissionIntent = PendingIntent.getBroadcast(getApplicationContext(),
                 0,
-                new Intent("org.quark.dr.canapp.USB_PERMISSION"), 0);
+                new Intent(ACTION_USB_PERMISSION), 0);
         mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
         mListView = findViewById(R.id.deviceList);
         mProgressBar = findViewById(R.id.progressBar);
@@ -133,8 +168,8 @@ public class UsbDeviceActivity extends Activity {
                 return row;
             }
         };
-        mListView.setAdapter(mAdapter);
 
+        mListView.setAdapter(mAdapter);
         mListView.setOnItemClickListener(new ListView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -150,8 +185,9 @@ public class UsbDeviceActivity extends Activity {
                 Intent intent = new Intent();
                 String usbaddr = "";
 
-                mUsbManager.requestPermission(port.getDriver().getDevice(), mPermissionIntent);
+                // Check permissions
                 if (mUsbManager.hasPermission(port.getDriver().getDevice())) {
+                    // Permission OK
                     UsbDeviceConnection connection =
                             mUsbManager.openDevice(port.getDriver().getDevice());
 
@@ -159,6 +195,10 @@ public class UsbDeviceActivity extends Activity {
                         try {
                             port.open(connection);
                             usbaddr = port.getSerial();
+                            intent.putExtra(EXTRA_DEVICE_SERIAL, usbaddr);
+                            // All is OK. set result and finish this Activity
+                            setResult(Activity.RESULT_OK, intent);
+                            finish();
                         } catch (IOException e) {
                             Log.e("canapp", "USB Activity, connection failed");
                             intent.putExtra(EXTRA_DEVICE_SERIAL, "CONNECTION FAILED");
@@ -172,15 +212,15 @@ public class UsbDeviceActivity extends Activity {
                         finish();
                     }
                 } else {
+                    // Request permission
+                    mCurrentUsbSerial = port;
+                    mUsbManager.requestPermission(port.getDriver().getDevice(), mPermissionIntent);
                     return;
                 }
-
-                intent.putExtra(EXTRA_DEVICE_SERIAL, usbaddr);
-                // Set result and finish this Activity
-                setResult(Activity.RESULT_OK, intent);
-                finish();
             }
         });
+
+        getApplicationContext().registerReceiver(mReceiver, new IntentFilter(ACTION_USB_PERMISSION));
     }
 
     @Override
@@ -241,6 +281,4 @@ public class UsbDeviceActivity extends Activity {
     private void hideProgressBar() {
         mProgressBar.setVisibility(View.INVISIBLE);
     }
-
-
 }

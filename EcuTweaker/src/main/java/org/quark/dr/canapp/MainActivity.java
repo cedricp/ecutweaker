@@ -6,19 +6,16 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.hardware.usb.UsbDevice;
-import android.hardware.usb.UsbManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.Settings;
@@ -48,11 +45,16 @@ import org.quark.dr.ecu.EcuDatabase;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigInteger;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -75,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
     final static String TAG = "EcuTweaker";
     final static int PERMISSIONS_ACCESS_EXTERNAL_STORAGE = 0;
     final static int PERMISSIONS_ACCESS_COARSE_LOCATION = 1;
+    final static int PERMISSIONS_WRITE_EXTERNAL_STORAGE = 2;
     // Intent request codes
     private static final int    REQUEST_CONNECT_DEVICE = 1;
     private static final int    REQUEST_SCREEN         = 2;
@@ -197,6 +200,14 @@ public class MainActivity extends AppCompatActivity {
         viewLogButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                try {
+                    MainActivity.this.copyLogs();
+                } catch (IOException e){
+                    mLogView.append("Error : Cannot copy logs\n");
+                    return;
+                }
+
+                if (true) return;
                 mLastLog = readFileAsString(
                         MainActivity.this.getApplicationContext().getFilesDir().
                                 getAbsolutePath() + "/log.txt");
@@ -338,6 +349,12 @@ public class MainActivity extends AppCompatActivity {
             parseDatabase();
         } else {
             askStoragePermission();
+        }
+
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED){
+            askStorageWritePermission();
         }
 
         if (ContextCompat.checkSelfPermission(this,
@@ -531,6 +548,7 @@ public class MainActivity extends AppCompatActivity {
             } else if (protocol.equals("KWP2000")){
                 String hexAddr = Ecu.padLeft(Integer.toHexString(mCurrentEcuAddressId),
                         2, "0");
+                // TODO : Check slow init mode
                 mChatService.initKwp(hexAddr, true);
             }
         }
@@ -744,6 +762,25 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    void askStorageWritePermission(){
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                Toast.makeText(this,
+                        "You may need write storage permission to use this application",
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        PERMISSIONS_WRITE_EXTERNAL_STORAGE);
+            }
+        }
+    }
+
+
+
     void askLocationPermission(){
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION);
         if (permissionCheck != PackageManager.PERMISSION_GRANTED){
@@ -829,10 +866,12 @@ public class MainActivity extends AppCompatActivity {
                         mLogView.append("Using USB HW # " + serial + "\n");
                     }
                 } else if (resultCode == Activity.RESULT_CANCELED) {
-                    if (data.getExtras().containsKey(UsbDeviceActivity.EXTRA_DEVICE_SERIAL)) {
-                        String error_code =
-                                data.getExtras().getString(UsbDeviceActivity.EXTRA_DEVICE_SERIAL);
-                        mLogView.append("Using USB connection error : " + error_code + "\n");
+                    if (data != null) {
+                        if (data.getExtras().containsKey(UsbDeviceActivity.EXTRA_DEVICE_SERIAL)) {
+                            String error_code =
+                                    data.getExtras().getString(UsbDeviceActivity.EXTRA_DEVICE_SERIAL);
+                            mLogView.append("Using USB connection error : " + error_code + "\n");
+                        }
                     }
                 }
                 break;
@@ -1169,5 +1208,48 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean isChatConnecting(){
         return mChatService != null && (mChatService.getState() == STATE_CONNECTING);
+    }
+
+    protected String getTimeStamp() {
+        return new String("[" + new SimpleDateFormat("dd-MM-hh:mm:ss")
+                .format(new Date()) + "] ");
+    }
+
+    public void copyLogs() throws IOException {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_GRANTED) {
+            String logSrc = getApplicationContext().getFilesDir().getAbsolutePath() + "/log.txt";
+            String logFilename = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/logs_" + getTimeStamp() + ".txt";
+            File src = new File(logSrc);
+            File dst = new File(logFilename);
+            InputStream in = new FileInputStream(src);
+            try {
+                OutputStream out = new FileOutputStream(dst);
+                try {
+                    // Transfer bytes from in to out
+                    byte[] buf = new byte[1024];
+                    int len;
+                    while ((len = in.read(buf)) > 0) {
+                        out.write(buf, 0, len);
+                    }
+                } finally {
+                    out.close();
+                }
+                Toast.makeText(this,
+                        "Logs copied to your Download directory",
+                        Toast.LENGTH_SHORT).show();
+            } catch (IOException e) {
+                mLogView.append("Error copying logs : " + e.getMessage() + "\n");
+            } finally {
+
+                in.close();
+                return;
+            }
+        } else {
+            Toast.makeText(this,
+                    "You need write storage permission",
+                    Toast.LENGTH_SHORT).show();
+        }
     }
 }

@@ -2,6 +2,7 @@ package org.quark.dr.canapp;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 
@@ -10,9 +11,12 @@ import org.quark.dr.ecu.IsoTPDecode;
 import org.quark.dr.ecu.IsoTPEncode;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -241,7 +245,7 @@ public abstract class ElmBase {
     }
 
     protected String getTimeStamp() {
-        return new String("[" + new SimpleDateFormat("dd-MM-yyyy-hh-mm-ss")
+        return new String("[" + new SimpleDateFormat("dd-MM-hh:mm:ss")
                 .format(new Date()) + "] ");
     }
 
@@ -269,20 +273,26 @@ public abstract class ElmBase {
     }
 
     public void initKwp(String addr, boolean fastInit) {
+        mRxa = 0xF1;
+        mTxa = Integer.parseInt(addr, 16);
+
         write("AT SH 81 " + addr + " F1");
         write("AT SW 96");
         write("AT WM 81 " + addr + " F1 3E");
         write("AT IB10");
         write("AT ST FF");
         write("AT AT 0");
+
         if (!fastInit) {
             write("AT SP 4");
-            write("AT " + addr);
-            write("AT AT 1");
+            write("AT IIA " + addr);
+            write("AT SI");
         } else {
             write("AT SP 5");
             write("AT FI");
         }
+
+        write("AT AT 1");
     }
 
     public void setTimeOut(int timeOut) {

@@ -362,6 +362,9 @@ public class EcuDatabase {
             m_zipFileSystem.getZipEntries();
             m_zipFileSystem.exportZipEntries();
             bytes = m_zipFileSystem.getZipFile("db.json");
+            if (bytes.isEmpty()){
+                throw new DatabaseException("Database (db.json) file not found");
+            }
         }
 
         JSONObject jsonRootObject;
