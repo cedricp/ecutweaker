@@ -171,44 +171,54 @@ public class ElmUsbSerial extends ElmBase {
         public String readFromElm() {
             StringBuilder final_res = new StringBuilder();
             while (true) {
-                try {
-                    byte bytes[] = new byte[2048];
-                    int bytes_count = 0;
-                    long millis =System.currentTimeMillis();
-                    if(mUsbSerialPort != null)
-                    {
+                byte bytes[] = new byte[2048];
+                int bytes_count = 0;
+                long millis =System.currentTimeMillis();
+                if(mUsbSerialPort != null)
+                {
+                    try {
                         bytes_count = mUsbSerialPort.read(bytes, 1500);
-                        if (bytes_count > 0){
-                            boolean eof = false;
-                            String res = new String(bytes, 0, bytes_count);
-                            res = res.substring(0, bytes_count);
-
-                            if(res.length() > 0) {
-                                // Only break when ELM has sent termination char
-                                if (res.charAt(res.length() - 1) == '>') {
-                                    res = res.substring(0, res.length() - 2);
-                                    eof = true;
-                                }
-                                res = res.replaceAll("\r", "\n");
-                                final_res.append(res);
-                                if (eof)
-                                    break;
-                            }
-                        } else {
-                            Thread.sleep(5);
-                        }
-                        if ((System.currentTimeMillis() - millis) > 4000){
-                            connectionLost("USBREAD : Timeout");
-                            break;
-                        }
-
+                    } catch (IOException e){
+                        logInfo("USB read IO exception : " + e.getMessage());
+                        bytes_count = 0;
+                    } catch (NullPointerException pne){
+                        connectionLost("USB read exception (closing) : " + pne.getMessage());
+                        break;
+                    } catch (Exception e) {
+                        logInfo("USB read exception : " + e.getMessage());
                     }
-                } catch (IOException localIOException) {
-                    connectionLost("USBREAD1 IO exception : " + localIOException.getMessage());
-                    break;
-                } catch (Exception e) {
-                    connectionLost("USBREAD2 Exception : " + e.getMessage());
-                    break;
+
+                    if (bytes_count > 0){
+                        boolean eof = false;
+                        String res = new String(bytes, 0, bytes_count);
+                        res = res.substring(0, bytes_count);
+
+                        if(res.length() > 0) {
+                            // Only break when ELM has sent termination char
+                            if (res.charAt(res.length() - 1) == '>') {
+                                if (res.length() > 2)
+                                    res = res.substring(0, res.length() - 2);
+                                else
+                                    res = "";
+                                eof = true;
+                            }
+                            res = res.replaceAll("\r", "\n");
+                            final_res.append(res);
+                            if (eof)
+                                break;
+                        }
+                    } else {
+                        try {
+                            Thread.sleep(5);
+                        } catch (Exception e){
+
+                        }
+                    }
+                    if ((System.currentTimeMillis() - millis) > 4000){
+                        connectionLost("USB read : Timeout");
+                        break;
+                    }
+
                 }
             }
             return final_res.toString();

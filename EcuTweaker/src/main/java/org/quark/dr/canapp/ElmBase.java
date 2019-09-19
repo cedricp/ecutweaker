@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
+import static java.lang.Math.PI;
 import static java.lang.Math.min;
 
 public abstract class ElmBase {
@@ -49,6 +50,7 @@ public abstract class ElmBase {
     protected boolean mSessionActive;
     private EcuDatabase mEcuDatabase;
     private boolean mCFC0;
+    private String mProtocol;
 
     static public ElmBase getSingleton() {
         return mSingleton;
@@ -139,6 +141,7 @@ public abstract class ElmBase {
     protected abstract String writeRaw(String raw_buffer);
 
     public ElmBase(Handler handler, String logDir) {
+        mProtocol = "UNDEFINED";
         mMessages = new ArrayList<>();
         mConnectionHandler = handler;
         mLogFile = null;
@@ -147,7 +150,7 @@ public abstract class ElmBase {
         mSessionActive = false;
         mState = STATE_NONE;
         mTxa = mRxa = -1;
-        mCFC0 = true;
+        mCFC0 = false;
         createLogFile();
         buildMaps();
     }
@@ -250,10 +253,13 @@ public abstract class ElmBase {
     }
 
     public void initElm() {
+        logInfo("Reintializing ELM...");
         write("AT Z");        // reset ELM
     }
 
     public void initCan(String rxa, String txa) {
+        logInfo("Intializing CAN protocol...");
+        mProtocol = "CAN";
         write("AT E1");
         write("AT S0");
         write("AT H0");
@@ -274,6 +280,8 @@ public abstract class ElmBase {
     }
 
     public void initKwp(String addr, boolean fastInit) {
+        logInfo("Intializing KPW2000 protocol...");
+        mProtocol = "KWP2000";
         mRxa = 0xF1;
         mTxa = Integer.parseInt(addr, 16);
 
@@ -394,10 +402,16 @@ public abstract class ElmBase {
                         }
                     }
                 } else {
-                    if (mCFC0)
-                        sendCanCFC0(message);
-                    else
-                        sendCan(message);
+                    if (mProtocol.equals("CAN")) {
+                        if (mCFC0)
+                            sendCanCFC0(message);
+                        else
+                            sendCan(message);
+                    } else {
+                        // KWP / ISO8
+                        sendISO(message);
+                    }
+
                     synchronized (this) {
                         if (mConnectionHandler != null) {
                             mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_QUEUE_STATE,
@@ -417,7 +431,7 @@ public abstract class ElmBase {
             }
 
             // Keep session alive
-            if (mSessionActive && ((System.currentTimeMillis() - timer) > 1500) && mRxa > 0) {
+            if (mProtocol.equals("CAN") && mSessionActive && ((System.currentTimeMillis() - timer) > 1500) && mRxa > 0) {
                 timer = System.currentTimeMillis();
                 writeRaw("013E");
             }
@@ -428,6 +442,43 @@ public abstract class ElmBase {
 
     void setSessionActive(boolean active) {
         mSessionActive = active;
+    }
+
+    protected void sendISO(String message){
+        String messageResult = writeRaw(message);
+
+        // Parse response
+        StringBuilder resultMess = new StringBuilder();
+        for (String s : messageResult.split("\n")){
+            // Remove useless whitespaces
+            String cleanedMessage = s.replace(" ", "");
+            if (cleanedMessage.equals(message)){
+                // Echo cancellation
+                continue;
+            }
+            resultMess.append(cleanedMessage);
+        }
+
+        try {
+            if (mLogFile != null) {
+                mLogFile.append("ISO SENT: " + getTimeStamp() + message + "\n");
+                mLogFile.append("ISO RECV: " + getTimeStamp() + resultMess.toString() + "\n");
+            }
+        } catch (IOException e) {
+            logInfo("Log error : " + e.getMessage());
+        }
+
+        String result = message + ";" + resultMess.toString();
+
+        int result_length = result.length();
+        byte[] tmpbuf = new byte[result_length];
+        //Make copy for not to rewrite in other thread
+        System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);
+        synchronized (this) {
+            if (mConnectionHandler != null) {
+                mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, -1, tmpbuf).sendToTarget();
+            }
+        }
     }
 
     protected void sendCanCFC0(String message){
@@ -636,6 +687,16 @@ public abstract class ElmBase {
             result = isotpdec.decodeCan();
         }
 
+        try {
+            if (mLogFile != null) {
+                mLogFile.append("CAN CFC SENT: " + getTimeStamp() + message + "\n");
+                mLogFile.append("CAN CFC RECV: " + getTimeStamp() + result + "\n");
+            }
+        } catch (IOException e) {
+            logInfo("Log error : " + e.getMessage());
+            e.printStackTrace();
+        }
+
         result = message + ";" + result;
         int result_length = result.length();
         byte[] tmpbuf = new byte[result_length];
@@ -695,8 +756,8 @@ public abstract class ElmBase {
 
         try {
             if (mLogFile != null) {
-                mLogFile.append("SENT: " + getTimeStamp() + message + "\n");
-                mLogFile.append("RECV: " + getTimeStamp() + result + "\n");
+                mLogFile.append("CAN SENT: " + getTimeStamp() + message + "\n");
+                mLogFile.append("CAN RECV: " + getTimeStamp() + result + "\n");
             }
         } catch (IOException e) {
             logInfo("Log error : " + e.getMessage());

@@ -53,7 +53,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.quark.dr.canapp.ElmBase.mEcuErrorCodeString;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTED;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTING;
 import static org.quark.dr.canapp.ElmBluetooth.STATE_DISCONNECTED;
@@ -731,8 +730,14 @@ public class ScreenActivity extends AppCompatActivity {
             return;
         }
 
-        int responseHeader = Integer.parseInt(response.substring(0, 2), 16);
-        int requestHeader = Integer.parseInt(req.substring(0, 2), 16);
+        int responseHeader, requestHeader;
+        try {
+            responseHeader = Integer.parseInt(response.substring(0, 2), 16);
+            requestHeader = Integer.parseInt(req.substring(0, 2), 16);
+        } catch (Exception e){
+            m_logView.append("Cannot decode service ID of " + response + "/" + req + "\n");
+            return;
+        }
 
         // Check response is ok
         if (requestHeader + 0x40 != responseHeader) {
@@ -1028,14 +1033,13 @@ public class ScreenActivity extends AppCompatActivity {
 
     private void initBus(){
         if (isChatConnected()) {
-            String txa = m_ecu.getTxId();
-            String rxa = m_ecu.getRxId();
-            String fa = m_ecu.getFunctionnalAddress();
             if (m_ecu.getProtocol().equals("CAN")) {
+                String txa = m_ecu.getTxId();
+                String rxa = m_ecu.getRxId();
                 mChatService.setEcuName(m_ecu.getName());
                 mChatService.initCan(rxa, txa);
             } else if (m_ecu.getProtocol().equals("KWP2000")){
-
+                String fa = m_ecu.getFunctionnalAddress();
                 mChatService.initKwp(fa, m_ecu.getFastInit());
             }
             updateDisplays();

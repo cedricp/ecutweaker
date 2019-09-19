@@ -539,11 +539,11 @@ public class MainActivity extends AppCompatActivity {
 
     void initBus(String protocol){
         if (isChatConnected()) {
-            String txa = mEcuDatabase.getTxAddressById(mCurrentEcuAddressId);
-            String rxa = mEcuDatabase.getRxAddressById(mCurrentEcuAddressId);
-            if (rxa == null || txa == null)
-                return;
             if (protocol.equals("CAN")) {
+                String txa = mEcuDatabase.getTxAddressById(mCurrentEcuAddressId);
+                String rxa = mEcuDatabase.getRxAddressById(mCurrentEcuAddressId);
+                if (rxa == null || txa == null)
+                    return;
                 mChatService.initCan(rxa, txa);
             } else if (protocol.equals("KWP2000")){
                 String hexAddr = Ecu.padLeft(Integer.toHexString(mCurrentEcuAddressId),

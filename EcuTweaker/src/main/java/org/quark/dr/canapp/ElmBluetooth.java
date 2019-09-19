@@ -116,18 +116,8 @@ public class ElmBluetooth extends ElmBase {
 
     @Override
     protected String writeRaw(String raw_buffer) {
+        raw_buffer += "\r";
         return mConnectedThread.write(raw_buffer);
-    }
-
-    public void initCan(String rxa, String txa){
-        write("AT SP 6");
-        write("AT SH " + txa);
-        write("AT CRA " + rxa.toUpperCase());
-        write("AT FC SH " + txa.toUpperCase());
-        write("AT FC SD 30 00 00");
-        write("AT FC SM 1");
-        mRxa = Integer.parseInt(rxa, 16);
-        mTxa = Integer.parseInt(txa, 16);
     }
 
     private void connectionFailed() {
@@ -268,7 +258,6 @@ public class ElmBluetooth extends ElmBase {
         }
 
         private String write(String raw_buffer) {
-            raw_buffer += "\r";
             byte[] reply_buffer = new byte[4096];
             try {
                 mmOutStream.write(raw_buffer.getBytes());
