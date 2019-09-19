@@ -1,6 +1,8 @@
 package org.quark.dr.canapp;
 
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Handler;
@@ -18,10 +20,16 @@ public class ElmUsbSerial extends ElmBase {
     private final Context mContext;
     private ConnectedThread mConnectedThread;
     private String mUsbSerial;
+    private static PendingIntent mPermissionIntent;
+
+    private static final String ACTION_USB_PERMISSION = "org.quark.dr.canapp.USB_PERMISSION";
 
     ElmUsbSerial(Context context, Handler handler, String logDir) {
         super(handler, logDir);
         mContext = context;
+        mPermissionIntent = PendingIntent.getBroadcast(context,
+                0,
+                new Intent(ACTION_USB_PERMISSION), 0);
     }
 
     @Override
@@ -47,6 +55,7 @@ public class ElmUsbSerial extends ElmBase {
             final List<UsbSerialPort> ports = driver.getPorts();
             result.addAll(ports);
             for (UsbSerialPort port : ports){
+                msPort = port;
                 if (!usbManager.hasPermission(port.getDriver().getDevice())){
                     logInfo("No permission to access USB device " + serial);
                 }
@@ -61,6 +70,7 @@ public class ElmUsbSerial extends ElmBase {
                         msPort = port;
                         break;
                     } else {
+                        msPort = null;
                         port.close();
                     }
                 } catch (IOException e) {
@@ -236,8 +246,23 @@ public class ElmUsbSerial extends ElmBase {
             try {
                 join();
             } catch (InterruptedException e) {
-
             }
         }
+    }
+
+    @Override
+    public boolean hasDevicePermission(){
+        if (msPort == null)
+            return true;
+        final UsbManager usbManager = (UsbManager) mContext.getApplicationContext().getSystemService(Context.USB_SERVICE);
+        return usbManager.hasPermission(msPort.getDriver().getDevice());
+    }
+
+    @Override
+    public void requestPermission(){
+        if (msPort == null)
+            return;
+        final UsbManager usbManager = (UsbManager) mContext.getApplicationContext().getSystemService(Context.USB_SERVICE);
+        usbManager.requestPermission(msPort.getDriver().getDevice(), mPermissionIntent);
     }
 }

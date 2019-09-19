@@ -1041,6 +1041,9 @@ public class ScreenActivity extends AppCompatActivity {
             } else if (m_ecu.getProtocol().equals("KWP2000")){
                 String fa = m_ecu.getFunctionnalAddress();
                 mChatService.initKwp(fa, m_ecu.getFastInit());
+            } else if (m_ecu.getProtocol().equals("ISO8")){
+                String fa = m_ecu.getFunctionnalAddress();
+                mChatService.initIso8(fa);
             }
             updateDisplays();
         }
@@ -1135,6 +1138,7 @@ public class ScreenActivity extends AppCompatActivity {
 
         if (requestCode.equals(m_currentDtcRequestBytes)){
             decodeDTC(replyCode);
+            m_currentDtcRequestBytes = "";
             return;
         }
 

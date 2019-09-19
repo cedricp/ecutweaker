@@ -2,7 +2,6 @@ package org.quark.dr.canapp;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 
@@ -11,19 +10,15 @@ import org.quark.dr.ecu.IsoTPDecode;
 import org.quark.dr.ecu.IsoTPEncode;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
-import static java.lang.Math.PI;
 import static java.lang.Math.min;
 
 public abstract class ElmBase {
@@ -139,6 +134,12 @@ public abstract class ElmBase {
     public abstract int getMode();
 
     protected abstract String writeRaw(String raw_buffer);
+    public boolean hasDevicePermission(){
+        return true;
+    }
+    public void requestPermission(){
+    }
+
 
     public ElmBase(Handler handler, String logDir) {
         mProtocol = "UNDEFINED";
@@ -216,7 +217,10 @@ public abstract class ElmBase {
         File file = new File(mLogDir + "/log.txt");
         if (!file.exists()) {
             try {
-                file.createNewFile();
+                boolean ok = file.createNewFile();
+                if(!ok){
+                    logInfo("Log file create error");
+                }
             } catch (IOException e) {
                 logInfo("Log file create error : " + e.getMessage());
                 e.printStackTrace();
@@ -230,15 +234,27 @@ public abstract class ElmBase {
             e.printStackTrace();
         }
         try {
-            mLogFile.write(getTimeStamp() + " Log file created open");
+            mLogFile.append(getTimeStamp() + " Log file created\n");
+            mLogFile.flush();
         } catch (Exception e){
             logInfo("Log file write error : " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    protected void closeLogFile(){
+    public void flushLogs() {
+        if (mLogFile != null) {
+            try {
+                mLogFile.flush();
+            } catch (IOException e){
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void closeLogFile(){
         if (mLogFile != null){
+            flushLogs();
             try {
                 mLogFile.close();
             } catch (IOException e){
@@ -253,7 +269,8 @@ public abstract class ElmBase {
     }
 
     public void initElm() {
-        logInfo("Reintializing ELM...");
+        mProtocol = "UNDEFINED";
+        logInfo("Re-intializing ELM...");
         write("AT Z");        // reset ELM
     }
 
@@ -279,12 +296,7 @@ public abstract class ElmBase {
             write("AT CFC0");
     }
 
-    public void initKwp(String addr, boolean fastInit) {
-        logInfo("Intializing KPW2000 protocol...");
-        mProtocol = "KWP2000";
-        mRxa = 0xF1;
-        mTxa = Integer.parseInt(addr, 16);
-
+    private void initIso(){
         write("AT WS");
         write("AT E1");
         write("AT L0");
@@ -292,6 +304,15 @@ public abstract class ElmBase {
         write("AT H0");
         write("AT AL");
         write("AT KW0");
+    }
+
+    public void initKwp(String addr, boolean fastInit) {
+        logInfo("Intializing KPW2000 protocol...");
+        mProtocol = "KWP2000";
+        mRxa = 0xF1;
+        mTxa = Integer.parseInt(addr, 16);
+
+        initIso();
 
         write("AT SH 81 " + addr + " F1");
         write("AT SW 96");
@@ -309,6 +330,25 @@ public abstract class ElmBase {
             write("AT FI");
         }
 
+        write("AT AT 1");
+    }
+
+    public void initIso8(String addr) {
+        logInfo("Intializing ISO8 protocol...");
+        mProtocol = "ISO8";
+        mRxa = 0xF1;
+        mTxa = Integer.parseInt(addr, 16);
+
+        initIso();
+
+        write("AT SH 81 " + addr + " F1");
+        write("AT SW 96");
+        write("AT WM 81 " + addr + " F1 3E");
+        write("AT IB10");
+        write("AT ST FF");
+        write("AT SP 3");
+        write("AT AT 0");
+        write("AT SI");
         write("AT AT 1");
     }
 
@@ -459,16 +499,18 @@ public abstract class ElmBase {
             resultMess.append(cleanedMessage);
         }
 
+        String result = resultMess.toString();
+
         try {
             if (mLogFile != null) {
                 mLogFile.append("ISO SENT: " + getTimeStamp() + message + "\n");
-                mLogFile.append("ISO RECV: " + getTimeStamp() + resultMess.toString() + "\n");
+                mLogFile.append("ISO RECV: " + getTimeStamp() + result + "\n");
             }
         } catch (IOException e) {
             logInfo("Log error : " + e.getMessage());
         }
 
-        String result = message + ";" + resultMess.toString();
+        result = message + ";" + result;
 
         int result_length = result.length();
         byte[] tmpbuf = new byte[result_length];

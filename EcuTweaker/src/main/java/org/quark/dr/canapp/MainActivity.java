@@ -208,6 +208,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 if (true) return;
+
                 mLastLog = readFileAsString(
                         MainActivity.this.getApplicationContext().getFilesDir().
                                 getAbsolutePath() + "/log.txt");
@@ -279,7 +280,7 @@ public class MainActivity extends AppCompatActivity {
         mBtButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                selectBtDevice();
+                selectDevice();
             }
         });
 
@@ -481,7 +482,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void connectDevice() {
-        Log.e(TAG, "?? Trying reconnect 1 ...");
         if (mChatService != null){
             if ((mChatService.getMode() == MODE_BT) && (mLinkMode == LINK_BLUETOOTH)){
                 if (mBtDeviceAddress.isEmpty())
@@ -494,26 +494,25 @@ public class MainActivity extends AppCompatActivity {
 
             if ((mChatService.getMode() == MODE_WIFI) && (mLinkMode == LINK_WIFI)){
                 // No need to recreate ELM manager instance
-                Log.e(TAG, "?? Trying reconnect WIFI...");
                 mChatService.reconnect();
                 return;
             }
 
             if ((mChatService.getMode() == MODE_USB) && (mLinkMode == LINK_USB)){{
-                Log.e(TAG, "?? Trying reconnect USB...");
                 mChatService.connect(mUsbSerialNumber);
                 return;
             }}
         }
 
+        String filesDir = getApplicationContext().getFilesDir().getAbsolutePath();
         if (mLinkMode == LINK_BLUETOOTH) {
             BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
             if (btAdapter != null && !btAdapter.isEnabled()){
                 return;
             }
 
-            mChatService = ElmBase.createBluetoothSingleton(mHandler,
-                    getApplicationContext().getFilesDir().getAbsolutePath());
+            mChatService = ElmBase.createBluetoothSingleton(mHandler, filesDir);
+                    ;
             // address is the device MAC address
             // Get the BluetoothDevice object
             if (btAdapter == null || mBtDeviceAddress.isEmpty() || isChatConnected())
@@ -525,19 +524,23 @@ public class MainActivity extends AppCompatActivity {
             // Attempt to connect to the device
             mChatService.connect(mBtDeviceAddress);
         } else if (mLinkMode == LINK_WIFI) {
-            mChatService = ElmBase.createWifiSingleton(getApplicationContext(), mHandler,
-                    getApplicationContext().
-                    getFilesDir().getAbsolutePath());
+            mChatService = ElmBase.createWifiSingleton(getApplicationContext(), mHandler, filesDir);
             mChatService.connect("");
         } else {
-            mChatService = ElmBase.createSerialSingleton(getApplicationContext(), mHandler,
-                    getApplicationContext().
-                            getFilesDir().getAbsolutePath());
+            mChatService = ElmBase.createSerialSingleton(getApplicationContext(), mHandler, filesDir);
             mChatService.connect(mUsbSerialNumber);
+        }
+
+        try {
+            if (!mChatService.hasDevicePermission()) {
+                mChatService.requestPermission();
+            }
+        } catch (Exception e){
+            mLogView.append("Exception when trying to get permission : " + e.getMessage() + "\n");
         }
     }
 
-    void initBus(String protocol){
+    void initBus(String protocol, boolean fastinit){
         if (isChatConnected()) {
             if (protocol.equals("CAN")) {
                 String txa = mEcuDatabase.getTxAddressById(mCurrentEcuAddressId);
@@ -549,7 +552,12 @@ public class MainActivity extends AppCompatActivity {
                 String hexAddr = Ecu.padLeft(Integer.toHexString(mCurrentEcuAddressId),
                         2, "0");
                 // TODO : Check slow init mode
-                mChatService.initKwp(hexAddr, true);
+                mChatService.initKwp(hexAddr, fastinit);
+            } else if (protocol.equals("ISO8")){
+                String hexAddr = Ecu.padLeft(Integer.toHexString(mCurrentEcuAddressId),
+                        2, "0");
+                // TODO : Check slow init mode
+                mChatService.initIso8(hexAddr);
             }
         }
     }
@@ -609,7 +617,7 @@ public class MainActivity extends AppCompatActivity {
         mChatService.changeHandler(mHandler);
         mChatService.setSessionActive(false);
         mChatService.initElm();
-        initBus("CAN");
+        initBus("CAN", false);
         mChatService.setTimeOut(1000);
         /*
          * (older) ECUs gives their identifiers with 2180 command
@@ -628,11 +636,18 @@ public class MainActivity extends AppCompatActivity {
         mChatService.changeHandler(mHandler);
         mChatService.setSessionActive(false);
         mChatService.initElm();
-        initBus("KWP2000");
+        // Try slow init
+        initBus("KWP2000", false);
         mChatService.setTimeOut(1000);
         /*
          * (old) ECUs gives their identifiers with 2180 command
          */
+        sendCmd("10C0");
+        sendCmd("2180");
+
+        // Try fast init
+        initBus("KWP2000", true);
+        mChatService.setTimeOut(1000);
         sendCmd("10C0");
         sendCmd("2180");
     }
@@ -649,7 +664,7 @@ public class MainActivity extends AppCompatActivity {
         mChatService.changeHandler(mHandler);
         mChatService.setSessionActive(false);
         mChatService.initElm();
-        initBus("CAN");
+        initBus("CAN", false);
         mChatService.setTimeOut(1000);
         /*
          * (new) ECUs gives their identifiers with these commands
@@ -690,7 +705,7 @@ public class MainActivity extends AppCompatActivity {
         mSpecificEcuListView.setAdapter(adapter);
     }
 
-    void selectBtDevice(){
+    void selectDevice(){
         BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         // If the adapter is null, then Bluetooth is not supported
@@ -814,8 +829,10 @@ public class MainActivity extends AppCompatActivity {
     {
         super.onDestroy();
         stopConnectionTimer();
-        if (mChatService != null)
+        if (mChatService != null) {
             mChatService.disconnect();
+            mChatService.closeLogFile();
+        }
     }
 
     @Override
@@ -1216,6 +1233,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void copyLogs() throws IOException {
+        if (mChatService != null)
+            mChatService.flushLogs();
+
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 == PackageManager.PERMISSION_GRANTED) {
