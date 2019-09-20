@@ -1345,16 +1345,20 @@
       "manualsend": true,
       "sendbyte_dataitems": {
         "Timeout Roof Button Window Close": {
-          "firstbyte": 5
+          "firstbyte": 5,
+          "endian": "little"
         },
         "Voltage High 1": {
-          "firstbyte": 25
+          "firstbyte": 25,
+          "endian": "little"
         },
         "Timeout Button Windows": {
-          "firstbyte": 11
+          "firstbyte": 11,
+          "endian": "little"
         },
         "Voltage High 3": {
-          "firstbyte": 23
+          "firstbyte": 23,
+          "endian": "little"
         },
         "Maximum Veh. Speed": {
           "firstbyte": 18

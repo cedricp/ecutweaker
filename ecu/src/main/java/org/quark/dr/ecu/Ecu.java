@@ -172,6 +172,8 @@ public class Ecu {
             int startBit = dataitem.bitoffset;
             boolean little_endian = false;
 
+            int requiredDataBytesLen = (int)(Math.ceil(((float)bitscount + (float)startBit) / 8.0f));
+
             if (global_endian.equals("Little"))
                 little_endian = true;
 
@@ -218,7 +220,7 @@ public class Ecu {
                     finalbinvalue = integerToBinaryString(intval, bitscount);
                 } else {
                     // Hex string
-                    if (value instanceof String == false) {
+                    if (!(value instanceof String)) {
                         throw new ClassCastException("Value must be hex a string");
                     }
                     String vv = (String)value;
@@ -228,54 +230,50 @@ public class Ecu {
 
             finalbinvalue = padLeft(finalbinvalue, bitscount, "0");
             int numreqbytes = (int)(Math.ceil(((float)(bitscount + startBit) / 8.f)));
+
             byte[] request_bytes = Arrays.copyOfRange(byte_list, start_byte, start_byte + numreqbytes);
             String requestasbin = "";
+            String bitmask = padLeft("", bitscount, "1");
 
-            for (int i = 0; i < request_bytes.length; ++i){
+            for (int i = 0; i < request_bytes.length; ++i) {
                 requestasbin += byteToBinaryString(request_bytes[i], 8);
+            }
+
+            if (little_endian){
+                /*
+                 * Handle little endian value (not an easy task...)
+                 */
+                // Moves the bytes to to left
+                for (int i = 0; i < startBit; ++i) {
+                    requestasbin += "0";
+                    bitmask += "0";
+                }
+
+                requestasbin = padLeft(requestasbin, requiredDataBytesLen * 8, "0");
+                bitmask = padLeft(bitmask, requiredDataBytesLen * 8, "0");
+
+                String tmp = "";
+                String tmpmask = "";
+                for (int i = requiredDataBytesLen - 1; i > 0 ; ++i){
+                    tmp += requestasbin.substring(i * 8, i * 8 + 8);
+                    tmpmask += bitmask.substring(i * 8, i * 8 + 8);
+                }
+                requestasbin = tmp;
+                bitmask = tmpmask;
             }
 
             char[] binaryRequest = requestasbin.toCharArray();
             char[] binaryValue = finalbinvalue.toCharArray();
 
-            if (!little_endian){
-                // Big endian
-                for (int i = 0; i < bitscount; ++i){
-                    binaryRequest[i + startBit] = binaryValue[i];
+            if (little_endian) {
+                for (int i = 0; i < bitscount; ++i) {
+                    if (little_endian && bitmask.charAt(i) == '1') {
+                        binaryRequest[i + startBit] = binaryValue[i];
+                    }
                 }
             } else {
-                // Little endian
-                int remainingBits = bitscount;
-                int lastBit = 7 - startBit + 1;
-                int firstBit = lastBit - bitscount;
-
-                if (firstBit < 0)
-                    firstBit = 0;
-
-                int count = 0;
-                for (int i = firstBit; i < lastBit; ++i, ++count){
-                    binaryRequest[i] = binaryValue[count];
-                }
-
-                remainingBits -= count;
-
-                int currentbyte = 1;
-                while(remainingBits >= 8){
-                    for (int i = 0; i < 8; ++i){
-                        binaryRequest[currentbyte * 8 + i] = binaryValue[count];
-                        ++count;
-                    }
-                    remainingBits -= 8;
-                    currentbyte += 1;
-                }
-
-                if (remainingBits > 0){
-                    lastBit = 8;
-                    firstBit = lastBit - remainingBits;
-                    for(int i = firstBit; i < lastBit; ++i){
-                        binaryRequest[currentbyte * 8 + i] = binaryValue[count];
-                        ++count;
-                    }
+                for (int i = 0; i < bitscount; ++i) {
+                    binaryRequest[i + startBit] = binaryValue[i];
                 }
             }
 
@@ -315,50 +313,32 @@ public class Ecu {
             }
 
             String hexToBin = "";
-
-            for (int i = 0; i < requiredDataBytesLen; ++i){
-                byte b = resp[i+sb];
-                hexToBin += byteToBinaryString(b, 8);
-            }
-
             String hex;
+
             if (little_endian){
-                int totalRemainingBits = bits;
-                int lastBit = 7 - startBit + 1;
-                int firstBit = lastBit - bits;
-                if (firstBit < 0)
-                    firstBit = 0;
-
-                String tempBin = hexToBin.substring(firstBit, lastBit);
-                totalRemainingBits -= lastBit - firstBit;
-
-                if (totalRemainingBits > 8) {
-                    int offset1 = 8;
-                    int offset2 = offset1 + ((requiredDataBytesLen - 2) * 8);
-                    tempBin += hexToBin.substring(offset1, offset2);
-                    totalRemainingBits -= offset2 - offset1;
+                int bitlength = requiredDataBytesLen * 8;
+                for (int i = 0; i < requiredDataBytesLen; ++i){
+                    byte b = resp[i+sb];
+                    hexToBin = byteToBinaryString(b, 8) + hexToBin;
                 }
 
-                if (totalRemainingBits > 0){
-                    int offset1 = (requiredDataBytesLen - 1) * 8;
-                    int offset2 = offset1 - totalRemainingBits;
-                    tempBin += hexToBin.substring(offset2, offset1);
-                    totalRemainingBits -= offset1 - offset2;
-                }
-
-                if (totalRemainingBits != 0){
-                    throw new ArithmeticException("Problem while resolving little endian value");
-                }
-
-                BigInteger bigValue = new BigInteger(tempBin, 2);
+                hexToBin = hexToBin.substring(bitlength - startBit - bitscount, bitlength - startBit);
+                BigInteger bigValue = new BigInteger(hexToBin, 2);
                 hex = bigValue.toString(16);
             } else {
+                for (int i = 0; i < requiredDataBytesLen; ++i){
+                    byte b = resp[i+sb];
+                    hexToBin += byteToBinaryString(b, 8);
+                }
+
                 hexToBin = hexToBin.substring(startBit, startBit + bitscount);
                 BigInteger bigValue = new BigInteger(hexToBin, 2);
                 hex = bigValue.toString(16);
             }
 
-            return padLeft(hex, dataBytesLen * 2, "0");
+            String finalRes = padLeft(hex, dataBytesLen * 2, "0");
+
+            return finalRes;
         }
 
         public String fmt(double d)

@@ -55,7 +55,6 @@ public class ElmUsbSerial extends ElmBase {
             final List<UsbSerialPort> ports = driver.getPorts();
             result.addAll(ports);
             for (UsbSerialPort port : ports){
-                msPort = port;
                 if (!usbManager.hasPermission(port.getDriver().getDevice())){
                     logInfo("No permission to access USB device " + serial);
                 }
@@ -85,15 +84,17 @@ public class ElmUsbSerial extends ElmBase {
 
         try {
             msPort.setParameters(38400, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
-        }catch (IOException e) {
+        } catch (IOException e) {
             try {
                 msPort.close();
             } catch (IOException e2) {
 
             }
-            logInfo("USB : error setting port parameters");
+            logInfo("USB : error setting port parameters" + e.getMessage());
             msPort = null;
             return false;
+        } catch (Exception e) {
+            logInfo("USB : error setting port parameters : " + e.getMessage());
         }
         logInfo("USB : Interface successfully connected");
         // Launch thread
