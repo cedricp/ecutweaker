@@ -308,13 +308,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        ImageButton licenseButton = findViewById(R.id.licenseButton);
-        licenseButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onLicenseCheck();
-            }
-        });
+//        ImageButton licenseButton = findViewById(R.id.licenseButton);
+//        licenseButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                onLicenseCheck();
+//            }
+//        });
 
         mChooseProjectButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -367,17 +367,17 @@ public class MainActivity extends AppCompatActivity {
         mLogView.append("EcuTweaker " + BuildConfig.BUILD_TYPE + " "
                 + getResources().getString(R.string.VERSION) + "\n");
 
-        String licenseCode = defaultPrefs.getString(PREF_LICENSE_CODE, "");
-        if (!licenseCode.isEmpty()){
-            mLicenseLock.checkUnlock(licenseCode);
-            setLicenseSatus();
-        } else {
-            mLogView.append(getResources().getString(R.string.USER_REQUEST_CODE) +" : "
-                    + mLicenseLock.getPublicCode() + "\n");
-            ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.RED);
-            mLogView.append("contact email : paillecedric@gmail.com\n");
-            displayHelp();
-        }
+//        String licenseCode = defaultPrefs.getString(PREF_LICENSE_CODE, "");
+//        if (!licenseCode.isEmpty()){
+//            mLicenseLock.checkUnlock(licenseCode);
+//            setLicenseSatus();
+//        } else {
+//            mLogView.append(getResources().getString(R.string.USER_REQUEST_CODE) +" : "
+//                    + mLicenseLock.getPublicCode() + "\n");
+//            ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.RED);
+//            mLogView.append("contact email : paillecedric@gmail.com\n");
+//            displayHelp();
+//        }
     }
 
     private void setLink(){
@@ -416,31 +416,31 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void onLicenseCheck(){
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(getResources().getString(R.string.APP_ENTER_CODE));
-        builder.setMessage(getResources().getString(R.string.USER_REQUEST_CODE) + " : "
-                + mLicenseLock.getPublicCode());
-        final EditText input = new EditText(this);
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        builder.setView(input);
-
-        builder.setPositiveButton(getResources().getString(R.string.OK), new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                mLicenseLock.checkUnlock(input.getText().toString());
-                setLicenseSatus();
-            }
-        });
-        builder.setNegativeButton(getResources().getString(R.string.CANCEL), new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-            }
-        });
-
-        builder.show();
-    }
+//    private void onLicenseCheck(){
+//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//        builder.setTitle(getResources().getString(R.string.APP_ENTER_CODE));
+//        builder.setMessage(getResources().getString(R.string.USER_REQUEST_CODE) + " : "
+//                + mLicenseLock.getPublicCode());
+//        final EditText input = new EditText(this);
+//        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+//        builder.setView(input);
+//
+//        builder.setPositiveButton(getResources().getString(R.string.OK), new DialogInterface.OnClickListener() {
+//            @Override
+//            public void onClick(DialogInterface dialog, int which) {
+//                mLicenseLock.checkUnlock(input.getText().toString());
+//                setLicenseSatus();
+//            }
+//        });
+//        builder.setNegativeButton(getResources().getString(R.string.CANCEL), new DialogInterface.OnClickListener() {
+//            @Override
+//            public void onClick(DialogInterface dialog, int which) {
+//                dialog.cancel();
+//            }
+//        });
+//
+//        builder.show();
+//    }
 
     private void startConnectionTimer(){
         stopConnectionTimer();
@@ -465,21 +465,21 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void setLicenseSatus(){
-        if (mLicenseLock.isLicenseOk()){
-            mLogView.append(getResources().getString(R.string.APP_UNLOCKED) + "\n");
-            (findViewById(R.id.licenseButton)).setEnabled(false);
-            SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG,
-                    MODE_PRIVATE);
-            SharedPreferences.Editor edit = defaultPrefs.edit();
-            edit.putString(PREF_LICENSE_CODE, mLicenseLock.getPrivateCode());
-            edit.apply();
-            ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.GREEN);
-        } else {
-            ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.RED);
-            mLogView.append(getResources().getString(R.string.WRONG_CODE) + "\n");
-        }
-    }
+//    private void setLicenseSatus(){
+//        if (mLicenseLock.isLicenseOk()){
+//            mLogView.append(getResources().getString(R.string.APP_UNLOCKED) + "\n");
+//            (findViewById(R.id.licenseButton)).setEnabled(false);
+//            SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG,
+//                    MODE_PRIVATE);
+//            SharedPreferences.Editor edit = defaultPrefs.edit();
+//            edit.putString(PREF_LICENSE_CODE, mLicenseLock.getPrivateCode());
+//            edit.apply();
+//            ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.GREEN);
+//        } else {
+//            ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.RED);
+//            mLogView.append(getResources().getString(R.string.WRONG_CODE) + "\n");
+//        }
+//    }
 
     private void connectDevice() {
         if (mChatService != null){

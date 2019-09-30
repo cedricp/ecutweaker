@@ -60,13 +60,6 @@
             android:orientation="horizontal">
 
             <ImageButton
-                android:id="@+id/licenseButton"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_weight="0"
-                app:srcCompat="@drawable/ic_lock" />
-
-            <ImageButton
                 android:id="@+id/linkChooser"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
@@ -81,19 +74,19 @@
                 android:text="@string/CHOOSE_BT_DEVICE"
                 android:textSize="10sp" />
 
-            <ImageButton
-                android:id="@+id/projectButton"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_weight="0"
-                app:srcCompat="@drawable/ic_bt_search" />
-
             <ImageView
                 android:id="@+id/btIcon"
                 android:layout_width="50dp"
                 android:layout_height="match_parent"
                 android:layout_weight="0"
                 app:srcCompat="@drawable/ic_link_nok" />
+
+            <ImageButton
+                android:id="@+id/projectButton"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="0"
+                app:srcCompat="@drawable/ic_bt_search" />
         </LinearLayout>
 
         <LinearLayout

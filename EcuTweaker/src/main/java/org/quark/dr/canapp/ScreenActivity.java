@@ -126,7 +126,8 @@ public class ScreenActivity extends AppCompatActivity {
 
     private void initialize(Bundle savedInstanceState) {
         mCanTimeOut = 0;
-        mDemoMode = true;
+        //mDemoMode = true;
+        mDemoMode = false;
         String ecuFile = "";
         String ecuHref = "";
         m_autoReload = false;
@@ -148,7 +149,7 @@ public class ScreenActivity extends AppCompatActivity {
             if (b.containsKey("deviceAddress")){
                 m_deviceAddressPref = b.getString("deviceAddress");
             }
-            mDemoMode =  ! b.getBoolean("licenseOk");
+            //mDemoMode =  ! b.getBoolean("licenseOk");
             linkMode = b.getInt("linkMode", MainActivity.LINK_WIFI);
         } else if (savedInstanceState != null && savedInstanceState.containsKey("ecu_name")){
             ecuFile = savedInstanceState.getString("ecu_name");
@@ -851,6 +852,8 @@ public class ScreenActivity extends AppCompatActivity {
                                 }
                             }
                         }
+                    } else {
+                        Log.e("canapp", "Cannot find data " + input.text);
                     }
                     inputBuilder.put(input.text, currentText);
                 }
@@ -1243,8 +1246,8 @@ public class ScreenActivity extends AppCompatActivity {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case MESSAGE_STATE_CHANGE:
-                    if (BuildConfig.DEBUG)
-                        Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
+                    //if (BuildConfig.DEBUG)
+                    //    Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
                     switch (msg.arg1) {
                         case STATE_CONNECTED:
                             activity.initELM();

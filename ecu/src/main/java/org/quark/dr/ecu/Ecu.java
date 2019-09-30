@@ -1,5 +1,6 @@
 package org.quark.dr.ecu;
 
+import android.util.Log;
 import android.util.Pair;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -183,6 +184,13 @@ public class Ecu {
             if (dataitem.endian.equals("Big"))
                 little_endian = false;
 
+
+            /*
+             * Not sure it's required to format little endian values...
+             * Will have to check that
+             */
+            little_endian = false;
+
             String finalbinvalue = "";
 
             if (bytesascii){
@@ -221,7 +229,7 @@ public class Ecu {
                 } else {
                     // Hex string
                     if (!(value instanceof String)) {
-                        throw new ClassCastException("Value must be hex a string");
+                        throw new ClassCastException("Value must be a hex string");
                     }
                     String vv = (String)value;
                     finalbinvalue = hexToBinary(vv.replaceAll(" ", ""));
@@ -245,20 +253,19 @@ public class Ecu {
                  */
                 // Moves the bytes to to left
                 for (int i = 0; i < startBit; ++i) {
-                    requestasbin += "0";
+                    finalbinvalue += "0";
                     bitmask += "0";
                 }
 
-                requestasbin = padLeft(requestasbin, requiredDataBytesLen * 8, "0");
+                finalbinvalue = padLeft(finalbinvalue, requiredDataBytesLen * 8, "0");
                 bitmask = padLeft(bitmask, requiredDataBytesLen * 8, "0");
-
                 String tmp = "";
                 String tmpmask = "";
-                for (int i = requiredDataBytesLen - 1; i > 0 ; ++i){
-                    tmp += requestasbin.substring(i * 8, i * 8 + 8);
+                for (int i = requiredDataBytesLen - 1; i >= 0 ; --i){
+                    tmp += finalbinvalue.substring(i * 8, i * 8 + 8);
                     tmpmask += bitmask.substring(i * 8, i * 8 + 8);
                 }
-                requestasbin = tmp;
+                finalbinvalue = tmp;
                 bitmask = tmpmask;
             }
 
@@ -267,20 +274,24 @@ public class Ecu {
 
             if (little_endian) {
                 for (int i = 0; i < bitscount; ++i) {
-                    if (little_endian && bitmask.charAt(i) == '1') {
+                    if (bitmask.charAt(i) == '1') {
                         binaryRequest[i + startBit] = binaryValue[i];
                     }
                 }
             } else {
                 for (int i = 0; i < bitscount; ++i) {
-                    binaryRequest[i + startBit] = binaryValue[i];
+                    if (little_endian && bitmask.charAt(i) == '1'){
+                        binaryRequest[i + startBit] = binaryValue[i];
+                    } else {
+                        binaryRequest[i + startBit] = binaryValue[i];
+                    }
                 }
             }
 
             BigInteger valueashex = new BigInteger(new String(binaryRequest), 2);
             String str16 = padLeft(valueashex.toString(16), bytescount*2, "0");
 
-            for (int i = 0; i < numreqbytes; ++i){
+            for (int i = 0; i < bytescount; ++i){
                 String hexpart = str16.substring(i*2, i*2 + 2);
                 byte[] b = hexStringToByteArray(hexpart);
                 byte_list[i + start_byte] = b[0];
@@ -645,14 +656,20 @@ public class Ecu {
     public byte[] setRequestValues(String requestname, HashMap<String, Object> hash){
         EcuRequest req = getRequest(requestname);
         byte[] barray = hexStringToByteArray(req.sentbytes);
+        Log.i("canapp", "Sentbytes : " + req.sentbytes);
         for (Map.Entry<String, Object> entry: hash.entrySet()){
             EcuDataItem item = req.getSendDataItem(entry.getKey());
             EcuData data = getData(entry.getKey());
+
+            Log.i("canapp", "set key " + entry.getKey());
             if (!data.items.isEmpty() && (entry.getValue() instanceof String == true)){
                 String val = (String)entry.getValue();
                 if (data.items.containsKey(val)){
+                    Log.i("canapp", "set key " + val + " with " + data.items.get(val));
                     barray = data.setValue(Integer.toHexString(data.items.get(val)), barray, item);
                     continue;
+                } else {
+                    Log.i("canapp", "key not found : " + val);
                 }
             }
             barray = data.setValue(entry.getValue(), barray, item);
