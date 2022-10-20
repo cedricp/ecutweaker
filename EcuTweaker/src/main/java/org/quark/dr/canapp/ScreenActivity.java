@@ -51,6 +51,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTED;
@@ -69,10 +70,11 @@ public class ScreenActivity extends AppCompatActivity {
     private Ecu m_ecu;
     private Layout m_currentLayoutData;
     private Layout.ScreenData m_currentScreenData;
-    private ImageButton m_reloadButton, m_screenButton, m_dtcButton, m_dtcClearButton;
+    private ImageButton m_reloadButton;
     private ImageView m_btIconStatus, m_btCommStatus;
     private TextView m_logView;
-    private String m_currentScreenName, m_currentEcuName, m_deviceAddressPref;
+    private String m_currentScreenName;
+    private String m_currentEcuName;
     private String m_currentDtcRequestName, m_currentDtcRequestBytes, m_clearDTCCommand;
     private boolean m_autoReload;
     private EcuDatabase m_ecuDatabase;
@@ -136,7 +138,7 @@ public class ScreenActivity extends AppCompatActivity {
 
         String globalScalePref = defaultPrefs.getString(PREF_GLOBAL_SCALE, "1.3");
         mFontSizeOverride = defaultPrefs.getInt(PREF_FONT_SCALE, 100);
-        mGlobalScale = Float.valueOf(globalScalePref);
+        mGlobalScale = Float.parseFloat(globalScalePref);
         mSoftFlowControl = defaultPrefs.getBoolean(PREF_SOFTFLOW, false);
 
         mLastSDSTime = 0;
@@ -147,7 +149,7 @@ public class ScreenActivity extends AppCompatActivity {
             ecuFile = b.getString("ecuFile");
             ecuHref = b.getString("ecuRef");
             if (b.containsKey("deviceAddress")){
-                m_deviceAddressPref = b.getString("deviceAddress");
+                String m_deviceAddressPref = b.getString("deviceAddress");
             }
             //mDemoMode =  ! b.getBoolean("licenseOk");
             linkMode = b.getInt("linkMode", MainActivity.LINK_WIFI);
@@ -157,182 +159,149 @@ public class ScreenActivity extends AppCompatActivity {
 
         m_reloadButton = findViewById(R.id.reloadButton);
         m_btIconStatus = findViewById(R.id.iconBt);
-        m_screenButton = findViewById(R.id.screenButton);
+        ImageButton m_screenButton = findViewById(R.id.screenButton);
         m_btCommStatus = findViewById(R.id.bt_comm);
-        m_dtcButton    = findViewById(R.id.dtcButton);
-        m_dtcClearButton = findViewById(R.id.dtcClearButton);
+        ImageButton m_dtcButton = findViewById(R.id.dtcButton);
+        ImageButton m_dtcClearButton = findViewById(R.id.dtcClearButton);
         ImageButton settingsButton = findViewById(R.id.settingsButton);
-        settingsButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                LayoutInflater inflater= LayoutInflater.from(ScreenActivity.this);
-                View view = inflater.inflate(R.layout.can_settings, null);
-                ArrayList<String> sdsList = new ArrayList<>();
-                for (String key : m_ecu.getSdsrequests().keySet()) {
-                    sdsList.add(key);
+        settingsButton.setOnClickListener(v -> {
+            LayoutInflater inflater= LayoutInflater.from(ScreenActivity.this);
+            View view = inflater.inflate(R.layout.can_settings, null);
+            ArrayList<String> sdsList = new ArrayList<>(m_ecu.getSdsrequests().keySet());
+
+            AlertDialog.Builder alertDialog = new AlertDialog.Builder(ScreenActivity.this);
+            alertDialog.setTitle("Settings");
+            alertDialog.setView(view);
+            AlertDialog alert = alertDialog.create();
+            CheckBox softflowcheckbox = view.findViewById(R.id.checkBoxSFC);
+            softflowcheckbox.setChecked(mSoftFlowControl);
+            softflowcheckbox.setOnCheckedChangeListener((btn, b1) -> mSoftFlowControl = b1);
+            SeekBar canSeekBar = view.findViewById(R.id.canTimeoutSeekBar);
+            canSeekBar.setProgress(mCanTimeOut);
+            Spinner sdsSpinner = view.findViewById(R.id.sdsSpinner);
+            ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(ScreenActivity.this,
+                    android.R.layout.simple_list_item_1, sdsList);
+            sdsSpinner.setAdapter(dataAdapter);
+            sdsSpinner.setOnItemSelectedListener(new Spinner.OnItemSelectedListener(){
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    String sdsname = ((TextView) view).getText().toString();
+                    m_ecu.setDefautSDS(sdsname);
+                    m_logView.append("Defaut diag session switched to " + m_ecu.getDefaultSDS() + "\n");
+                }
+                @Override
+                public void onNothingSelected(AdapterView<?> parent){
+
+                }
+            });
+
+            SeekBar fontSeekBar = view.findViewById(R.id.fontSizeBar);
+            fontSeekBar.setProgress(mFontSizeOverride);
+            fontSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    mFontSizeOverride = progress;
+                    if (mFontSizeOverride < 20)
+                        mFontSizeOverride = 20;
                 }
 
-                AlertDialog.Builder alertDialog = new AlertDialog.Builder(ScreenActivity.this);
-                alertDialog.setTitle("Settings");
-                alertDialog.setView(view);
-                AlertDialog alert = alertDialog.create();
-                CheckBox softflowcheckbox = view.findViewById(R.id.checkBoxSFC);
-                softflowcheckbox.setChecked(mSoftFlowControl);
-                softflowcheckbox.setOnCheckedChangeListener(new CheckBox.OnCheckedChangeListener(){
-                    @Override
-                    public void onCheckedChanged(CompoundButton btn, boolean b){
-                        mSoftFlowControl = b;
-                    }
-                });
-                SeekBar canSeekBar = view.findViewById(R.id.canTimeoutSeekBar);
-                canSeekBar.setProgress(mCanTimeOut);
-                Spinner sdsSpinner = view.findViewById(R.id.sdsSpinner);
-                ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(ScreenActivity.this,
-                        android.R.layout.simple_list_item_1, sdsList);
-                sdsSpinner.setAdapter(dataAdapter);
-                sdsSpinner.setOnItemSelectedListener(new Spinner.OnItemSelectedListener(){
-                    @Override
-                    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                        String sdsname = ((TextView) view).getText().toString();
-                        m_ecu.setDefautSDS(sdsname);
-                        m_logView.append("Defaut diag session switched to " + m_ecu.getDefaultSDS() + "\n");
-                    }
-                    @Override
-                    public void onNothingSelected(AdapterView<?> parent){
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
 
-                    }
-                });
-
-                SeekBar fontSeekBar = view.findViewById(R.id.fontSizeBar);
-                fontSeekBar.setProgress(mFontSizeOverride);
-                fontSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                    @Override
-                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                        mFontSizeOverride = progress;
-                        if (mFontSizeOverride < 20)
-                            mFontSizeOverride = 20;
-                    }
-
-                    @Override
-                    public void onStartTrackingTouch(SeekBar seekBar) {
-
-                    }
-
-                    @Override
-                    public void onStopTrackingTouch(SeekBar seekBar) {
-
-                    }
-                });
-
-                final TextView canTimeoutReport = view.findViewById(R.id.canTimeOutReport);
-                canSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                    @Override
-                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                        mCanTimeOut = progress;
-                        canTimeoutReport.setText(String.valueOf(progress));
-                    }
-
-                    @Override
-                    public void onStartTrackingTouch(SeekBar seekBar) {
-
-                    }
-
-                    @Override
-                    public void onStopTrackingTouch(SeekBar seekBar) {
-
-                    }
-                });
-                alert.setButton(AlertDialog.BUTTON_POSITIVE,getResources().
-                                getString(R.string.OK),
-                        new DialogInterface.OnClickListener(){
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                applySettings();
-                                drawScreen(m_currentScreenName);
-                            }
-                        });
-                alert.show();
-            }
-        });
-
-        m_dtcButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (m_autoReload)
-                    stopAutoReload();
-                readDTC();
-            }
-        });
-
-        m_dtcClearButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (m_autoReload)
-                    stopAutoReload();
-                clearDTC();
-            }
-        });
-
-        m_reloadButton.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                if (!isChatConnected()){
-                    connectDevice();
-                    return true;
                 }
-                m_autoReload = !m_autoReload;
-                if (m_autoReload){
-                    m_reloadButton.setColorFilter(Color.GREEN);
-                } else {
-                    stopAutoReload();
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+
                 }
-                updateDisplays();
+            });
+
+            final TextView canTimeoutReport = view.findViewById(R.id.canTimeOutReport);
+            canSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                    mCanTimeOut = progress;
+                    canTimeoutReport.setText(String.valueOf(progress));
+                }
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+
+                }
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+
+                }
+            });
+            alert.setButton(AlertDialog.BUTTON_POSITIVE,getResources().
+                            getString(R.string.OK),
+                    (dialog, which) -> {
+                        applySettings();
+                        drawScreen(m_currentScreenName);
+                    });
+            alert.show();
+        });
+
+        m_dtcButton.setOnClickListener(v -> {
+            if (m_autoReload)
+                stopAutoReload();
+            readDTC();
+        });
+
+        m_dtcClearButton.setOnClickListener(v -> {
+            if (m_autoReload)
+                stopAutoReload();
+            clearDTC();
+        });
+
+        m_reloadButton.setOnLongClickListener(v -> {
+            if (!isChatConnected()){
+                connectDevice();
                 return true;
             }
+            m_autoReload = !m_autoReload;
+            if (m_autoReload){
+                m_reloadButton.setColorFilter(Color.GREEN);
+            } else {
+                stopAutoReload();
+            }
+            updateDisplays();
+            return true;
         });
 
-        m_reloadButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (!isChatConnected()){
-                    connectDevice();
-                    Toast.makeText(getApplicationContext(),
-                            getResources().getString(R.string.not_connected),
-                            Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                if (m_autoReload)
-                    stopAutoReload();
-                updateDisplays();
+        m_reloadButton.setOnClickListener(v -> {
+            if (!isChatConnected()){
+                connectDevice();
+                Toast.makeText(getApplicationContext(),
+                        getResources().getString(R.string.not_connected),
+                        Toast.LENGTH_LONG).show();
+                return;
             }
+
+            if (m_autoReload)
+                stopAutoReload();
+            updateDisplays();
         });
 
-        m_screenButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (m_autoReload)
-                    stopAutoReload();
-                chooseCategory();
-            }
+        m_screenButton.setOnClickListener(v -> {
+            if (m_autoReload)
+                stopAutoReload();
+            chooseCategory();
         });
 
         Button zoomInButton = findViewById(R.id.zoom_in);
-        zoomInButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mGlobalScale += 0.1f;
-                drawScreen(m_currentScreenName);
-            }
+        zoomInButton.setOnClickListener(v -> {
+            mGlobalScale += 0.1f;
+            drawScreen(m_currentScreenName);
         });
 
         Button zoomOutButton = findViewById(R.id.zoom_out);
-        zoomOutButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mGlobalScale -= 0.1f;
-                if (mGlobalScale < 0.3f)
-                    mGlobalScale = 0.3f;
-                drawScreen(m_currentScreenName);
-            }
+        zoomOutButton.setOnClickListener(v -> {
+            mGlobalScale -= 0.1f;
+            if (mGlobalScale < 0.3f)
+                mGlobalScale = 0.3f;
+            drawScreen(m_currentScreenName);
         });
 
         m_scrollView = this.findViewById(R.id.scrollView);
@@ -414,7 +383,6 @@ public class ScreenActivity extends AppCompatActivity {
             m_ecu = new Ecu(ecuJson);
             m_currentLayoutData = new Layout(layoutJson);
             m_currentEcuName = ecuName;
-            return;
         } catch (EcuDatabase.DatabaseException e){
             e.printStackTrace();
         }
@@ -578,7 +546,7 @@ public class ScreenActivity extends AppCompatActivity {
                 m_editTextViews.put(inputdata.text, textEdit);
                 m_layoutView.addView(textEdit);
             } else {
-                String items[] = new String[m_ecu.getData(inputdata.text).items.size()];
+                String[] items = new String[m_ecu.getData(inputdata.text).items.size()];
                 int i = 0;
                 for (String item : m_ecu.getData(inputdata.text).items.keySet()){
                     items[i++] = item;
@@ -603,7 +571,7 @@ public class ScreenActivity extends AppCompatActivity {
                 m_layoutView.addView(spinner);
             }
             if (!m_requestsInputs.containsKey(inputdata.request)){
-                m_requestsInputs.put(inputdata.request, new ArrayList<Layout.InputData>());
+                m_requestsInputs.put(inputdata.request, new ArrayList<>());
             }
             ArrayList<Layout.InputData> tmp = m_requestsInputs.get(inputdata.request);
             tmp.add(inputdata);
@@ -712,9 +680,9 @@ public class ScreenActivity extends AppCompatActivity {
                     Log.i(TAG, "Cannot find request " + requestname);
             }
             if (BuildConfig.DEBUG)
-                Log.i(TAG, "Send bytes " + request.sentbytes);
+                Log.i(TAG, "Send bytes " + Objects.requireNonNull(request).sentbytes);
 
-            sendCmd(request.sentbytes);
+            sendCmd(Objects.requireNonNull(request).sentbytes);
         }
     }
 
@@ -769,7 +737,7 @@ public class ScreenActivity extends AppCompatActivity {
                     mapValues = m_ecu.getRequestValuesWithUnit(bytes, requestname);
                 } catch (Exception e) {
                     m_logView.append("Cannot decode request " + requestname + "\n");
-                    m_logView.append("Exception : " + e.toString() + "\n");
+                    m_logView.append("Exception : " + e + "\n");
                     continue;
                 }
 
@@ -791,7 +759,7 @@ public class ScreenActivity extends AppCompatActivity {
         }
     }
 
-    private View.OnClickListener buttonClickListener = new View.OnClickListener() {
+    private final View.OnClickListener buttonClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             if (mDemoMode){
@@ -877,7 +845,7 @@ public class ScreenActivity extends AppCompatActivity {
             if (BuildConfig.DEBUG)
                 Log.d(TAG,getResources().getString(R.string.COMPUTED_FRAME)
                         + " : " + Ecu.byteArrayToHex(builtStream));
-            commands.add(new Pair<Integer, String>(delay, Ecu.byteArrayToHex(builtStream)));
+            commands.add(new Pair<>(delay, Ecu.byteArrayToHex(builtStream)));
         }
 
         for (Pair<Integer, String> command : commands){
@@ -973,12 +941,9 @@ public class ScreenActivity extends AppCompatActivity {
                 m_currentLayoutData.getCategories().toArray(
                         new String[m_currentLayoutData.getCategories().size()]);
 
-        builder.setItems(categories, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String selected = categories[which];
-                chooseScreen(selected);
-            }
+        builder.setItems(categories, (dialog, which) -> {
+            String selected = categories[which];
+            chooseScreen(selected);
         });
 
         AlertDialog dialog = builder.create();
@@ -993,13 +958,10 @@ public class ScreenActivity extends AppCompatActivity {
                 m_currentLayoutData.getScreenNames(screenname).toArray(
                         new String[m_currentLayoutData.getScreenNames(screenname).size()]);
 
-        builder.setItems(screens, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String selected = screens[which];
-                drawScreen(selected);
-                m_currentScreenName = selected;
-            }
+        builder.setItems(screens, (dialog, which) -> {
+            String selected = screens[which];
+            drawScreen(selected);
+            m_currentScreenName = selected;
         });
 
         AlertDialog dialog = builder.create();
@@ -1092,7 +1054,7 @@ public class ScreenActivity extends AppCompatActivity {
         }
     }
 
-    void handleElmResult(String result, int txa){
+    void handleElmResult(String result){
         String[] results = result.split(";");
         if (results.length < 2 || results[0] == null || results[1] == null){
             m_logView.append(getResources().getString(R.string.NO_ELM_RESPONSE) + " (" + result + ")\n");
@@ -1102,19 +1064,19 @@ public class ScreenActivity extends AppCompatActivity {
         String requestCode = results[0];
         String replyCode = results[1];
 
-        if (requestCode.length() >= 2 && requestCode.substring(0,2).toUpperCase().equals("AT")){
+        if (requestCode.length() >= 2 && requestCode.substring(0,2).equalsIgnoreCase("AT")){
             // Don't worry about ELM configuration
             return;
         }
 
-        if (requestCode.length() >= 2 && requestCode.substring(0, 2).equals("14")){
-            if (replyCode.length() >= 2 && replyCode.substring(0, 2).equals("54")){
+        if (requestCode.length() >= 2 && requestCode.startsWith("14")){
+            if (replyCode.length() >= 2 && replyCode.startsWith("54")){
                 m_logView.append(getResources().getString(R.string.DTC_CLEAR_OK) + "\n");
                 return;
             }
         }
 
-        if (replyCode.length() >= 6 && replyCode.substring(0, 2).equals("7F")) {
+        if (replyCode.length() >= 6 && replyCode.startsWith("7F")) {
             String resultCode = replyCode.substring(0, 6).toUpperCase();
             String nrcode = resultCode.substring(4, 6);
             String translatedErrorCode = mChatService.getEcuErrorCode(nrcode);
@@ -1179,20 +1141,17 @@ public class ScreenActivity extends AppCompatActivity {
             m_clearDTCCommand = "14FF00";
         }
 
-        DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                switch (which){
-                    case DialogInterface.BUTTON_POSITIVE:
-                        sendCmd("AT ST FF");
-                        sendCmd(m_ecu.getDefaultSDS());
-                        sendCmd(m_clearDTCCommand);
-                        sendCmd("AT ST 00");
-                        break;
+        DialogInterface.OnClickListener dialogClickListener = (dialog, which) -> {
+            switch (which){
+                case DialogInterface.BUTTON_POSITIVE:
+                    sendCmd("AT ST FF");
+                    sendCmd(m_ecu.getDefaultSDS());
+                    sendCmd(m_clearDTCCommand);
+                    sendCmd("AT ST 00");
+                    break;
 
-                    case DialogInterface.BUTTON_NEGATIVE:
-                        return;
-                }
+                case DialogInterface.BUTTON_NEGATIVE:
+                    return;
             }
         };
 
@@ -1214,31 +1173,27 @@ public class ScreenActivity extends AppCompatActivity {
             return;
         }
 
-        String dtcReport = "";
+        StringBuilder dtcReport = new StringBuilder();
         int i = 0;
         for (List<String> stringList : decodedDtcs){
-            dtcReport += "<b>DTC #" + (i + 1) + "</b><br>";
+            dtcReport.append("<b>DTC #").append(i + 1).append("</b><br>");
             i++;
             for (String dtcLine : stringList){
-                dtcReport += "* " + dtcLine + "<br>";
+                dtcReport.append("* ").append(dtcLine).append("<br>");
             }
         }
 
-        Spanned message = Html.fromHtml(dtcReport);
+        Spanned message = Html.fromHtml(dtcReport.toString());
         AlertDialog alertDialog = new AlertDialog.Builder(ScreenActivity.this).create();
         alertDialog.setTitle("DTC Report");
         alertDialog.setMessage(message);
         alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, getResources().getString(R.string.OK),
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                });
+                (dialog, which) -> dialog.dismiss());
         alertDialog.show();
     }
 
     private static class messageHandler extends Handler {
-        private ScreenActivity activity;
+        private final ScreenActivity activity;
         messageHandler(ScreenActivity ac){
             activity = ac;
         }
@@ -1267,10 +1222,9 @@ public class ScreenActivity extends AppCompatActivity {
                     try {
                         byte[] m = (byte[]) msg.obj;
                         String readMessage = new String(m, 0, msg.arg1);
-                        int txa = msg.arg2;
-                        activity.handleElmResult(readMessage, txa);
+                        activity.handleElmResult(readMessage);
                     } catch (Exception e) {
-                        activity.m_logView.append("Java exception : " + e.toString() + "\n");
+                        activity.m_logView.append("Java exception : " + e + "\n");
                     }
                     break;
                 case MESSAGE_DEVICE_NAME:

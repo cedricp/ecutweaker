@@ -7,19 +7,19 @@ import java.util.ArrayList;
  */
 
 public class IsoTPEncode {
-    private String mmessage;
+    private final String mmessage;
     public IsoTPEncode(String mess){
         mmessage = mess;
     }
 
     public String getFormatted(){
         ArrayList<String> raw_command = getFormattedArray();
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
         for (String frame: raw_command) {
-            ret += frame;
-            ret += "\n";
+            ret.append(frame);
+            ret.append("\n");
         }
-        return ret;
+        return ret.toString();
     }
 
     public ArrayList<String> getFormattedArray(){
@@ -44,8 +44,8 @@ public class IsoTPEncode {
             while (message.length() > 0){
                 header = "2" + String.format("%X", frame_number++);
                 int remaining_len = message.length();
-                raw_command.add(header + message.substring( 0, (remaining_len >= 14 ? 14 : remaining_len) ) );
-                message = message.substring( (remaining_len >= 14 ? 14 : remaining_len) );
+                raw_command.add(header + message.substring( 0, (Math.min(remaining_len, 14)) ) );
+                message = message.substring( (Math.min(remaining_len, 14)) );
             }
         }
 

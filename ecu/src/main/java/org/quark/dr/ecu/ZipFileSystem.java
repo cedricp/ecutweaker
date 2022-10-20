@@ -27,20 +27,17 @@ import java.util.zip.ZipInputStream;
  */
 
 public class ZipFileSystem {
-    class CustomZipEntry{
+    static class CustomZipEntry{
         public long compressedSize, pos, uncompressedSize;
     }
     private HashMap<String, CustomZipEntry> m_directoryEntries;
-    private String m_zipFilePath, m_indexFile;
+    private final String m_zipFilePath;
+    private final String m_indexFile;
 
     public ZipFileSystem(String zipFilePath, String applicationDirectory){
         m_directoryEntries = new HashMap<>();
         m_zipFilePath = zipFilePath;
         m_indexFile = applicationDirectory + "/ecu.idx";
-    }
-
-    public Set<String> getFiles(){
-        return m_directoryEntries.keySet();
     }
 
     public boolean importZipEntries(){
@@ -93,7 +90,7 @@ public class ZipFileSystem {
      * Map zip entries to fast load them
      * This is the slowest part
      */
-    public boolean getZipEntries() {
+    public void getZipEntries() {
         m_directoryEntries = new HashMap<>();
         try {
             FileInputStream zip_is = new FileInputStream(m_zipFilePath);
@@ -113,11 +110,9 @@ public class ZipFileSystem {
                 m_directoryEntries.put(filename, cze);
                 pos += cze.compressedSize;
             }
-            return true;
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return false;
     }
 
     public boolean fileExists(String filename){
@@ -158,19 +153,16 @@ public class ZipFileSystem {
     }
 
     private String readFile(String file) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(file));
-        String         line = null;
-        StringBuilder  stringBuilder = new StringBuilder();
-        String         ls = System.getProperty("line.separator");
-        try {
-            while((line = reader.readLine()) != null) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            StringBuilder stringBuilder = new StringBuilder();
+            String ls = System.getProperty("line.separator");
+            while ((line = reader.readLine()) != null) {
                 stringBuilder.append(line);
                 stringBuilder.append(ls);
             }
 
             return stringBuilder.toString();
-        } finally {
-            reader.close();
         }
     }
 }

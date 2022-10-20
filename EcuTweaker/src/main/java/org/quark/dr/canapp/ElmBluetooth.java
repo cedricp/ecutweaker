@@ -61,7 +61,7 @@ public class ElmBluetooth extends ElmBase {
     }
 
     public synchronized void createConnectedThread(BluetoothSocket socket, BluetoothDevice
-            device, final String socketType) {
+            device) {
         // Cancel the thread that completed the connection
         if (mConnectThread != null) {
             mConnectThread.cancel();
@@ -75,7 +75,7 @@ public class ElmBluetooth extends ElmBase {
         }
 
         // Start the thread to manage the connection and perform transmissions
-        mConnectedThread = new ConnectedThread(socket, socketType);
+        mConnectedThread = new ConnectedThread(socket);
         mConnectedThread.start();
         synchronized (this) {
             if (mConnectionHandler != null) {
@@ -139,7 +139,6 @@ public class ElmBluetooth extends ElmBase {
     private class ConnectThread extends Thread {
         private final BluetoothSocket mmSocket;
         private final BluetoothDevice mmDevice;
-        private String mSocketType = "ELM-socket";
 
         public ConnectThread(BluetoothDevice device) {
             mmDevice = device;
@@ -157,6 +156,7 @@ public class ElmBluetooth extends ElmBase {
         }
 
         public void run() {
+            String mSocketType = "ELM-socket";
             setName("ConnectThread" + mSocketType);
 
             // Always cancel discovery because it will slow down a connection
@@ -185,7 +185,7 @@ public class ElmBluetooth extends ElmBase {
             }
 
             // Start the connected thread
-            createConnectedThread(mmSocket, mmDevice, mSocketType);
+            createConnectedThread(mmSocket, mmDevice);
         }
 
         public void cancel() {
@@ -216,7 +216,7 @@ public class ElmBluetooth extends ElmBase {
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;
 
-        public ConnectedThread(BluetoothSocket socket, String socketType) {
+        public ConnectedThread(BluetoothSocket socket) {
             mMessages.clear();
             mmSocket = socket;
             InputStream tmpIn = null;

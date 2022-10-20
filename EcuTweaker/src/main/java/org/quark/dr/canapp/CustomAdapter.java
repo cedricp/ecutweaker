@@ -1,18 +1,18 @@
 package org.quark.dr.canapp;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class CustomAdapter extends ArrayAdapter<String> {
     Context context;
     int color;
-    String[] items = new String[] {};
+    String[] items;
     private int textSize=20;
 
     public CustomAdapter(final Context context, final int textViewResourceId, final String[] objects) {
@@ -24,7 +24,7 @@ public class CustomAdapter extends ArrayAdapter<String> {
 
     @Override
     public View getDropDownView(int position, View convertView,
-                                ViewGroup parent) {
+                                @NonNull ViewGroup parent) {
 
         if (convertView == null) {
             LayoutInflater inflater = LayoutInflater.from(context);
@@ -39,7 +39,7 @@ public class CustomAdapter extends ArrayAdapter<String> {
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public View getView(int position, View convertView, @NonNull ViewGroup parent) {
         if (convertView == null) {
             LayoutInflater inflater = LayoutInflater.from(context);
             convertView = inflater.inflate(

@@ -39,7 +39,7 @@
     <string name="DEMO_MESSAGE"><![CDATA[Benvingut a <b>ECU TWEAKER</b>,<br> Utilitzes l\'aplicació en mode demo.
 Pots fer-la servir per llegir tots els paràmetres de la ECU, però no podràs fer servir els botons o la funció <i>CLEAR DTC</i>.<br>
 La pots desbloquejar enviantme el codi de solicitud, et respondré amb el codi d\'activació.<br>
-<b>Tingues present que un gran poder suposa una gran responsabilitat, fes-la servir sota el teu risc. El desenvolupador nega qualsevol responsabilitat, tu ets l'únic responsable del que facis amb aquest software.</u></b>]]></string>
+<b>Tingues present que un gran poder suposa una gran responsabilitat, fes-la servir sota el teu risc. El desenvolupador nega qualsevol responsabilitat, tu ets l\'únic responsable del que facis amb aquest software.</u></b>]]></string>
     <string name="BAD_RESPONSE">Resposta dolenta</string>
     <string name="TO_REQUEST">a solicitar</string>
     <string name="INVALID_VALUE">Valor invàlid, comprova les dades</string>

@@ -34,11 +34,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -101,7 +101,6 @@ public class UsbDeviceActivity extends Activity {
             if (ACTION_USB_PERMISSION.equals(action)) {
                 synchronized (this) {
                     if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                        UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
                         UsbDeviceConnection connection =
                                 mUsbManager.openDevice(mCurrentUsbSerial.getDriver().getDevice());
                         // Shouldn't happen, but who knows...
@@ -124,7 +123,7 @@ public class UsbDeviceActivity extends Activity {
         }
     };
 
-    private List<UsbSerialPort> mEntries = new ArrayList<UsbSerialPort>();
+    private final List<UsbSerialPort> mEntries = new ArrayList<>();
     private ArrayAdapter<UsbSerialPort> mAdapter;
 
     @Override
@@ -134,7 +133,7 @@ public class UsbDeviceActivity extends Activity {
 
         mPermissionIntent = PendingIntent.getBroadcast(getApplicationContext(),
                 0,
-                new Intent(ACTION_USB_PERMISSION), 0);
+                new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE);
         mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
         mListView = findViewById(R.id.deviceList);
         mProgressBar = findViewById(R.id.progressBar);
@@ -143,7 +142,7 @@ public class UsbDeviceActivity extends Activity {
         mAdapter = new ArrayAdapter<UsbSerialPort>(this,
                 android.R.layout.simple_expandable_list_item_2, mEntries) {
             @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
+            public View getView(int position, View convertView, @NonNull ViewGroup parent) {
                 final TwoLineListItem row;
                 if (convertView == null){
                     final LayoutInflater inflater =
@@ -170,53 +169,49 @@ public class UsbDeviceActivity extends Activity {
         };
 
         mListView.setAdapter(mAdapter);
-        mListView.setOnItemClickListener(new ListView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Log.d(TAG, "Pressed item " + position);
-                if (position >= mEntries.size()) {
-                    Log.w(TAG, "Illegal position.");
-                    return;
-                }
+        mListView.setOnItemClickListener((parent, view, position, id) -> {
+            Log.d(TAG, "Pressed item " + position);
+            if (position >= mEntries.size()) {
+                Log.w(TAG, "Illegal position.");
+                return;
+            }
 
-                final UsbSerialPort port = mEntries.get(position);
+            final UsbSerialPort port = mEntries.get(position);
 
-                // Create the result Intent and include the MAC address
-                Intent intent = new Intent();
-                String usbaddr = "";
+            // Create the result Intent and include the MAC address
+            Intent intent = new Intent();
+            String usbaddr;
 
-                // Check permissions
-                if (mUsbManager.hasPermission(port.getDriver().getDevice())) {
-                    // Permission OK
-                    UsbDeviceConnection connection =
-                            mUsbManager.openDevice(port.getDriver().getDevice());
+            // Check permissions
+            if (mUsbManager.hasPermission(port.getDriver().getDevice())) {
+                // Permission OK
+                UsbDeviceConnection connection =
+                        mUsbManager.openDevice(port.getDriver().getDevice());
 
-                    if (connection != null) {
-                        try {
-                            port.open(connection);
-                            usbaddr = port.getSerial();
-                            intent.putExtra(EXTRA_DEVICE_SERIAL, usbaddr);
-                            // All is OK. set result and finish this Activity
-                            setResult(Activity.RESULT_OK, intent);
-                            finish();
-                        } catch (IOException e) {
-                            Log.e("canapp", "USB Activity, connection failed");
-                            intent.putExtra(EXTRA_DEVICE_SERIAL, "CONNECTION FAILED");
-                            setResult(Activity.RESULT_CANCELED, intent);
-                            finish();
-                        }
-                    } else {
-                        Log.e("canapp", "USB Activity, unable to create connection");
-                        intent.putExtra(EXTRA_DEVICE_SERIAL, "CANNOT CREATE CONNECTION");
+                if (connection != null) {
+                    try {
+                        port.open(connection);
+                        usbaddr = port.getSerial();
+                        intent.putExtra(EXTRA_DEVICE_SERIAL, usbaddr);
+                        // All is OK. set result and finish this Activity
+                        setResult(Activity.RESULT_OK, intent);
+                        finish();
+                    } catch (IOException e) {
+                        Log.e("canapp", "USB Activity, connection failed");
+                        intent.putExtra(EXTRA_DEVICE_SERIAL, "CONNECTION FAILED");
                         setResult(Activity.RESULT_CANCELED, intent);
                         finish();
                     }
                 } else {
-                    // Request permission
-                    mCurrentUsbSerial = port;
-                    mUsbManager.requestPermission(port.getDriver().getDevice(), mPermissionIntent);
-                    return;
+                    Log.e("canapp", "USB Activity, unable to create connection");
+                    intent.putExtra(EXTRA_DEVICE_SERIAL, "CANNOT CREATE CONNECTION");
+                    setResult(Activity.RESULT_CANCELED, intent);
+                    finish();
                 }
+            } else {
+                // Request permission
+                mCurrentUsbSerial = port;
+                mUsbManager.requestPermission(port.getDriver().getDevice(), mPermissionIntent);
             }
         });
 
@@ -241,7 +236,7 @@ public class UsbDeviceActivity extends Activity {
     }
 
     private static class SearchUSBTask extends AsyncTask<Void, Void, List<UsbSerialPort>> {
-        private WeakReference<UsbDeviceActivity> mActivity;
+        private final WeakReference<UsbDeviceActivity> mActivity;
         SearchUSBTask(UsbDeviceActivity activity){
             mActivity =  new WeakReference<>(activity);
         }
@@ -252,7 +247,7 @@ public class UsbDeviceActivity extends Activity {
             final List<UsbSerialDriver> drivers =
                     UsbSerialProber.getDefaultProber().findAllDrivers(mActivity.get().mUsbManager);
 
-            final List<UsbSerialPort> result = new ArrayList<UsbSerialPort>();
+            final List<UsbSerialPort> result = new ArrayList<>();
             for (final UsbSerialDriver driver : drivers) {
                 final List<UsbSerialPort> ports = driver.getPorts();
                 result.addAll(ports);
@@ -267,7 +262,7 @@ public class UsbDeviceActivity extends Activity {
             mActivity.get().mEntries.addAll(result);
             mActivity.get().mAdapter.notifyDataSetChanged();
             mActivity.get(). mProgressBarTitle.setText(
-                    String.format("%s device(s) found",Integer.valueOf(mActivity.get().mEntries.size())));
+                    String.format("%s device(s) found", mActivity.get().mEntries.size()));
             mActivity.get().hideProgressBar();
         }
 

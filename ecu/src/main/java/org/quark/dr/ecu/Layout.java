@@ -20,7 +20,7 @@ public class Layout {
     public HashMap<String, ScreenData> m_screens;
     HashMap<String, ArrayList<String>> m_categories;
 
-    private class ListComparator implements Comparator {
+    private static class ListComparator implements Comparator {
 
         @Override
         public int compare(Object o1, Object o2) {
@@ -30,7 +30,7 @@ public class Layout {
         }
     }
 
-    public class Color {
+    public static class Color {
         int r,g,b;
 
         Color(){
@@ -60,7 +60,7 @@ public class Layout {
         }
     }
 
-    public class Font {
+    public static class Font {
         public String name;
         public int size;
         public Color color;
@@ -77,7 +77,7 @@ public class Layout {
         }
     }
 
-    public class Rect {
+    public static class Rect {
         public int x, y, w, h, area;
         Rect(JSONObject jrect){
             try {
@@ -92,7 +92,7 @@ public class Layout {
         }
     }
 
-    public class InputData {
+    public static class InputData {
         public String text;
         public String request;
         public Rect rect;
@@ -101,7 +101,7 @@ public class Layout {
         public Color color;
     }
 
-    public class DisplayData {
+    public static class DisplayData {
         public String text;
         public String request;
         public Rect rect;
@@ -110,7 +110,7 @@ public class Layout {
         public Color color;
     }
 
-    public class LabelData {
+    public static class LabelData {
         public String text;
         public Rect rect;
         public Font font;
@@ -118,7 +118,7 @@ public class Layout {
         public Color color, fontcolor;
     }
 
-    public class ButtonData {
+    public static class ButtonData {
         public String text, uniqueName;
         public Rect rect;
         public Font font;
@@ -126,7 +126,7 @@ public class Layout {
     }
 
 
-    public class ScreenData {
+    public static class ScreenData {
         List<InputData> m_inputs;
         List<LabelData> m_labels;
         List<DisplayData> m_displays;
@@ -262,10 +262,8 @@ public class Layout {
         }
 
         public ButtonData getButtonData(String buttonname){
-            Iterator<ButtonData> it = m_buttons.iterator();
-            while(it.hasNext()){
-                ButtonData currentData = it.next();
-                if (currentData.uniqueName.equals(buttonname)){
+            for (ButtonData currentData : m_buttons) {
+                if (currentData.uniqueName.equals(buttonname)) {
                     return currentData;
                 }
             }
@@ -285,7 +283,7 @@ public class Layout {
         try {
             br = new BufferedReader(new InputStreamReader(is));
             while ((line = br.readLine()) != null) {
-                sb.append(line + "\n");
+                sb.append(line).append("\n");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -314,7 +312,7 @@ public class Layout {
             if (jobj.has("screens")) {
                 JSONObject scr_object = jobj.getJSONObject("screens");
                 Iterator<String> keys = scr_object.keys();
-                for (; keys.hasNext(); ) {
+                while (keys.hasNext()) {
                     String key = keys.next();
                     JSONObject sobj = scr_object.getJSONObject(key);
                     ScreenData sdata = new ScreenData(key, sobj);

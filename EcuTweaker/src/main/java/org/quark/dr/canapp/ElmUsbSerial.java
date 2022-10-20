@@ -29,7 +29,7 @@ public class ElmUsbSerial extends ElmBase {
         mContext = context;
         mPermissionIntent = PendingIntent.getBroadcast(context,
                 0,
-                new Intent(ACTION_USB_PERMISSION), 0);
+                new Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_IMMUTABLE);
     }
 
     @Override
@@ -146,7 +146,7 @@ public class ElmUsbSerial extends ElmBase {
      *
      */
     private class ConnectedThread extends Thread {
-        private UsbSerialPort mUsbSerialPort;
+        private final UsbSerialPort mUsbSerialPort;
 
         public ConnectedThread(UsbSerialPort usbSerialPort) {
             mUsbSerialPort = usbSerialPort;
@@ -158,8 +158,7 @@ public class ElmUsbSerial extends ElmBase {
 
         public String write(byte[] buffer) {
             writeToElm(buffer);
-            String result = readFromElm();
-            return result;
+            return readFromElm();
         }
 
         public void writeToElm(byte[] buffer) {
@@ -182,7 +181,7 @@ public class ElmUsbSerial extends ElmBase {
         public String readFromElm() {
             StringBuilder final_res = new StringBuilder();
             while (true) {
-                byte bytes[] = new byte[2048];
+                byte[] bytes = new byte[2048];
                 int bytes_count = 0;
                 long millis =System.currentTimeMillis();
                 if(mUsbSerialPort != null)
@@ -256,6 +255,7 @@ public class ElmUsbSerial extends ElmBase {
         if (msPort == null)
             return true;
         final UsbManager usbManager = (UsbManager) mContext.getApplicationContext().getSystemService(Context.USB_SERVICE);
+        if( usbManager == null) return false;
         return usbManager.hasPermission(msPort.getDriver().getDevice());
     }
 
@@ -264,6 +264,7 @@ public class ElmUsbSerial extends ElmBase {
         if (msPort == null)
             return;
         final UsbManager usbManager = (UsbManager) mContext.getApplicationContext().getSystemService(Context.USB_SERVICE);
+        if (usbManager == null) return;
         usbManager.requestPermission(msPort.getDriver().getDevice(), mPermissionIntent);
     }
 }

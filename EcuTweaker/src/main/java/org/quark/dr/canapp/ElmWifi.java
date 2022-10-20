@@ -53,8 +53,17 @@ public class ElmWifi extends ElmBase{
         setState(STATE_CONNECTING);
 
         WifiManager wifi = (WifiManager) mContext.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+
+        if (wifi == null){
+            return false;
+        }
+
         if (wifiLock == null) {
             wifiLock = wifi.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "HighPerf wifi lock");
+        }
+
+        if (wifiLock == null){
+            return false;
         }
 
         wifiLock.acquire();
@@ -122,7 +131,7 @@ public class ElmWifi extends ElmBase{
     }
 
     public boolean isConnected() {
-        return (mSocket != null) && mSocket.isConnected() && mRunningStatus == true;
+        return (mSocket != null) && mSocket.isConnected() && mRunningStatus;
     }
 
     @Override
@@ -139,8 +148,8 @@ public class ElmWifi extends ElmBase{
      */
     private class ConnectedThread extends Thread {
         private final Socket mmSocket;
-        private OutputStream mOutStream;
-        private InputStream mInStream;
+        private final OutputStream mOutStream;
+        private final InputStream mInStream;
 
         public ConnectedThread(Socket socket) {
             mmSocket = socket;
@@ -165,16 +174,14 @@ public class ElmWifi extends ElmBase{
 
         public String write(byte[] buffer) {
             writeToElm(buffer);
-            String result = readFromElm();
-            return result;
+            return readFromElm();
         }
 
         public void writeToElm(byte[] buffer) {
             try {
                 if(mmSocket != null)
                 {
-                    byte[] arrayOfBytes = buffer;
-                    mOutStream.write(arrayOfBytes);
+                    mOutStream.write(buffer);
                     mOutStream.flush();
                 }
             } catch (Exception localIOException1) {
@@ -247,8 +254,8 @@ public class ElmWifi extends ElmBase{
      *
      */
     private class ConnectThread extends Thread {
-        private String mServerIp;
-        private int mServerPort;
+        private final String mServerIp;
+        private final int mServerPort;
         private Socket mLocalSocket;
 
         public ConnectThread(String serverIp, int serverPort) {

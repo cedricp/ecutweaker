@@ -449,7 +449,7 @@ public class EcuDatabase {
                     if (!res.isEmpty())
                         return res;
                 } else {
-                    if (f.getName().equals("ecu.zip")) {
+                    if (f.getName().equalsIgnoreCase("ecu.zip")) {
                         return f.getAbsolutePath();
                     }
                 }

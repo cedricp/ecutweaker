@@ -7,7 +7,7 @@ import java.util.ArrayList;
  */
 
 public class IsoTPDecode {
-    private ArrayList<String> responses;
+    private final ArrayList<String> responses;
 
     public IsoTPDecode(ArrayList<String> mess){
         responses = mess;
@@ -32,11 +32,9 @@ public class IsoTPDecode {
     }
 
     public String decodeCan(){
-        String result = "";
-        boolean noerrors = true;
+        String result;
         int cframe = 0;
         int nbytes = 0;
-        int nframes = 0;
 
         if (responses.size() == 0)
             return "ERROR : NO DATA";
@@ -44,32 +42,26 @@ public class IsoTPDecode {
         if (responses.size() == 1){
             String line = responses.get(0);
             if (!isHexadecimal(line)){
-                noerrors = false;
                 return "ERROR : NON HEXA";
             }
-            if (line.substring(0,1).equals("0")) {
+            if (line.charAt(0) == '0') {
                 String nbytes_hex = responses.get(0).substring(1,2);
                 nbytes = Integer.parseInt(nbytes_hex, 16);
-                nframes = 1;
                 result = line.substring(2, 2 + nbytes * 2);
             } else {
-                noerrors = false;
                 result = "ERROR : BAD CAN FORMAT (SINGLE LINE)";
             }
         } else {
-            if (responses.get(0).substring(0,1).equals("1")){
+            if (responses.get(0).charAt(0) == '1'){
                 String line = responses.get(0);
                 if (!isHexadecimal(line)){
-                    noerrors = false;
                     return "ERROR : NON HEXA";
                 }
                 String nbytes_hex = line.substring(1,4);
                 nbytes = Integer.parseInt(nbytes_hex, 16);
-                nframes = nbytes / 7 + 1;
                 cframe = 1;
                 result = line.substring(4,16);
             } else {
-                noerrors = false;
                 result = "ERROR : BAD CAN FORMAT (MULTILINE)";
             }
 
@@ -78,17 +70,15 @@ public class IsoTPDecode {
                 if (!isHexadecimal(fr)){
                     return "ERROR : NON HEXA";
                 }
-                if (fr.substring(0,1).equals("2")){
+                if (fr.charAt(0) == '2'){
                     int tmp_fn = Integer.parseInt(fr.substring(1,2), 16);
                     if (tmp_fn != (cframe % 16)){
-                        noerrors = false;
                         result = "ERROR : BAD CFC";
                         break;
                     }
                     cframe += 1;
-                    result += fr.substring(2, (fr.length() >= 16 ? 16 : fr.length()));
+                    result += fr.substring(2, (Math.min(fr.length(), 16)));
                 } else {
-                    noerrors = false;
                     result = "ERROR : BAD CAN FORMAT";
                 }
             }

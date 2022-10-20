@@ -150,7 +150,6 @@ public abstract class ElmBase {
         mRxa = mTxa = -1;
         mSessionActive = false;
         mState = STATE_NONE;
-        mTxa = mRxa = -1;
         mCFC0 = false;
         createLogFile();
         buildMaps();
@@ -234,7 +233,7 @@ public abstract class ElmBase {
             e.printStackTrace();
         }
         try {
-            mLogFile.append(getTimeStamp() + " Log file created\n");
+            mLogFile.append(getTimeStamp()).append(" Log file created\n");
             mLogFile.flush();
         } catch (Exception e){
             logInfo("Log file write error : " + e.getMessage());
@@ -264,8 +263,8 @@ public abstract class ElmBase {
     }
 
     protected String getTimeStamp() {
-        return new String("[" + new SimpleDateFormat("dd-MM-hh:mm:ss")
-                .format(new Date()) + "] ");
+        return "[" + new SimpleDateFormat("dd-MM-hh:mm:ss")
+                .format(new Date()) + "] ";
     }
 
     public void initElm() {
@@ -419,14 +418,14 @@ public abstract class ElmBase {
 
             if (messagePresent){
                 int message_len = message.length();
-                if ((message_len > 6) && message.substring(0, 6).toUpperCase().equals("DELAY:")) {
+                if ((message_len > 6) && message.substring(0, 6).equalsIgnoreCase("DELAY:")) {
                     int delay = Integer.parseInt(message.substring(6));
                     try {
                         Thread.sleep(delay);
                     } catch (InterruptedException e) {
                         break;
                     }
-                } else if ((message_len > 2) && message.substring(0, 2).toUpperCase().equals("AT")) {
+                } else if ((message_len > 2) && message.substring(0, 2).equalsIgnoreCase("AT")) {
                     String result = writeRaw(message);
                     result = message + ";" + result;
 
@@ -503,8 +502,8 @@ public abstract class ElmBase {
 
         try {
             if (mLogFile != null) {
-                mLogFile.append("ISO SENT: " + getTimeStamp() + message + "\n");
-                mLogFile.append("ISO RECV: " + getTimeStamp() + result + "\n");
+                mLogFile.append("ISO SENT: ").append(getTimeStamp()).append(message).append("\n");
+                mLogFile.append("ISO RECV: ").append(getTimeStamp()).append(result).append("\n");
             }
         } catch (IOException e) {
             logInfo("Log error : " + e.getMessage());
@@ -612,7 +611,7 @@ public abstract class ElmBase {
                         ST = Integer.parseInt(frameInterval, 16);
                     }
                     break;
-                } else if (s.substring(0, 4).equals("037F") && s.substring(6, 8).equals("78")) {
+                } else if (s.startsWith("037F") && s.startsWith("78", 6)) {
                     if (s0.size() > 0 && s.equals(s0.get(s0.size()-1))){
                         noerrors = false;
                         errorMsg = "Cannot handle 037F78 yet !";
@@ -653,7 +652,7 @@ public abstract class ElmBase {
             }
         }
 
-        String result = "";
+        StringBuilder result = new StringBuilder();
         if (responses.size() != 1){
             noerrors = false;
             errorMsg = "Cannot send CAN frame with software flow control";
@@ -663,14 +662,14 @@ public abstract class ElmBase {
             if (response0.charAt(0) == '0'){
                 // Single frame
                 nbytes = Integer.parseInt(response0.substring(1,2), 16);
-                result = responses.get(0).substring(2, 2 + (nbytes*2));
+                result = new StringBuilder(responses.get(0).substring(2, 2 + (nbytes * 2)));
             } else if (response0.charAt(0) == '1') {
                 nbytes = Integer.parseInt(response0.substring(1, 4), 16);
                 // We assume that it should be more than 7
                 nbytes -= 6;
                 int nframes = 1 + nbytes / 7 + ((nbytes%7) > 0 ? 1 : 0);
                 int cframe = 1;
-                result = response0.substring(4, 16);
+                result = new StringBuilder(response0.substring(4, 16));
 
                 while (cframe < nframes){
                     String sBS =  String.format("%x", min(nframes - responses.size(), 0xf));
@@ -680,7 +679,7 @@ public abstract class ElmBase {
                     boolean nodataflag = false;
                     for (String s: frsp.split("\n")){
                         // Echo cancel
-                        if (s.substring(0, raw_command.get(Fc -1 ).length()).equals(raw_command.get(Fc - 1))){
+                        if (s.startsWith(raw_command.get(Fc - 1))){
                             continue;
                         }
 
@@ -705,7 +704,7 @@ public abstract class ElmBase {
                                     continue;
                                 }
                                 ++cframe;
-                                result += s.substring(2, 16);
+                                result.append(s, 2, 16);
                             }
                             continue;
                         }
@@ -726,24 +725,24 @@ public abstract class ElmBase {
         } else {
             // Decode received ISO_TP data
             IsoTPDecode isotpdec = new IsoTPDecode(responses);
-            result = isotpdec.decodeCan();
+            result = new StringBuilder(isotpdec.decodeCan());
         }
 
         try {
             if (mLogFile != null) {
-                mLogFile.append("CAN CFC SENT: " + getTimeStamp() + message + "\n");
-                mLogFile.append("CAN CFC RECV: " + getTimeStamp() + result + "\n");
+                mLogFile.append("CAN CFC SENT: ").append(getTimeStamp()).append(message).append("\n");
+                mLogFile.append("CAN CFC RECV: ").append(getTimeStamp()).append(result.toString()).append("\n");
             }
         } catch (IOException e) {
             logInfo("Log error : " + e.getMessage());
             e.printStackTrace();
         }
 
-        result = message + ";" + result;
+        result.insert(0, message + ";");
         int result_length = result.length();
         byte[] tmpbuf = new byte[result_length];
         //Make copy for not to rewrite in other thread
-        System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);
+        System.arraycopy(result.toString().getBytes(), 0, tmpbuf, 0, result_length);
         synchronized (this) {
             if (mConnectionHandler != null) {
                 mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, -1, tmpbuf).sendToTarget();
@@ -757,7 +756,7 @@ public abstract class ElmBase {
         ArrayList<String> raw_command = isotpm.getFormattedArray();
         ArrayList<String> responses = new ArrayList<>();
         boolean error = false;
-        String errorMsg = "";
+        StringBuilder errorMsg = new StringBuilder();
 
         // Send data
         for (String frame: raw_command) {
@@ -777,11 +776,11 @@ public abstract class ElmBase {
 
                 if (isHexadecimal(s)){
                     // Filter out frame control (FC) response
-                    if (s.substring(0, 1).equals("3"))
+                    if (s.charAt(0) == '3')
                         continue;
                     responses.add(s);
                 } else {
-                    errorMsg += frsp;
+                    errorMsg.append(frsp);
                     error = true;
                 }
             }
@@ -798,8 +797,8 @@ public abstract class ElmBase {
 
         try {
             if (mLogFile != null) {
-                mLogFile.append("CAN SENT: " + getTimeStamp() + message + "\n");
-                mLogFile.append("CAN RECV: " + getTimeStamp() + result + "\n");
+                mLogFile.append("CAN SENT: ").append(getTimeStamp()).append(message).append("\n");
+                mLogFile.append("CAN RECV: ").append(getTimeStamp()).append(result).append("\n");
             }
         } catch (IOException e) {
             logInfo("Log error : " + e.getMessage());
@@ -825,7 +824,7 @@ public abstract class ElmBase {
     public void setEcuName(String name){
         if (mLogFile != null){
             try {
-                mLogFile.append("New session with ECU " + name + "\n");
+                mLogFile.append("New session with ECU ").append(name).append("\n");
             } catch (IOException e){
                 e.printStackTrace();
             }

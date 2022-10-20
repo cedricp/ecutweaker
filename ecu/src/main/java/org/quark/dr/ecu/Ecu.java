@@ -22,13 +22,13 @@ import java.util.Set;
 public class Ecu {
     public String global_endian;
     private HashMap<String, EcuRequest> requests;
-    private HashMap<String, EcuDevice> devices;
     private HashMap<String, EcuData> data;
     private HashMap<String, String> sdsrequests;
-    private String protocol, funcname, funcaddr, ecu_name;
+    private String protocol;
+    private String funcaddr;
+    private String ecu_name;
     private String kw1, kw2, ecu_send_id, ecu_recv_id;
     private boolean fastinit;
-    private int baudrate;
     private String m_defaultSDS;
 
     private class EcuDataItem{
@@ -61,7 +61,7 @@ public class Ecu {
             m_defaultSDS = sdsrequests.get(sdsname);
     }
 
-    private class EcuDevice {
+    private static class EcuDevice {
         public int dtc;
         public int dtctype;
         HashMap<String, String> devicedata;
@@ -76,7 +76,7 @@ public class Ecu {
 
                 JSONObject devdataobj = json.getJSONObject("devicedata");
                 Iterator<String> keys = devdataobj.keys();
-                for (;keys.hasNext();){
+                while (keys.hasNext()) {
                     String key = keys.next();
                     devicedata.put(key, devdataobj.getString(key));
                 }
@@ -153,7 +153,7 @@ public class Ecu {
                 if (json.has("lists")) {
                     JSONObject listobj = json.getJSONObject("lists");
                     Iterator<String> keys = listobj.keys();
-                    for (; keys.hasNext(); ) {
+                    while (keys.hasNext()) {
                         String key = keys.next();
                         lists.put(Integer.parseInt(key), listobj.getString(key));
                         items.put(listobj.getString(key), Integer.parseInt(key));
@@ -162,10 +162,6 @@ public class Ecu {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
-
-        public HashMap<String, Integer> getItems(){
-            return items;
         }
 
         public byte[] setValue(Object value, byte[] byte_list, EcuDataItem dataitem){
@@ -191,10 +187,10 @@ public class Ecu {
              */
             little_endian = false;
 
-            String finalbinvalue = "";
+            String finalbinvalue;
 
             if (bytesascii){
-                if (value instanceof String == false){
+                if (!(value instanceof String)){
                     throw new ClassCastException("Value must be a string");
                 }
                 String strvalue = (String)value;
@@ -217,7 +213,7 @@ public class Ecu {
                         // Replace comma with point and remove spaces
                         value = ((String) value).replace(",", ".");
                         value = ((String) value).replace(" ", "");
-                        floatval = Float.valueOf((String)value);
+                        floatval = Float.parseFloat((String)value);
                     } else {
                         throw new ClassCastException("Value must be an integer or float");
                     }
@@ -240,11 +236,11 @@ public class Ecu {
             int numreqbytes = (int)(Math.ceil(((float)(bitscount + startBit) / 8.f)));
 
             byte[] request_bytes = Arrays.copyOfRange(byte_list, start_byte, start_byte + numreqbytes);
-            String requestasbin = "";
+            StringBuilder requestasbin = new StringBuilder();
             String bitmask = padLeft("", bitscount, "1");
 
-            for (int i = 0; i < request_bytes.length; ++i) {
-                requestasbin += byteToBinaryString(request_bytes[i], 8);
+            for (byte request_byte : request_bytes) {
+                requestasbin.append(byteToBinaryString(request_byte, 8));
             }
 
             if (little_endian){
@@ -269,7 +265,7 @@ public class Ecu {
                 bitmask = tmpmask;
             }
 
-            char[] binaryRequest = requestasbin.toCharArray();
+            char[] binaryRequest = requestasbin.toString().toCharArray();
             char[] binaryValue = finalbinvalue.toCharArray();
 
             if (little_endian) {
@@ -347,9 +343,7 @@ public class Ecu {
                 hex = bigValue.toString(16);
             }
 
-            String finalRes = padLeft(hex, dataBytesLen * 2, "0");
-
-            return finalRes;
+            return padLeft(hex, dataBytesLen * 2, "0");
         }
 
         public String fmt(double d)
@@ -520,7 +514,7 @@ public class Ecu {
                 if (json.has("sendbyte_dataitems")) {
                     JSONObject sbdiobj = json.getJSONObject("sendbyte_dataitems");
                     Iterator<String> keys = sbdiobj.keys();
-                    for (; keys.hasNext(); ) {
+                    while (keys.hasNext()) {
                         String key = keys.next();
                         JSONObject dataitemobj = sbdiobj.getJSONObject(key);
                         EcuDataItem dataitem = new EcuDataItem(dataitemobj, key);
@@ -531,7 +525,7 @@ public class Ecu {
                 if (json.has("receivebyte_dataitems")) {
                     JSONObject sbdiobj = json.getJSONObject("receivebyte_dataitems");
                     Iterator<String> keys = sbdiobj.keys();
-                    for (; keys.hasNext(); ) {
+                    while (keys.hasNext()) {
                         String key = keys.next();
                         JSONObject dataitemobj = sbdiobj.getJSONObject(key);
                         EcuDataItem dataitem = new EcuDataItem(dataitemobj, key);
@@ -574,13 +568,11 @@ public class Ecu {
     }
 
     public EcuData getData(String dataname){
-        EcuData d = data.get(dataname);
-        return d;
+        return data.get(dataname);
     }
 
     public EcuRequest getRequest(String req_name){
-        EcuRequest er = requests.get(req_name);
-        return er;
+        return requests.get(req_name);
     }
 
     public String getRequestData(byte[] bytes, String requestname, String dataname){
@@ -705,7 +697,7 @@ public class Ecu {
             }
             Iterator<String> it = currentDTC.keySet().iterator();
             List<String> currentDtcList = new ArrayList<>();
-            for (;it.hasNext();){
+            while (it.hasNext()) {
                 String key = it.next();
                 if (key.equals("NDTC"))
                     continue;
@@ -726,7 +718,7 @@ public class Ecu {
 
     private void init(JSONObject ecudef){
         requests = new HashMap<>();
-        devices = new HashMap<>();
+        HashMap<String, EcuDevice> devices = new HashMap<>();
         data = new HashMap<>();
         sdsrequests = new HashMap<>();
         m_defaultSDS = "10C0";
@@ -738,11 +730,11 @@ public class Ecu {
             if (ecudef.has("obd")) {
                 JSONObject obd = ecudef.getJSONObject("obd");
                 protocol = obd.getString("protocol");
-                funcname = obd.getString("funcname");
+                String funcname = obd.getString("funcname");
                 if (protocol.equals("CAN")) {
                     ecu_send_id = obd.getString("send_id");
                     ecu_recv_id = obd.getString("recv_id");
-                    if (obd.has("baudrate ")) baudrate = obd.getInt("baudrate");
+                    if (obd.has("baudrate ")) ;
 
                 }
                 if (protocol.equals("KWP2000")) {
