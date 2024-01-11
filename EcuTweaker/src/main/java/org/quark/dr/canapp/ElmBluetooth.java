@@ -5,12 +5,18 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.UUID;
 
+import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.hardware.usb.UsbManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 public class ElmBluetooth extends ElmBase {
     // Debugging
@@ -20,18 +26,23 @@ public class ElmBluetooth extends ElmBase {
     private ConnectThread mConnectThread;
     private ConnectedThread mConnectedThread;
     private String mBtAddress;
+    private final Context mContext;
 
-    protected ElmBluetooth(Handler handler, String logDir) {
+    protected ElmBluetooth(Context context, Handler handler, String logDir) {
         super(handler, logDir);
+        mContext = context;
     }
 
     @Override
-    public int getMode(){
+    public int getMode() {
         return MODE_BT;
     }
 
     @Override
     public boolean connect(String address) {
+        if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            return false;
+        }
         setState(STATE_CONNECTING);
         BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
         if (btAdapter == null)
@@ -40,7 +51,7 @@ public class ElmBluetooth extends ElmBase {
         BluetoothDevice device;
         try {
             device = btAdapter.getRemoteDevice(address);
-        } catch (Exception e){
+        } catch (Exception e) {
             return false;
         }
         if (device == null)
@@ -56,7 +67,7 @@ public class ElmBluetooth extends ElmBase {
     }
 
     @Override
-    public boolean reconnect(){
+    public boolean reconnect() {
         return connect(mBtAddress);
     }
 
@@ -92,7 +103,7 @@ public class ElmBluetooth extends ElmBase {
     }
 
     @Override
-    public void disconnect(){
+    public void disconnect() {
         if (mConnectThread != null) {
             mConnectThread.cancel();
         }
@@ -137,7 +148,7 @@ public class ElmBluetooth extends ElmBase {
      *
      */
     private class ConnectThread extends Thread {
-        private final BluetoothSocket mmSocket;
+        private BluetoothSocket mmSocket;
         private final BluetoothDevice mmDevice;
 
         public ConnectThread(BluetoothDevice device) {
@@ -163,6 +174,7 @@ public class ElmBluetooth extends ElmBase {
             BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
             if (btAdapter == null)
                 return;
+
             btAdapter.cancelDiscovery();
 
             // Make a connection to the BluetoothSocket

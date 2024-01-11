@@ -19,10 +19,12 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.Settings;
+
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
+
 import android.text.Html;
 import android.text.Spanned;
 import android.text.method.ScrollingMovementMethod;
@@ -78,14 +80,17 @@ public class MainActivity extends AppCompatActivity {
     final static int PERMISSIONS_ACCESS_COARSE_LOCATION = 1;
     final static int PERMISSIONS_WRITE_EXTERNAL_STORAGE = 2;
     // Intent request codes
-    private static final int    REQUEST_CONNECT_DEVICE = 1;
-    private static final int    REQUEST_SCREEN         = 2;
-    private static final int    REQUEST_ENABLE_BT      = 3;
-    public static final String  DEFAULT_PREF_TAG = "default";
+    final static int PERMISSIONS_BLUETOOTH_CONNECT = 3;
+    final static int PERMISSIONS_BLUETOOTH_SCAN = 4;
+    // Intent request codes
+    private static final int REQUEST_CONNECT_DEVICE = 1;
+    private static final int REQUEST_SCREEN = 2;
+    private static final int REQUEST_ENABLE_BT = 3;
+    public static final String DEFAULT_PREF_TAG = "default";
 
-    public static final int     LINK_WIFI=0;
-    public static final int     LINK_BLUETOOTH=1;
-    public static final int     LINK_USB=2;
+    public static final int LINK_WIFI = 0;
+    public static final int LINK_BLUETOOTH = 1;
+    public static final int LINK_USB = 2;
 
     public static final String PREF_DEVICE_ADDRESS = "btAdapterAddress";
     public static final String PREF_DEVICE_USBSERIAL = "usbSerialNumber";
@@ -93,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String PREF_FONT_SCALE = "fontScale";
     public static final String PREF_ECUZIPFILE = "ecuZipFile";
     public static final String PREF_PROJECT = "project";
-    public static final String PREF_LINK_MODE =  "BT";
+    public static final String PREF_LINK_MODE = "BT";
     public static final String PREF_SOFTFLOW = "softFlowControl";
 
     public static String mLastLog;
@@ -127,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
     private String readFileAsString(String filePath) {
         StringBuilder result = new StringBuilder("No log file found");
         File file = new File(filePath);
-        if ( file.exists() ) {
+        if (file.exists()) {
             result = new StringBuilder();
             FileInputStream fis = null;
             try {
@@ -150,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
         return result.toString();
     }
 
-    private void initialize(){
+    private void initialize() {
         long id = new BigInteger(Settings.Secure.getString(getContentResolver(),
                 Settings.Secure.ANDROID_ID), 16).longValue();
         mLicenseLock = new LicenseLock(id);
@@ -187,7 +192,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (linkMode.equals("BT")) {
             mLinkMode = LINK_BLUETOOTH;
-        } else if (linkMode.equals("WIFI")){
+        } else if (linkMode.equals("WIFI")) {
             mLinkMode = LINK_WIFI;
         } else {
             mLinkMode = LINK_USB;
@@ -196,19 +201,12 @@ public class MainActivity extends AppCompatActivity {
 
         Button viewLogButton = findViewById(R.id.viewLogButton);
         viewLogButton.setOnClickListener(v -> {
-            try {
-                MainActivity.this.copyLogs();
-                return;
-            } catch (IOException e){
-                mLogView.append("Error : Cannot copy logs\n");
-            }
-
             mLastLog = readFileAsString(
                     MainActivity.this.getApplicationContext().getFilesDir().
                             getAbsolutePath() + "/log.txt");
-            System.out.println("?? "  + MainActivity.this.getApplicationContext().getFilesDir().
+            System.out.println("?? " + MainActivity.this.getApplicationContext().getFilesDir().
                     getAbsolutePath());
-            LayoutInflater inflater= LayoutInflater.from(MainActivity.this);
+            LayoutInflater inflater = LayoutInflater.from(MainActivity.this);
             View view = inflater.inflate(R.layout.custom_scroll, null);
 
             TextView textview = view.findViewById(R.id.textmsg);
@@ -218,12 +216,12 @@ public class MainActivity extends AppCompatActivity {
             alertDialog.setTitle("LOGS");
             alertDialog.setView(view);
             AlertDialog alert = alertDialog.create();
-            alert.setButton(AlertDialog.BUTTON_NEUTRAL,getResources().
-                    getString(R.string.COPY_TO_CLIPBOARD),
+            alert.setButton(AlertDialog.BUTTON_NEUTRAL, getResources().
+                            getString(R.string.COPY_TO_CLIPBOARD),
                     (dialog, which) -> {
-                        ClipboardManager  clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                        ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
                         ClipData clip = ClipData.newPlainText("EcuTeakerLog", mLastLog);
-                        if(clipboard != null) clipboard.setPrimaryClip(clip);
+                        if (clipboard != null) clipboard.setPrimaryClip(clip);
                     });
             alert.show();
         });
@@ -238,8 +236,8 @@ public class MainActivity extends AppCompatActivity {
             String logFilename = MainActivity.this.getApplicationContext().getFilesDir().
                     getAbsolutePath() + "/log.txt";
             File logFile = new File(logFilename);
-            if (logFile.exists()){
-                if (logFile.delete()){
+            if (logFile.exists()) {
+                if (logFile.delete()) {
                     Toast.makeText(getApplicationContext(),
                             getResources().getString(R.string.LOGFILE_DELETED),
                             Toast.LENGTH_SHORT).show();
@@ -262,12 +260,12 @@ public class MainActivity extends AppCompatActivity {
         });
 
         mSpecificEcuListView.setOnItemClickListener((parent, view, position, id12) -> {
-            if ( mCurrentEcuInfoList == null || mEcuFilePath == null){
+            if (mCurrentEcuInfoList == null || mEcuFilePath == null) {
                 return;
             }
-            String stringToSearch = ((TextView)view).getText().toString();
-            for (EcuDatabase.EcuInfo ecuinfo : mCurrentEcuInfoList){
-                if (stringToSearch.equals(ecuinfo.ecuName)){
+            String stringToSearch = ((TextView) view).getText().toString();
+            for (EcuDatabase.EcuInfo ecuinfo : mCurrentEcuInfoList) {
+                if (stringToSearch.equals(ecuinfo.ecuName)) {
                     startScreen(mEcuFilePath, ecuinfo.href);
                     break;
                 }
@@ -302,31 +300,13 @@ public class MainActivity extends AppCompatActivity {
         mEcuDatabase = new EcuDatabase();
         mEcuIdentifierNew = mEcuDatabase.new EcuIdentifierNew();
 
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.READ_EXTERNAL_STORAGE)
-                == PackageManager.PERMISSION_GRANTED){
-            parseDatabase();
-        } else {
-            askStoragePermission();
-        }
-
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED){
-            askStorageWritePermission();
-        }
-
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            askLocationPermission();
-        }
+        askStorageReadPermission();
 
         mLogView.append("EcuTweaker " + BuildConfig.BUILD_TYPE + " "
                 + getResources().getString(R.string.VERSION) + "\n");
     }
 
-    private void setLink(){
+    private void setLink() {
         /*
          * First disconnect chat
          */
@@ -335,14 +315,19 @@ public class MainActivity extends AppCompatActivity {
 
         SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
         SharedPreferences.Editor edit = defaultPrefs.edit();
-        if (mLinkMode == LINK_BLUETOOTH){
+        if (mLinkMode == LINK_BLUETOOTH) {
             mLinkChooser.setImageResource(R.drawable.ic_bt_connected);
             mBtButton.setEnabled(true);
             edit.putString(PREF_LINK_MODE, "BT");
             edit.apply();
 
+            int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT);
+            if (askBluetoothPermission()) {
+                return;
+            }
+
             BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
-            if (!mActivateBluetoothAsked && btAdapter != null && !btAdapter.isEnabled()){
+            if (!mActivateBluetoothAsked && btAdapter != null && !btAdapter.isEnabled()) {
                 mActivateBluetoothAsked = true;
                 Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
@@ -353,6 +338,7 @@ public class MainActivity extends AppCompatActivity {
             mBtButton.setEnabled(false);
             edit.putString(PREF_LINK_MODE, "WIFI");
             edit.apply();
+            askLocationPermission();
         }  else {
             mActivateBluetoothAsked = false;
             mLinkChooser.setImageResource(R.drawable.ic_usb);
@@ -361,32 +347,6 @@ public class MainActivity extends AppCompatActivity {
             edit.apply();
         }
     }
-
-//    private void onLicenseCheck(){
-//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-//        builder.setTitle(getResources().getString(R.string.APP_ENTER_CODE));
-//        builder.setMessage(getResources().getString(R.string.USER_REQUEST_CODE) + " : "
-//                + mLicenseLock.getPublicCode());
-//        final EditText input = new EditText(this);
-//        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-//        builder.setView(input);
-//
-//        builder.setPositiveButton(getResources().getString(R.string.OK), new DialogInterface.OnClickListener() {
-//            @Override
-//            public void onClick(DialogInterface dialog, int which) {
-//                mLicenseLock.checkUnlock(input.getText().toString());
-//                setLicenseSatus();
-//            }
-//        });
-//        builder.setNegativeButton(getResources().getString(R.string.CANCEL), new DialogInterface.OnClickListener() {
-//            @Override
-//            public void onClick(DialogInterface dialog, int which) {
-//                dialog.cancel();
-//            }
-//        });
-//
-//        builder.show();
-//    }
 
     private void startConnectionTimer(){
         stopConnectionTimer();
@@ -410,22 +370,6 @@ public class MainActivity extends AppCompatActivity {
             mConnectionTimer = null;
         }
     }
-
-//    private void setLicenseSatus(){
-//        if (mLicenseLock.isLicenseOk()){
-//            mLogView.append(getResources().getString(R.string.APP_UNLOCKED) + "\n");
-//            (findViewById(R.id.licenseButton)).setEnabled(false);
-//            SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG,
-//                    MODE_PRIVATE);
-//            SharedPreferences.Editor edit = defaultPrefs.edit();
-//            edit.putString(PREF_LICENSE_CODE, mLicenseLock.getPrivateCode());
-//            edit.apply();
-//            ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.GREEN);
-//        } else {
-//            ((ImageButton)findViewById(R.id.licenseButton)).setColorFilter(Color.RED);
-//            mLogView.append(getResources().getString(R.string.WRONG_CODE) + "\n");
-//        }
-//    }
 
     private void connectDevice() {
         if (mObdDevice != null){
@@ -457,7 +401,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            mObdDevice = ElmBase.createBluetoothSingleton(mHandler, filesDir);
+            mObdDevice = ElmBase.createBluetoothSingleton(getApplicationContext(), mHandler, filesDir);
             // address is the device MAC address
             // Get the BluetoothDevice object
             if (btAdapter == null || mBtDeviceAddress.isEmpty() || isChatConnected())
@@ -655,6 +599,9 @@ public class MainActivity extends AppCompatActivity {
             stopConnectionTimer();
             try {
                 if (mLinkMode == LINK_BLUETOOTH) {
+                    if (!askBluetoothScanPermission()){
+                        return;
+                    }
                     Intent serverIntent = new Intent(this, DeviceListActivity.class);
                     startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
                 } else if (mLinkMode == LINK_USB) {
@@ -693,68 +640,108 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    void askStoragePermission(){
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.READ_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.READ_EXTERNAL_STORAGE)) {
-                Toast.makeText(this,
-                        "You need external storage permission to use this application",
-                        Toast.LENGTH_SHORT).show();
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                        PERMISSIONS_ACCESS_EXTERNAL_STORAGE);
-            } else {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                        PERMISSIONS_ACCESS_EXTERNAL_STORAGE);
-            }
-        } else {
+    boolean askStorageReadPermission(){
+        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            mLogView.append("Storage read permission OK\n");
             parseDatabase();
+            return true;
         }
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            Toast.makeText(this,
+                    "You need external storage permission to read database",
+                    Toast.LENGTH_SHORT).show();
+        }
+        ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                PERMISSIONS_ACCESS_EXTERNAL_STORAGE);
+        return false;
     }
 
-    void askStorageWritePermission(){
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                Toast.makeText(this,
-                        "You may need write storage permission to use this application",
-                        Toast.LENGTH_SHORT).show();
-            } else {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                        PERMISSIONS_WRITE_EXTERNAL_STORAGE);
-            }
-        }
-    }
-
-    void askLocationPermission(){
+    boolean askLocationPermission(){
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION);
-        if (permissionCheck != PackageManager.PERMISSION_GRANTED){
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)){
-                Toast.makeText(this, "You need location permission to connect to WiFi", Toast.LENGTH_SHORT).show();
-            }else{
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                        PERMISSIONS_ACCESS_COARSE_LOCATION);
-            }
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            mLogView.append("Location permission (necessary for WiFi) OK\n");
+            return true;
         }
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)){
+            Toast.makeText(this, "You need location permission to connect to WiFi", Toast.LENGTH_SHORT).show();
+        }
+        ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                PERMISSIONS_ACCESS_COARSE_LOCATION);
+        return false;
+    }
+
+    boolean askBluetoothPermission(){
+        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT);
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            mLogView.append("Bluetooth connect permission OK\n");
+            return true;
+        }
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.BLUETOOTH_CONNECT)){
+            Toast.makeText(this, "You need location permission to connect to WiFi", Toast.LENGTH_SHORT).show();
+        }
+        ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.BLUETOOTH_CONNECT},
+                PERMISSIONS_BLUETOOTH_CONNECT);
+        return false;
+    }
+
+    boolean askBluetoothScanPermission(){
+        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN);
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            mLogView.append("Bluetooth scan permission OK\n");
+            return true;
+        }
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.BLUETOOTH_SCAN)){
+            Toast.makeText(this, "You need location permission to connect to WiFi", Toast.LENGTH_SHORT).show();
+        }
+        ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.BLUETOOTH_SCAN},
+                PERMISSIONS_BLUETOOTH_SCAN);
+        return false;
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
             case PERMISSIONS_ACCESS_EXTERNAL_STORAGE: {
                 // If request is cancelled, the result arrays are empty.
+                Toast.makeText(this, "Storage read permission granted !", Toast.LENGTH_SHORT).show();
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     parseDatabase();
+                }
+            }
+            case PERMISSIONS_ACCESS_COARSE_LOCATION: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this, "Coarse location granted !", Toast.LENGTH_SHORT).show();
+                    selectDevice();
+                }
+            }
+            case PERMISSIONS_BLUETOOTH_CONNECT: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this, "Bluetooth granted !", Toast.LENGTH_SHORT).show();
+                    setLink();
+                }
+            }
+            case PERMISSIONS_WRITE_EXTERNAL_STORAGE: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                    Toast.makeText(this, "External storage write granted !", Toast.LENGTH_SHORT).show();
+            }
+            case PERMISSIONS_BLUETOOTH_SCAN: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this, "Bluetooth scan granted !", Toast.LENGTH_SHORT).show();
+                    selectDevice();
                 }
             }
         }
@@ -792,6 +779,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode) {
             case REQUEST_CONNECT_DEVICE:
                 // When DeviceListActivity returns with a device to connect
@@ -807,7 +795,7 @@ public class MainActivity extends AppCompatActivity {
                         edit.apply();
                         mBtDeviceAddress = address;
                         startConnectionTimer();
-                    } else if (data.getExtras().containsKey(UsbDeviceActivity.EXTRA_DEVICE_SERIAL)){
+                    } else if (data.getExtras().containsKey(UsbDeviceActivity.EXTRA_DEVICE_SERIAL)) {
                         // USB
                         String serial =
                                 data.getExtras().getString(UsbDeviceActivity.EXTRA_DEVICE_SERIAL);
@@ -1187,4 +1175,11 @@ public class MainActivity extends AppCompatActivity {
                     Toast.LENGTH_SHORT).show();
         }
     }
+
+    @Override
+    public void onBackPressed() {
+        this.finishAffinity();
+    }
 }
+
+

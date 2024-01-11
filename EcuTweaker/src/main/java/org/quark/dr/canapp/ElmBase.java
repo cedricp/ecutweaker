@@ -51,8 +51,8 @@ public abstract class ElmBase {
         return mSingleton;
     }
 
-    static public ElmBase createBluetoothSingleton(Handler handler, String logDir){
-        mSingleton = new ElmBluetooth(handler, logDir);
+    static public ElmBase createBluetoothSingleton(Context context, Handler handler, String logDir){
+        mSingleton = new ElmBluetooth(context, handler, logDir);
         return mSingleton;
     }
 
@@ -276,6 +276,7 @@ public abstract class ElmBase {
     public void initCan(String rxa, String txa) {
         logInfo("Intializing CAN protocol...");
         mProtocol = "CAN";
+        write("AT WS");
         write("AT E1");
         write("AT S0");
         write("AT H0");
