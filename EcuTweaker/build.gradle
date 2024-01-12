@@ -24,7 +24,9 @@ android {
 
     defaultConfig {
         minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
+        //TODO: better uses rootProject but READ_STORAGE not ok in android 14.
+        //noinspection ExpiredTargetSdkVersion
+        targetSdkVersion 26 //rootProject.ext.targetSdkVersion
         versionCode rootProject.ext.appversion_int
         versionName rootProject.ext.appversion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
