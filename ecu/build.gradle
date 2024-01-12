@@ -2,29 +2,52 @@ apply plugin: 'com.android.library'
 
 android {
     signingConfigs {
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+        release {
+            storeFile file('release.keystore')
+            storePassword 'android'
+            keyAlias 'androidreleasekey'
+            keyPassword 'android'
+        }
     }
-    compileSdkVersion 33
-    defaultConfig {
-        minSdkVersion 19
-        targetSdkVersion 33
 
+    namespace 'org.quark.dr.ecu'
+    compileSdk rootProject.ext.targetSdkVersion
+    //buildToolsVersion rootProject.ext.buildToolsVersion
+    ndkVersion rootProject.ext.ndkVersion
+    compileOptions.encoding rootProject.ext.compileOptions_encoding
+
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode rootProject.ext.appversion_int
+        versionName rootProject.ext.appversion
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
 
     }
+
     buildTypes {
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+        debug {
+            minifyEnabled false
+            signingConfig signingConfigs.debug
         }
     }
+
     compileOptions {
     }
-    namespace 'org.quark.dr.ecu'
 }
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'androidx.appcompat:appcompat:1.5.1'
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
 }
