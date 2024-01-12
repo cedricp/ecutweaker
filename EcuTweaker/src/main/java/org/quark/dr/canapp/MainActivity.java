@@ -883,7 +883,8 @@ public class MainActivity extends AppCompatActivity {
             SharedPreferences defaultPrefs = getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
             mCurrentProject = defaultPrefs.getString(PREF_PROJECT, "");
             updateEcuTypeListView(ecuFile, mCurrentProject);
-            mStatusView.setText("ECU-TWEAKER");
+            CharSequence title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME;
+            mStatusView.setText(title);
             if (!error.isEmpty()){
                 mLogView.append("Database exception : " + error + "\n");
             }
