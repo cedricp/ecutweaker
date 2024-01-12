@@ -712,9 +712,9 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case PERMISSIONS_ACCESS_EXTERNAL_STORAGE: {
                 // If request is cancelled, the result arrays are empty.
-                Toast.makeText(this, "Storage read permission granted !", Toast.LENGTH_SHORT).show();
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this, "Storage read permission granted !", Toast.LENGTH_SHORT).show();
                     parseDatabase();
                 }
             }
