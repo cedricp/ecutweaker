@@ -2,6 +2,7 @@ package org.quark.dr.canapp;
 
 import java.util.Set;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -47,6 +48,7 @@ public class DeviceListActivity extends Activity {
      */
 
     @Override
+    @SuppressLint("MissingPermission")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
@@ -124,6 +126,7 @@ public class DeviceListActivity extends Activity {
     }
 
     @Override
+    @SuppressLint("MissingPermission")
     protected void onDestroy() {
         super.onDestroy();
 
@@ -139,6 +142,7 @@ public class DeviceListActivity extends Activity {
     /**
      * Start device discover with the BluetoothAdapter
      */
+    @SuppressLint("MissingPermission")
     private void doDiscovery() {
         if (D) Log.d(TAG, "doDiscovery()");
 
@@ -159,6 +163,7 @@ public class DeviceListActivity extends Activity {
     }
 
     // The on-click listener for all devices in the ListViews
+    @SuppressLint("MissingPermission")
     private final OnItemClickListener mDeviceClickListener = new OnItemClickListener() {
         public void onItemClick(AdapterView<?> av, View v, int arg2, long arg3) {
             // Cancel discovery because it's costly and we're about to connect
@@ -180,6 +185,7 @@ public class DeviceListActivity extends Activity {
 
     // The BroadcastReceiver that listens for discovered devices and
     // changes the title when discovery is finished
+    @SuppressLint("MissingPermission")
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {

@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.util.UUID;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -71,6 +72,7 @@ public class ElmBluetooth extends ElmBase {
         return connect(mBtAddress);
     }
 
+    @SuppressLint("MissingPermission")
     public synchronized void createConnectedThread(BluetoothSocket socket, BluetoothDevice
             device) {
         // Cancel the thread that completed the connection
@@ -147,6 +149,7 @@ public class ElmBluetooth extends ElmBase {
      * Asynchronously manage ELM connection
      *
      */
+    @SuppressLint("MissingPermission")
     private class ConnectThread extends Thread {
         private BluetoothSocket mmSocket;
         private final BluetoothDevice mmDevice;
