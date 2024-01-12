@@ -20,6 +20,7 @@ package org.quark.dr.canapp;
  * Project home page: https://github.com/mik3y/usb-serial-for-android
  */
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -126,6 +127,7 @@ public class UsbDeviceActivity extends Activity {
     private final List<UsbSerialPort> mEntries = new ArrayList<>();
     private ArrayAdapter<UsbSerialPort> mAdapter;
 
+    @SuppressLint("InlinedApi")
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -214,8 +216,7 @@ public class UsbDeviceActivity extends Activity {
                 mUsbManager.requestPermission(port.getDriver().getDevice(), mPermissionIntent);
             }
         });
-
-        getApplicationContext().registerReceiver(mReceiver, new IntentFilter(ACTION_USB_PERMISSION));
+        getApplicationContext().registerReceiver(mReceiver, new IntentFilter(ACTION_USB_PERMISSION), Context.RECEIVER_NOT_EXPORTED);
     }
 
     @Override

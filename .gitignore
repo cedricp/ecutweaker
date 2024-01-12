@@ -12,3 +12,5 @@ speedviewlib/build/
 
 /.idea/
 /EcuTweaker/build/
+/EcuTweaker/debug/
+/EcuTweaker/release/
