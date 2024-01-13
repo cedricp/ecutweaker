@@ -97,6 +97,7 @@ public class ZipFileSystem {
             ZipInputStream zis = new ZipInputStream(zip_is);
             ZipEntry ze;
             long pos = 0;
+            //TODO: https://developer.android.com/about/versions/14/behavior-changes-14?hl=fr#zip-path-traversal
             while ((ze = zis.getNextEntry()) != null) {
                 if(ze.isDirectory())
                     continue;
