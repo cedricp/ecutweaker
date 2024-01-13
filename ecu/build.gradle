@@ -18,9 +18,9 @@ android {
 
     namespace 'org.quark.dr.ecu'
     compileSdk rootProject.ext.targetSdkVersion
+    // deprecated
     //buildToolsVersion rootProject.ext.buildToolsVersion
     ndkVersion rootProject.ext.ndkVersion
-    compileOptions.encoding rootProject.ext.compileOptions_encoding
 
     defaultConfig {
         minSdkVersion rootProject.ext.minSdkVersion
@@ -28,7 +28,7 @@ android {
         versionCode rootProject.ext.appversion_int
         versionName rootProject.ext.appversion
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-
+        consumerProguardFiles 'consumer-rules.pro'
     }
 
     buildTypes {
@@ -44,6 +44,9 @@ android {
     }
 
     compileOptions {
+        sourceCompatibility = rootProject.ext.compileOptions_sourceCompatibility
+        targetCompatibility = rootProject.ext.compileOptions_targetCompatibility
+        encoding = rootProject.ext.compileOptions_encoding
     }
 }
 

@@ -18,14 +18,14 @@ android {
 
     namespace 'org.quark.dr.canapp'
     compileSdk rootProject.ext.targetSdkVersion
+    // deprecated
     //buildToolsVersion rootProject.ext.buildToolsVersion
     ndkVersion rootProject.ext.ndkVersion
-    compileOptions.encoding rootProject.ext.compileOptions_encoding
 
     defaultConfig {
         minSdkVersion rootProject.ext.minSdkVersion
         //TODO: better uses rootProject but READ_STORAGE not ok in android 14.
-        //noinspection ExpiredTargetSdkVersion
+        //noinspection OldTargetApi,ExpiredTargetSdkVersion
         targetSdkVersion 29 //rootProject.ext.targetSdkVersion
         versionCode rootProject.ext.appversion_int
         versionName rootProject.ext.appversion
@@ -42,20 +42,27 @@ android {
     buildTypes {
         release {
             minifyEnabled true
+            // Obfuscate
+            //shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
             buildConfigField "String", "TYPE", '"release"'
             // deprecated
-            // zipAlignEnabled true
+            //zipAlignEnabled true
         }
         debug {
             minifyEnabled false
+            // Obfuscate
+            //shrinkResources false
             buildConfigField "String", "TYPE", '"debug"'
             signingConfig signingConfigs.debug
         }
     }
 
-    productFlavors {
+    compileOptions {
+        sourceCompatibility = rootProject.ext.compileOptions_sourceCompatibility
+        targetCompatibility = rootProject.ext.compileOptions_targetCompatibility
+        encoding = rootProject.ext.compileOptions_encoding
     }
 }
 

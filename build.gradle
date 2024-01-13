@@ -36,7 +36,8 @@ ext {
     minSdkVersion = 19
     targetSdkVersion = 34
     compileSdkVersion = 34
-    // buildToolsVersion = "34.0.0"
+    // deprecated
+    //buildToolsVersion = "34.0.0"
     ndkVersion = '26.0.10792818'
     compileOptions_encoding = 'utf-8'
     compileOptions_sourceCompatibility = JavaVersion.VERSION_1_8
