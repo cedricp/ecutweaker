@@ -277,6 +277,9 @@ public abstract class ElmBase {
         logInfo("Intializing CAN protocol...");
         mProtocol = "CAN";
         // Based on https://github.com/cedricp/ddt4all/blob/master/elm.py#L1201
+        if (canline == -1) {
+            canline = 0;
+        }
         //write("AT WS");
         write("AT E1");
         write("AT S0");
@@ -297,17 +300,14 @@ public abstract class ElmBase {
         else {
             write("AT SH " + txa.toUpperCase());
         }
-        //write("AT SP 6");
-        //write("AT SH " + txa);
         write("AT CRA " + rxa.toUpperCase());
         write("AT FC SH " + txa.toUpperCase());
-        write("AT FC SD 30 00 00");
+        write("AT FC SD 30 00 00"); //status BS STmin
         write("AT FC SM 1");
 
         //TODO : Need get canline good value and look brp value if good also.
-        canline = 1;
         if (canline == 0) {
-            //if (0 && ecu.containsKey("brp") && ecu.get("brp").equals("1")) {
+            // TODO: Find a better way to detect baud rate, some XML files are wrong
             if (brp) {
                 if (extended_can) {
                     write("AT SP 9");
