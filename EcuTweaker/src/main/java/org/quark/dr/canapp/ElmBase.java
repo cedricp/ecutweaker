@@ -278,7 +278,9 @@ public abstract class ElmBase {
         mProtocol = "CAN";
         // Based on https://github.com/cedricp/ddt4all/blob/master/elm.py#L1201
         if (canline == -1) {
-            canline = 0;
+            // TODO : Uses 1 this need review
+            // canline = 0;
+            canline = 1;
         }
         //write("AT WS");
         write("AT E1");
