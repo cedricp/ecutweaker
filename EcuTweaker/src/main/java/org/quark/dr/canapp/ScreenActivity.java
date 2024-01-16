@@ -1002,7 +1002,9 @@ public class ScreenActivity extends AppCompatActivity {
                 String txa = m_ecu.getTxId();
                 String rxa = m_ecu.getRxId();
                 mChatService.setEcuName(m_ecu.getName());
-                mChatService.initCan(rxa, txa);
+                // TODO : Need look for canline and brp here send 0 and false.
+                boolean as_brp = m_ecu.getSdsrequests().containsKey("brp") && Objects.equals(m_ecu.getSdsrequests().get("brp"), "1");
+                mChatService.initCan(rxa, txa, 0, as_brp);
             } else if (m_ecu.getProtocol().equals("KWP2000")){
                 String fa = m_ecu.getFunctionnalAddress();
                 mChatService.initKwp(fa, m_ecu.getFastInit());

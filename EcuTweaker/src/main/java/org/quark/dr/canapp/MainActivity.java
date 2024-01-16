@@ -436,7 +436,8 @@ public class MainActivity extends AppCompatActivity {
                 String rxa = mEcuDatabase.getRxAddressById(mCurrentEcuAddressId);
                 if (rxa == null || txa == null)
                     return;
-                mObdDevice.initCan(rxa, txa);
+                // TODO : Need look for canline and brp here send 0 and false.
+                mObdDevice.initCan(rxa, txa, 0, false);
             } else if (protocol.equals("KWP2000")){
                 String hexAddr = Ecu.padLeft(Integer.toHexString(mCurrentEcuAddressId),
                         2, "0");
