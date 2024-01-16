@@ -273,27 +273,80 @@ public abstract class ElmBase {
         write("AT Z");        // reset ELM
     }
 
-    public void initCan(String rxa, String txa) {
+    public void initCan(String rxa, String txa, Integer canline, boolean brp) {
         logInfo("Intializing CAN protocol...");
         mProtocol = "CAN";
-        write("AT WS");
+        // Based on https://github.com/cedricp/ddt4all/blob/master/elm.py#L1201
+        if (canline == -1) {
+            // TODO : Uses 1 this need review
+            // canline = 0;
+            canline = 1;
+        }
+        //write("AT WS");
         write("AT E1");
         write("AT S0");
         write("AT H0");
         write("AT L0");
         write("AT AL");
         write("AT CAF0");
-
-        write("AT SP 6");
-        write("AT SH " + txa);
+        // try fix 29 bits
+        if (mCFC0) {
+            write("AT CFC0");
+        }
+        // Extended (29bits) addressing
+        boolean extended_can = rxa.length() == 8;
+        if (extended_can) {
+            write("AT CP " + txa.substring(0, 2));
+            write("AT SH " + txa.substring(2));
+        }
+        else {
+            write("AT SH " + txa.toUpperCase());
+        }
         write("AT CRA " + rxa.toUpperCase());
         write("AT FC SH " + txa.toUpperCase());
-        write("AT FC SD 30 00 00");
+        write("AT FC SD 30 00 00"); //status BS STmin
         write("AT FC SM 1");
+
+        //TODO : Need get canline good value and look brp value if good also.
+        if (canline == 0) {
+            // TODO: Find a better way to detect baud rate, some XML files are wrong
+            if (brp) {
+                if (extended_can) {
+                    write("AT SP 9");
+                } else {
+                    write("AT SP 8");
+                }
+            } else {
+                if (extended_can) {
+                    write("AT SP 7");
+                } else {
+                    write("AT SP 6");
+                }
+            }
+        } else if (canline == 1) {
+            if (extended_can) {
+                write("AT SP 7");
+            } else {
+                write("AT SP 6");
+            }
+        } else if (canline == 2) {
+            if (extended_can) {
+                write("AT SP 9");
+            } else {
+                write("AT SP 8");
+            }
+        } else {
+            write("STP 53");
+            if (canline == 3) {
+                write("STPBR 500000");
+            } else if (canline == 4) {
+                write("STPBR 250000");
+            } else if (canline == 5) {
+                write("STPBR 125000");
+            }
+        }
         mRxa = Integer.parseInt(rxa, 16);
         mTxa = Integer.parseInt(txa, 16);
-        if (mCFC0)
-            write("AT CFC0");
     }
 
     private void initIso(){
