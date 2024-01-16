@@ -29,7 +29,7 @@ public class Projects {
     public static class project {
         public String code;
         public HashMap<String, HashMap<String, HashMap<String, String>>> addressing = new HashMap<>();
-        public HashMap<String, String>  snat = new HashMap<>();
-        public HashMap<String, String>  dnat = new HashMap<>();
+        public HashMap<String, HashMap<String, String>>  snat = new HashMap<>();
+        public HashMap<String, HashMap<String, String>>  dnat = new HashMap<>();
     }
 }
