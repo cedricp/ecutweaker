@@ -22,6 +22,7 @@ import java.util.Set;
 
 public class EcuDatabase {
     public String current_project_code;
+    public String current_project_name;
     boolean m_loaded;
     private final HashMap<Integer, ArrayList<EcuInfo>> m_ecuInfo;
     private final HashMap<Integer, String> m_ecuAddressing;
@@ -221,6 +222,7 @@ public class EcuDatabase {
         for (Map.Entry<String, ProjectData.Project> p: Projects.projects.entrySet()) {
             if (Objects.equals(p.getValue().code, code)) {
                 current_project_code = code.toUpperCase();
+                current_project_name = p.getKey();
                 for (Map.Entry<String, String[]> a: p.getValue().addressing.entrySet()) {
                     Integer add_key = Integer.parseInt(a.getKey().trim(), 16);
                     String add_name = a.getValue()[1].trim();

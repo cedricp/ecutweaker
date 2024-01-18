@@ -892,9 +892,10 @@ public class MainActivity extends AppCompatActivity {
             }
             else {
                 String code = mEcuDatabase.current_project_code;
+                String name = mEcuDatabase.current_project_name;
                 title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
                 mStatusView.setText(title);
-                mLogView.append("Loaded vehicle code : " + code + "\n");
+                mLogView.append("Loaded vehicle Code : " + code + " Name: " + name +"\n");
             }
         }
     }
@@ -937,9 +938,10 @@ public class MainActivity extends AppCompatActivity {
                 edit.apply();
                 updateEcuTypeListView(mEcuFilePath, mCurrentProject);
                 String code = mEcuDatabase.current_project_code;
+                String name = mEcuDatabase.current_project_name;
                 CharSequence title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
                 mStatusView.setText(title);
-                mLogView.append("Loaded vehicle code : " + code + "\n");
+                mLogView.append("Loaded vehicle Code : " + code + " Name: " + name +"\n");
             }
         });
 
