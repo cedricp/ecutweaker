@@ -211,6 +211,9 @@ public class EcuDatabase {
     }
 
     private void buildMaps(String code){
+        if (Projects == null) {
+            throw new RuntimeException("projects.json not found or not loaded!");
+        }
         m_ecuAddressing.clear();
         // dnat
         TXADDRMAP.clear();
@@ -248,9 +251,6 @@ public class EcuDatabase {
 
     private void loadModels(){
         for (Map.Entry<String, ProjectData.Project> p: Projects.projects.entrySet()) {
-            if (Objects.equals(p.getKey(), "All")) {
-                //continue;
-            }
             MODELSMAP.put(p.getValue().code, p.getKey());
         }
         /*
