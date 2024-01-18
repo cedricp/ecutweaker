@@ -176,7 +176,6 @@ public class EcuDatabase {
         TXADDRMAP = new HashMap<>();
         loadProjectsData();
         buildMaps("ALL");
-        //loadAddressing();
         loadModels();
     }
 
@@ -203,7 +202,7 @@ public class EcuDatabase {
         return "";
     }
 
-    private void buildMaps(String code){
+    public void buildMaps(String code){
         if (Projects == null) {
             throw new RuntimeException("projects.json not found or not loaded!");
         }

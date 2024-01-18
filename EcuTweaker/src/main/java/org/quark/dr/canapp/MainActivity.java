@@ -884,17 +884,17 @@ public class MainActivity extends AppCompatActivity {
             SharedPreferences defaultPrefs = getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
             mCurrentProject = defaultPrefs.getString(PREF_PROJECT, "");
             updateEcuTypeListView(ecuFile, mCurrentProject);
+            mEcuDatabase.buildMaps(mCurrentProject);
             CharSequence title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME;
-            mStatusView.setText(title);
             if (!error.isEmpty()){
                 mLogView.append("Database exception : " + error + "\n");
                 mStatusView.setText(title);
             }
             else {
                 String code = mEcuDatabase.current_project_code;
-                title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + " => " + code;
-                mLogView.append("Loaded vehicle code : " + code + "\n");
+                title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
                 mStatusView.setText(title);
+                mLogView.append("Loaded vehicle code : " + code + "\n");
             }
         }
     }
@@ -937,7 +937,7 @@ public class MainActivity extends AppCompatActivity {
                 edit.apply();
                 updateEcuTypeListView(mEcuFilePath, mCurrentProject);
                 String code = mEcuDatabase.current_project_code;
-                CharSequence title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + " => " + code;
+                CharSequence title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
                 mStatusView.setText(title);
                 mLogView.append("Loaded vehicle code : " + code + "\n");
             }
