@@ -43,7 +43,7 @@ android {
         release {
             minifyEnabled true
             // Obfuscate
-            //shrinkResources true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
             buildConfigField "String", "TYPE", '"release"'
@@ -53,7 +53,7 @@ android {
         debug {
             minifyEnabled false
             // Obfuscate
-            //shrinkResources false
+            shrinkResources false
             buildConfigField "String", "TYPE", '"debug"'
             signingConfig signingConfigs.debug
         }
