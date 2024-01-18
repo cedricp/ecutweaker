@@ -888,6 +888,13 @@ public class MainActivity extends AppCompatActivity {
             mStatusView.setText(title);
             if (!error.isEmpty()){
                 mLogView.append("Database exception : " + error + "\n");
+                mStatusView.setText(title);
+            }
+            else {
+                String code = mEcuDatabase.current_project_code;
+                title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + " => " + code;
+                mLogView.append("Loaded vehicle code : " + code + "\n");
+                mStatusView.setText(title);
             }
         }
     }
@@ -929,6 +936,10 @@ public class MainActivity extends AppCompatActivity {
                 edit.putString(PREF_PROJECT, mCurrentProject);
                 edit.apply();
                 updateEcuTypeListView(mEcuFilePath, mCurrentProject);
+                String code = mEcuDatabase.current_project_code;
+                CharSequence title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + " => " + code;
+                mStatusView.setText(title);
+                mLogView.append("Loaded vehicle code : " + code + "\n");
             }
         });
 

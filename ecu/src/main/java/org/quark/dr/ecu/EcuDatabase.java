@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Set;
 
 public class EcuDatabase {
+    public String current_project_code;
     boolean m_loaded;
     private final HashMap<Integer, ArrayList<EcuInfo>> m_ecuInfo;
     private final HashMap<Integer, String> m_ecuAddressing;
@@ -220,6 +221,7 @@ public class EcuDatabase {
         RXADDRMAP.put(Integer.parseInt( "E8", 16), "5C4");
         for (Map.Entry<String, ProjectData.Project> p: Projects.projects.entrySet()) {
             if (Objects.equals(p.getValue().code, code)) {
+                current_project_code = code.toUpperCase();
                 for (Map.Entry<String, String[]> a: p.getValue().addressing.entrySet()) {
                     Integer add_key = Integer.parseInt(a.getKey().trim(), 16);
                     String add_name = a.getValue()[1].trim();
