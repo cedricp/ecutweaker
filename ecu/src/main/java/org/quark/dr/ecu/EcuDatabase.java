@@ -13,25 +13,23 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 public class EcuDatabase {
     boolean m_loaded;
-    private HashMap<Integer, ArrayList<EcuInfo>> m_ecuInfo;
-    private HashMap<Integer, String> m_ecuAddressing;
+    private final HashMap<Integer, ArrayList<EcuInfo>> m_ecuInfo;
+    private final HashMap<Integer, String> m_ecuAddressing;
     private Set<String> m_projectSet;
     private String m_ecuFilePath;
     private ZipFileSystem m_zipFileSystem;
 
-    private HashMap<Integer, String> RXADDRMAP, TXADDRMAP;
-    private HashMap<String, String> MODELSMAP;
+    private final HashMap<Integer, String> RXADDRMAP, TXADDRMAP;
+    private final HashMap<String, String> MODELSMAP;
 
     private static ProjectData.Projects Projects = null;
 
