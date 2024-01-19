@@ -1,8 +1,8 @@
-package org.quark.dr.canapp;
+package org.quark.dr.ecu;
 
 import java.util.HashMap;
 
-public class Projects {
+public class ProjectData {
     /**
      * {
      *  "projects": {
@@ -24,12 +24,15 @@ public class Projects {
      *  }
      * }
      */
-    public HashMap<String, project> projects = new HashMap<>();
 
-    public static class project {
+    public static class Projects {
+        public HashMap<String, Project> projects = new HashMap<>();
+    }
+
+    public static class Project {
         public String code;
-        public HashMap<String, HashMap<String, HashMap<String, String>>> addressing = new HashMap<>();
-        public HashMap<String, HashMap<String, String>>  snat = new HashMap<>();
-        public HashMap<String, HashMap<String, String>>  dnat = new HashMap<>();
+        public HashMap<String, String[]> addressing = new HashMap<>();
+        public HashMap<String, String> snat = new HashMap<>();
+        public HashMap<String, String> dnat = new HashMap<>();
     }
 }

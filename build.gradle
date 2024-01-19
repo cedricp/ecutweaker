@@ -1,7 +1,6 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    //deprecated jcenter()
     repositories {
         google()
         gradlePluginPortal()
@@ -10,16 +9,15 @@ buildscript {
     }
 
     dependencies {
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
         classpath 'com.android.tools.build:gradle:8.2.1'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
         classpath "com.github.dcendents:android-maven-gradle-plugin:1.4.1"
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
     }
 }
 
 allprojects {
-    //deprecated jcenter()
     repositories {
         google()
         gradlePluginPortal()
@@ -31,8 +29,8 @@ allprojects {
 ext {
     debug = file("$rootDir/EcuTweaker/debug")
     release = file("$rootDir/EcuTweaker/release")
-    appversion = "1.9"
-    appversion_int = 19
+    appversion = "2.0"
+    appversion_int = 20
     minSdkVersion = 19
     targetSdkVersion = 34
     compileSdkVersion = 34
