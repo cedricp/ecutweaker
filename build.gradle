@@ -11,7 +11,7 @@ buildscript {
     dependencies {
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
-        classpath 'com.android.tools.build:gradle:8.2.1'
+        classpath 'com.android.tools.build:gradle:8.2.2'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
         classpath "com.github.dcendents:android-maven-gradle-plugin:1.4.1"
     }
@@ -29,8 +29,8 @@ allprojects {
 ext {
     debug = file("$rootDir/EcuTweaker/debug")
     release = file("$rootDir/EcuTweaker/release")
-    appversion = "2.0"
-    appversion_int = 20
+    appversion = "2.1"
+    appversion_int = 21
     minSdkVersion = 19
     targetSdkVersion = 34
     compileSdkVersion = 34

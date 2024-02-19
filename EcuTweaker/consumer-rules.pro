@@ -48,7 +48,6 @@
 
 # Application classes that will be serialized/deserialized over Gson
 #-keep class com.google.gson.examples.android.model.** { <fields>; }
--keep class com.github.furtif.fridainjector.configuration.json.** { *; }
 
 # Prevent proguard from stripping interface information from TypeAdapter, TypeAdapterFactory,
 # JsonSerializer, JsonDeserializer instances (so they can be used in @JsonAdapter)
