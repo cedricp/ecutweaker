@@ -893,6 +893,7 @@ public class MainActivity extends AppCompatActivity {
             else {
                 String code = mEcuDatabase.current_project_code;
                 String name = mEcuDatabase.current_project_name;
+                mCurrentProject = mEcuDatabase.getProjectFromModel(code);
                 title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
                 mStatusView.setText(title);
                 mLogView.append("Loaded vehicle Code : " + code + " Name: " + name +"\n");
