@@ -34,5 +34,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           path: |
-            ./app/build/outputs/apk/debug/*.apk
-            ./app/build/outputs/apk/release/*.apk
+            ./EcuTweaker/build/outputs/apk/debug/*.apk
+            ./EcuTweaker/build/outputs/apk/release/*.apk
