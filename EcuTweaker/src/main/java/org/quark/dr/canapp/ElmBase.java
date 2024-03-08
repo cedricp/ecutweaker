@@ -282,7 +282,7 @@ public abstract class ElmBase {
             // canline = 0;
             canline = 1;
         }
-        //write("AT WS");
+        write("AT WS");
         write("AT E1");
         write("AT S0");
         write("AT H0");
