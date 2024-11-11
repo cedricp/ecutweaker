@@ -17,7 +17,7 @@ android {
     }
 
     namespace 'org.quark.dr.usbserial'
-    compileSdk rootProject.ext.targetSdkVersion
+    compileSdk rootProject.ext.compileSdkVersion
     // deprecated
     //buildToolsVersion rootProject.ext.buildToolsVersion
     ndkVersion rootProject.ext.ndkVersion
