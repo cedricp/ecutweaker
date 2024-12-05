@@ -14,6 +14,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -87,6 +88,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_SCREEN = 2;
     private static final int REQUEST_ENABLE_BT = 3;
     public static final String DEFAULT_PREF_TAG = "default";
+    //ajout perso
+    private static final int REQUEST_PERMISSION_LOCATION = 100;
 
     public static final int LINK_WIFI = 0;
     public static final int LINK_BLUETOOTH = 1;
@@ -600,9 +603,19 @@ public class MainActivity extends AppCompatActivity {
             stopConnectionTimer();
             try {
                 if (mLinkMode == LINK_BLUETOOTH) {
-                    if (!askBluetoothScanPermission()){
-                        return;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        // Android 12 (31) +
+                        if (!askBluetoothScanPermission()) {
+                            return;
+                        }
+                    } else {
+                        // Android 11 (30) -
+                        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_PERMISSION_LOCATION);
+                            return;
+                        }
                     }
+
                     Intent serverIntent = new Intent(this, DeviceListActivity.class);
                     startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
                 } else if (mLinkMode == LINK_USB) {
@@ -893,7 +906,6 @@ public class MainActivity extends AppCompatActivity {
             else {
                 String code = mEcuDatabase.current_project_code;
                 String name = mEcuDatabase.current_project_name;
-                mCurrentProject = mEcuDatabase.getProjectFromModel(code);
                 title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
                 mStatusView.setText(title);
                 mLogView.append("Loaded vehicle Code : " + code + " Name: " + name +"\n");
@@ -1198,5 +1210,3 @@ public class MainActivity extends AppCompatActivity {
         this.finishAffinity();
     }
 }
-
-
