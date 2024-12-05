@@ -23,7 +23,7 @@ public class ElmBluetooth extends ElmBase {
     // Debugging
     private static final String TAG = "ElmBluetoothThread";
     private static final boolean D = false;
-    private static final UUID SPP_UUID = UUID.nameUUIDFromBytes("0001101-0000-1000-8000-00805F9B34FB".getBytes());
+    private static final UUID SPP_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private ConnectThread mConnectThread;
     private ConnectedThread mConnectedThread;
     private String mBtAddress;
