@@ -78,7 +78,7 @@ import static org.quark.dr.canapp.ScreenActivity.TOAST;
 public class MainActivity extends AppCompatActivity {
     final static String TAG = "EcuTweaker";
     final static int PERMISSIONS_ACCESS_EXTERNAL_STORAGE = 0;
-    final static int PERMISSIONS_ACCESS_LOCATION = 1;
+    final static int PERMISSIONS_LOCATION = 1;
     final static int PERMISSIONS_WRITE_EXTERNAL_STORAGE = 2;
     // Intent request codes
     final static int PERMISSIONS_BLUETOOTH_CONNECT = 3;
@@ -608,8 +608,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     } else {
                         // Android 11 (30) -
-                        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_ACCESS_LOCATION);
+                        if(!askLocationPermission()) {
                             return;
                         }
                     }
@@ -672,17 +671,30 @@ public class MainActivity extends AppCompatActivity {
     }
 
     boolean askLocationPermission(){
-        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION);
+        int val = 0;
+        int permissionCheck = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
         if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            val++;
+        }
+        permissionCheck = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION);
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            val++;
+        }
+        if (val == 2) {
             mLogView.append("Location permission (necessary for WiFi) OK\n");
             return true;
         }
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)){
-            Toast.makeText(this, "You need location permission to connect to WiFi", Toast.LENGTH_SHORT).show();
+        val = 0;
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
+            val++;
         }
-        ActivityCompat.requestPermissions(this,
-                new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                PERMISSIONS_ACCESS_LOCATION);
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+            val++;
+        }
+        if (val > 0) {
+            Toast.makeText(this, "You need location permission.", Toast.LENGTH_SHORT).show();
+        }
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSIONS_LOCATION);
         return false;
     }
 
@@ -730,7 +742,7 @@ public class MainActivity extends AppCompatActivity {
                     parseDatabase();
                 }
             }
-            case PERMISSIONS_ACCESS_LOCATION: {
+            case PERMISSIONS_LOCATION: {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this, "Coarse location granted !", Toast.LENGTH_SHORT).show();
