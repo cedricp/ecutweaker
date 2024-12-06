@@ -78,7 +78,7 @@ import static org.quark.dr.canapp.ScreenActivity.TOAST;
 public class MainActivity extends AppCompatActivity {
     final static String TAG = "EcuTweaker";
     final static int PERMISSIONS_ACCESS_EXTERNAL_STORAGE = 0;
-    final static int PERMISSIONS_ACCESS_COARSE_LOCATION = 1;
+    final static int PERMISSIONS_ACCESS_LOCATION = 1;
     final static int PERMISSIONS_WRITE_EXTERNAL_STORAGE = 2;
     // Intent request codes
     final static int PERMISSIONS_BLUETOOTH_CONNECT = 3;
@@ -88,8 +88,6 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_SCREEN = 2;
     private static final int REQUEST_ENABLE_BT = 3;
     public static final String DEFAULT_PREF_TAG = "default";
-    //ajout perso
-    private static final int REQUEST_PERMISSION_LOCATION = 100;
 
     public static final int LINK_WIFI = 0;
     public static final int LINK_BLUETOOTH = 1;
@@ -611,7 +609,7 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         // Android 11 (30) -
                         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_PERMISSION_LOCATION);
+                            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_ACCESS_LOCATION);
                             return;
                         }
                     }
@@ -684,7 +682,7 @@ public class MainActivity extends AppCompatActivity {
         }
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                PERMISSIONS_ACCESS_COARSE_LOCATION);
+                PERMISSIONS_ACCESS_LOCATION);
         return false;
     }
 
@@ -732,7 +730,7 @@ public class MainActivity extends AppCompatActivity {
                     parseDatabase();
                 }
             }
-            case PERMISSIONS_ACCESS_COARSE_LOCATION: {
+            case PERMISSIONS_ACCESS_LOCATION: {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this, "Coarse location granted !", Toast.LENGTH_SHORT).show();
@@ -906,6 +904,7 @@ public class MainActivity extends AppCompatActivity {
             else {
                 String code = mEcuDatabase.current_project_code;
                 String name = mEcuDatabase.current_project_name;
+                mCurrentProject = mEcuDatabase.getProjectFromModel(code);
                 title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
                 mStatusView.setText(title);
                 mLogView.append("Loaded vehicle Code : " + code + " Name: " + name +"\n");
