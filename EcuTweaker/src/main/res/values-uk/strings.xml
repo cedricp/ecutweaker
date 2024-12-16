@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
+    <!-- BluetoothChat -->
+<string name="send">Надіслати</string>
+<string name="not_connected">Немає зв’язку з пристроєм</string>
+<string name="bt_not_enabled_leaving">Bluetooth не підключений. Вихід з Bluetooth Chat.</string>
+<string name="title_connecting">Підключення…</string>
+<string name="title_connected_to">Підключено до <xliff:g id="device_name">%1$s</xliff:g></string>
+<string name="title_not_connected">немає підключення</string>
+
+<!-- DeviceListActivity -->
+<string name="scanning">сканування пристроїв…</string>
+<string name="select_device">виберіть пристрій для підключення</string>
+<string name="none_paired">Немає спарених пристроїв</string>
+<string name="none_found">Пристрої не знайдено</string>
+<string name="title_paired_devices">Спарені пристрої</string>
+<string name="title_other_devices">Доступні пристрої</string>
+<string name="button_scan">Пошук пристроїв</string>
+
+<!-- Application strings -->
+<string name="INDEXING_DB">БАЗУ ЗНАЙДЕНО...</string>
+<string name="DB_NOT_FOUND">БАЗУ НЕ ЗНАЙДЕНО</string>
+<string name="WRONG_CODE">Код не підходить!</string>
+<string name="APP_UNLOCKED">Розблоковано</string>
+<string name="APP_ENTER_CODE">Введіть код активації</string>
+<string name="USER_REQUEST_CODE">Ваш код запиту</string>
+<string name="OK">OK</string>
+<string name="CANCEL">Скасувати</string>
+<string name="USER_USES_DEMO_MODE">Ви використовуєте демо-версію, запис заблоковано.</string>
+<string name="BT_MANAGER_MESSAGE">Повідомлення менеджера ELM</string>
+<string name="ECU_PART_MATCH">ECU частково збігається (використовуйте обережно)</string>
+<string name="ECU_MATCH">ECU повністю збігається</string>
+<string name="ECU_FOUND">ECU знайдено</string>
+<string name="DIAG_VERSION">версія діагностики</string>
+<string name="VERSION">версія</string>
+<string name="SOFT_VERSION">версія програмного забезпечення</string>
+<string name="SUPPLIER_VERSION">версія постачальника</string>
+<string name="CHOOSE_PROJECT">Виберіть проєкт</string>
+<string name="INFORMATION">Інформація</string>
+<string name="DEMO_MESSAGE"><![CDATA[Ласкаво просимо до <b>ECU TWEAKER</b>,<br> Ви використовуєте застосунок у демонстраційному режимі.
+Ви можете читати всі параметри блоків, але не можете
+використовувати кнопки чи функцію <i>СБРОС DTC</i>.<br>
+Для розблокування надішліть мені код запиту, і я надішлю Вам код активації.<br>
+<b>Будьте уважні! Ви використовуєте цей застосунок на власний ризик.
+Розробник не несе жодної відповідальності за роботу застосунку та за те, що ви робите з його допомогою.</u></b>]]></string>
+<string name="BAD_RESPONSE">Невірна відповідь</string>
+<string name="TO_REQUEST">на запит</string>
+<string name="INVALID_VALUE">Невірне значення, перевірте</string>
+<string name="FRAME_COMPUTE_FAILED">Помилка складання фрейму</string>
+<string name="COMPUTED_FRAME">Складений фрейм</string>
+<string name="CATEGORY_CHOOSE">Виберіть категорію</string>
+<string name="SCREEN_CHOOSE">Виберіть екран</string>
+<string name="FRAME_NOT_SENT">Фрейм не відправлено (Bluetooth не підключений)</string>
+<string name="NO_ELM_RESPONSE">Немає відповіді від ELM</string>
+<string name="DTC_CLEAR_OK">Скидання DTC успішне</string>
+<string name="NEGATIVE_RESPONSE">негативна відповідь</string>
+<string name="ELM_RESPONSE">відповідь ELM</string>
+<string name="BAD_ELM_RESPONSE">невірна відповідь ELM</string>
+<string name="CLEAR_ALL_DTC">Скинути всі DTC?</string>
+<string name="YES">Так</string>
+<string name="NO">Ні</string>
+<string name="NO_DTC_STORED">У блоці немає збережених DTC</string>
+<string name="NEW_DEVICE">Блок знайдено</string>
+<string name="CHOOSE_BT_DEVICE">Виберіть пристрій</string>
+<string name="AUTO_IDENTIFY">Авто-визначення</string>
+<string name="AUTO_IDENT_RESULT">Результат авто-визначення</string>
+<string name="NO_CHAT_SESSION">Спроба відправити команду за неактивного BT</string>
+<string name="LOGS">Перегляд логів</string>
+<string name="COPY_TO_CLIPBOARD">Скопіювати в буфер обміну</string>
+<string name="CLEAR_LOG">Очистити логи</string>
+<string name="LOGFILE_DELETED">Лог-файл видалено</string>
+<string name="LOGFILE_DELETE_FAILED">Помилка видалення лог-файлу</string>
+<string name="LONGPRESS_TO_DELETE">Довге натискання для скидання</string>
+</resources>
