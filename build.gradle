@@ -31,7 +31,7 @@ ext {
     release = file("$rootDir/EcuTweaker/release")
     appversion = "2.1"
     appversion_int = 21
-    minSdkVersion = 19
+    minSdkVersion = 21
     targetSdkVersion = 29
     compileSdkVersion = 34
     // deprecated
