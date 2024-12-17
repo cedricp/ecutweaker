@@ -30,7 +30,7 @@ public class EcuDatabase {
     private String m_ecuFilePath;
     private ZipFileSystem m_zipFileSystem;
 
-    private final HashMap<Integer, String> RXADDRMAP, TXADDRMAP;
+    private final HashMap<Integer, String> RXADDRMAP, TXADDRMAP, RXADDRMAP_EXT, TXADDRMAP_EXT;
     private final HashMap<String, String> MODELSMAP;
 
     private static ProjectData.Projects Projects = null;
@@ -175,6 +175,8 @@ public class EcuDatabase {
         MODELSMAP = new HashMap<>();
         RXADDRMAP = new HashMap<>();
         TXADDRMAP = new HashMap<>();
+        RXADDRMAP_EXT = new HashMap<>();
+        TXADDRMAP_EXT = new HashMap<>();
         loadProjectsData();
         buildMaps("ALL");
         loadModels();
@@ -210,15 +212,13 @@ public class EcuDatabase {
         m_ecuAddressing.clear();
         // dnat
         TXADDRMAP.clear();
+        // dnat_ext
+        TXADDRMAP_EXT.clear();
         // snat
         RXADDRMAP.clear();
-        // TODO missing entries this need look side ecu addressing missing entries or ignore {}
-        // dnat
-        TXADDRMAP.put(Integer.parseInt("E7", 16), "7E4");
-        TXADDRMAP.put(Integer.parseInt( "E8", 16), "644");
-        // snat
-        RXADDRMAP.put(Integer.parseInt("E7", 16), "7EC");
-        RXADDRMAP.put(Integer.parseInt( "E8", 16), "5C4");
+        // snat_ext
+        RXADDRMAP_EXT.clear();
+
         for (Map.Entry<String, ProjectData.Project> p: Projects.projects.entrySet()) {
             if (Objects.equals(p.getValue().code, code)) {
                 current_project_code = code.toUpperCase();
@@ -234,11 +234,23 @@ public class EcuDatabase {
                     String dnat_name = d.getValue().trim();
                     TXADDRMAP.put(dnat_key, dnat_name);
                 }
+                // dnat_ext
+                for (Map.Entry<String, String> d: p.getValue().dnat_ext.entrySet()) {
+                    Integer dnat_ext_key = Integer.parseInt(d.getKey().trim(), 16);
+                    String dnat_ext_name = d.getValue().trim();
+                    TXADDRMAP_EXT.put(dnat_ext_key, dnat_ext_name);
+                }
                 // snat
                 for (Map.Entry<String, String> s: p.getValue().snat.entrySet()) {
                     Integer snat_key = Integer.parseInt(s.getKey().trim(), 16);
                     String snat_name = s.getValue().trim();
                     RXADDRMAP.put(snat_key, snat_name);
+                }
+                // snat_ext
+                for (Map.Entry<String, String> s: p.getValue().snat_ext.entrySet()) {
+                    Integer snat_ext_key = Integer.parseInt(s.getKey().trim(), 16);
+                    String snat_ext_name = s.getValue().trim();
+                    RXADDRMAP.put(snat_ext_key, snat_ext_name);
                 }
             }
         }
@@ -456,6 +468,14 @@ public class EcuDatabase {
 
     public String getTxAddressById(int id){
         return TXADDRMAP.get(id);
+    }
+
+    public String getRxExtAddressById(int id){
+        return RXADDRMAP_EXT.get(id);
+    }
+
+    public String getTxExtAddressById(int id){
+        return TXADDRMAP_EXT.get(id);
     }
 
     public ZipFileSystem getZipFileSystem(){

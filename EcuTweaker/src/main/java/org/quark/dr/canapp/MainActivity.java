@@ -118,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
     private Handler mHandler = null;
     private EcuDatabase.EcuIdentifierNew mEcuIdentifierNew = null;
     private Timer mConnectionTimer;
-    private LicenseLock mLicenseLock;
+    // private LicenseLock mLicenseLock;
     private int mLinkMode;
     private boolean mActivateBluetoothAsked;
     private ProgressDialog mScanProgressDialog;
@@ -157,9 +157,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initialize() {
+        /*
         long id = new BigInteger(Settings.Secure.getString(getContentResolver(),
                 Settings.Secure.ANDROID_ID), 16).longValue();
         mLicenseLock = new LicenseLock(id);
+         */
         SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
         String linkMode = defaultPrefs.getString(PREF_LINK_MODE, "BT");
 
@@ -433,9 +435,14 @@ public class MainActivity extends AppCompatActivity {
     void initBus(String protocol, boolean fastinit){
         if (isChatConnected()) {
             if (protocol.equals("CAN")) {
-                String txa = mEcuDatabase.getTxAddressById(mCurrentEcuAddressId);
-                String rxa = mEcuDatabase.getRxAddressById(mCurrentEcuAddressId);
-                if (rxa == null || txa == null)
+                // TODO : Need look if is extended for better in this.
+                 String txa = mEcuDatabase.getTxAddressById(mCurrentEcuAddressId);
+                 String rxa = mEcuDatabase.getRxAddressById(mCurrentEcuAddressId);
+                 if (rxa == null || txa == null) {
+                    txa = mEcuDatabase.getTxExtAddressById(mCurrentEcuAddressId);
+                    rxa = mEcuDatabase.getRxExtAddressById(mCurrentEcuAddressId);
+                 }
+                 if (rxa == null || txa == null)
                     return;
                 // TODO : Need look for canline and brp here send 0 and false.
                 mObdDevice.initCan(rxa, txa, 0, false);
@@ -642,7 +649,7 @@ public class MainActivity extends AppCompatActivity {
             b.putString("ecuFile", ecuFile);
             b.putString("ecuRef", ecuHREFName);
             b.putString("deviceAddress", mBtDeviceAddress);
-            b.putBoolean("licenseOk", mLicenseLock.isLicenseOk());
+            //b.putBoolean("licenseOk", mLicenseLock.isLicenseOk());
             b.putInt("linkMode", mLinkMode);
             serverIntent.putExtras(b);
             startActivityForResult(serverIntent, REQUEST_SCREEN);

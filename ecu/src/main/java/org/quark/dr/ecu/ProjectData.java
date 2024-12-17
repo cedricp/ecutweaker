@@ -16,9 +16,13 @@ public class ProjectData {
      *    },
      *    "snat": {
      *     "E7": "7EC"
+     *    "snat_ext": {
+     *     "E7": "7ECDDDEE"
      *    },
      *    "dnat": {
      *     "E7": "7E4"
+     *    "dnat_ext": {
+     *     "E7": "7E4EEEFF"
      *    }
      *   }
      *  }
@@ -33,6 +37,8 @@ public class ProjectData {
         public String code;
         public HashMap<String, String[]> addressing = new HashMap<>();
         public HashMap<String, String> snat = new HashMap<>();
+        public HashMap<String, String> snat_ext = new HashMap<>();
         public HashMap<String, String> dnat = new HashMap<>();
+        public HashMap<String, String> dnat_ext = new HashMap<>();
     }
 }
