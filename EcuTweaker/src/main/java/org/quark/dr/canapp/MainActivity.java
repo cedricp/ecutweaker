@@ -596,39 +596,39 @@ public class MainActivity extends AppCompatActivity {
         mSpecificEcuListView.setAdapter(adapter);
     }
 
-    void selectDevice(){
-        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
-        // If the adapter is null, then Bluetooth is not supported
-        if (bluetoothAdapter == null) {
-            return;
-        }
-
-        if (bluetoothAdapter.isEnabled()) {
-            stopConnectionTimer();
-            try {
-                if (mLinkMode == LINK_BLUETOOTH) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        // Android 12 (31) +
-                        if (!askBluetoothScanPermission()) {
-                            return;
-                        }
-                    } else {
-                        // Android 11 (30) -
-                        if(!askLocationPermission()) {
-                            return;
-                        }
-                    }
-
-                    Intent serverIntent = new Intent(this, DeviceListActivity.class);
-                    startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
-                } else if (mLinkMode == LINK_USB) {
-                    Intent serverIntent = new Intent(this, UsbDeviceActivity.class);
-                    startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+    void selectDevice() {
+        stopConnectionTimer();
+        try {
+            if (mLinkMode == LINK_BLUETOOTH) {
+                BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+                // If the adapter is null, then Bluetooth is not supported
+                if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
+                    return;
                 }
-            } catch (android.content.ActivityNotFoundException e) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    // Android 12 (31) +
+                    if (!askBluetoothScanPermission()) {
+                        return;
+                    }
+                } else {
+                    // Android 11 (30) -
+                    if (!askLocationPermission()) {
+                        return;
+                    }
+                }
 
+                Intent serverIntent = new Intent(this, DeviceListActivity.class);
+                startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+            } else if (mLinkMode == LINK_USB) {
+                Intent serverIntent = new Intent(this, UsbDeviceActivity.class);
+                startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+            } else if (mLinkMode == LINK_WIFI) {
+                if (!askLocationPermission()) {
+                    //return;
+                }
             }
+        } catch (android.content.ActivityNotFoundException e) {
+
         }
     }
 
