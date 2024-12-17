@@ -5,7 +5,7 @@ EcuTweaker is tool to create your own ECU parameters screens and connect to a CA
 
 ## Informations
 
-**_DataBase not included, do not forget to install database as ecu.zip or full mode in to root clone repo._**
+**_DataBase not included, do not forget to install database as ecu.zip InternalStorage root._**
 
 ### Report bugs
 Report bugs you found in [issues](https://github.com/cedricp/ecutweaker/issues).
