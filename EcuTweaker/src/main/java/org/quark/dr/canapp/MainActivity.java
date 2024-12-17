@@ -19,7 +19,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.provider.Settings;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -50,7 +49,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.math.BigInteger;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -752,7 +750,7 @@ public class MainActivity extends AppCompatActivity {
             case PERMISSIONS_LOCATION: {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this, "Coarse location granted !", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Location granted !", Toast.LENGTH_SHORT).show();
                     selectDevice();
                 }
             }
