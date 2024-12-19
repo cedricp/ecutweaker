@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author mike wakerly (opensource@hoho.com)
  */
 public class UsbSerialProber {
@@ -45,7 +44,7 @@ public class UsbSerialProber {
     public static UsbSerialProber getDefaultProber() {
         return new UsbSerialProber(getDefaultProbeTable());
     }
-    
+
     public static ProbeTable getDefaultProbeTable() {
         final ProbeTable probeTable = new ProbeTable();
         probeTable.addDriver(CdcAcmSerialDriver.class);
@@ -74,19 +73,19 @@ public class UsbSerialProber {
                     result.add(driver);
                 }
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             Log.e("USBMANAGER", "Cannot enumerate USB devices");
         }
         return result;
 
     }
-    
+
     /**
      * Probes a single device for a compatible driver.
-     * 
+     *
      * @param usbDevice the usb device to probe
      * @return a new {@link UsbSerialDriver} compatible with this device, or
-     *         {@code null} if none available.
+     * {@code null} if none available.
      */
     public UsbSerialDriver probeDevice(final UsbDevice usbDevice) {
         final int vendorId = usbDevice.getVendorId();

@@ -118,7 +118,7 @@ public class SerialInputOutputManager implements Runnable {
     /**
      * Continuously services the read and write buffers until {@link #stop()} is
      * called, or until a driver exception is raised.
-     *
+     * <p>
      * NOTE(mikey): Uses inefficient read/write-with-timeout.
      * TODO(mikey): Read asynchronously with {@link UsbRequest#queue(ByteBuffer, int)}
      */
@@ -144,7 +144,7 @@ public class SerialInputOutputManager implements Runnable {
             Log.w(TAG, "Run ending due to exception: " + e.getMessage(), e);
             final Listener listener = getListener();
             if (listener != null) {
-              listener.onRunError(e);
+                listener.onRunError(e);
             }
         } finally {
             synchronized (this) {

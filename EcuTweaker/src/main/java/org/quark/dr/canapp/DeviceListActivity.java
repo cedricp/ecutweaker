@@ -1,7 +1,13 @@
 package org.quark.dr.canapp;
 
+import static org.quark.dr.canapp.MainActivity.PERMISSIONS_BLUETOOTH_CONNECT;
+import static org.quark.dr.canapp.MainActivity.PERMISSIONS_BLUETOOTH_SCAN;
+import static org.quark.dr.canapp.MainActivity.PERMISSIONS_LOCATION;
+import static org.quark.dr.canapp.MainActivity.mLogView;
+
 import java.util.Set;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -10,9 +16,16 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +36,7 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.Toast;
 
 
 /**
@@ -42,13 +56,74 @@ public class DeviceListActivity extends Activity {
     // Member fields
     private BluetoothAdapter mBtAdapter;
     private ArrayAdapter<String> mNewDevicesArrayAdapter;
+
+    @RequiresApi(api = Build.VERSION_CODES.S)
+    boolean askBluetoothPermission() {
+        int permissionCheck = ContextCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_CONNECT);
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            mLogView.append("Bluetooth connect permission OK\n");
+            return true;
+        }
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.BLUETOOTH_CONNECT)) {
+            Toast.makeText(this, "You need location permission to connect to WiFi", Toast.LENGTH_SHORT).show();
+        }
+        ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.BLUETOOTH_CONNECT},
+                PERMISSIONS_BLUETOOTH_CONNECT);
+        return false;
+    }
+
+    boolean askLocationPermission() {
+        int val = 0;
+        int permissionCheck = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            val++;
+        }
+        permissionCheck = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION);
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            val++;
+        }
+        if (val == 2) {
+            mLogView.append("Location permission (necessary for WiFi) OK\n");
+            return true;
+        }
+        val = 0;
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
+            val++;
+        }
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+            val++;
+        }
+        if (val > 0) {
+            Toast.makeText(this, "You need location permission.", Toast.LENGTH_SHORT).show();
+        }
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSIONS_LOCATION);
+        return false;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.S)
+    boolean askBluetoothScanPermission() {
+        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN);
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            mLogView.append("Bluetooth scan permission OK\n");
+            return true;
+        }
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.BLUETOOTH_SCAN)) {
+            Toast.makeText(this, "You need location permission to connect to WiFi", Toast.LENGTH_SHORT).show();
+        }
+        ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.BLUETOOTH_SCAN},
+                PERMISSIONS_BLUETOOTH_SCAN);
+        return false;
+    }
+
+
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
      */
 
     @Override
-    @SuppressLint("MissingPermission")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
@@ -100,6 +175,18 @@ public class DeviceListActivity extends Activity {
         // Register for broadcasts when discovery has finished
         filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         this.registerReceiver(mReceiver, filter);
+        // Get a set of currently paired devices
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (!askBluetoothPermission()) {
+                    return;
+                }
+            } else {
+                if (!askLocationPermission()) {
+                    return;
+                }
+            }
+        }
 
         // Get the local Bluetooth adapter
         mBtAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -108,7 +195,7 @@ public class DeviceListActivity extends Activity {
         Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
 
         // If there are paired devices, add each one to the ArrayAdapter
-        if (pairedDevices.size() > 0) {
+        if (!pairedDevices.isEmpty()) {
             findViewById(R.id.title_paired_devices).setVisibility(View.VISIBLE);
             for (BluetoothDevice device : pairedDevices) {
                 mPairedDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
@@ -126,12 +213,23 @@ public class DeviceListActivity extends Activity {
     }
 
     @Override
-    @SuppressLint("MissingPermission")
     protected void onDestroy() {
         super.onDestroy();
 
         // Make sure we're not doing discovery anymore
         if (mBtAdapter != null) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (!askBluetoothScanPermission()) {
+                        return;
+                    }
+                }
+                else {
+                    if (!askLocationPermission()) {
+                        return;
+                    }
+                }
+            }
             mBtAdapter.cancelDiscovery();
         }
 
@@ -142,7 +240,7 @@ public class DeviceListActivity extends Activity {
     /**
      * Start device discover with the BluetoothAdapter
      */
-    @SuppressLint("MissingPermission")
+
     private void doDiscovery() {
         if (D) Log.d(TAG, "doDiscovery()");
 
@@ -154,6 +252,18 @@ public class DeviceListActivity extends Activity {
         findViewById(R.id.title_new_devices).setVisibility(View.VISIBLE);
 
         // If we're already discovering, stop it
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (!askBluetoothScanPermission()) {
+                    return;
+                }
+            }
+            else {
+                if (!askLocationPermission()) {
+                    return;
+                }
+            }
+        }
         if (mBtAdapter.isDiscovering()) {
             mBtAdapter.cancelDiscovery();
         }
@@ -163,10 +273,21 @@ public class DeviceListActivity extends Activity {
     }
 
     // The on-click listener for all devices in the ListViews
-    @SuppressLint("MissingPermission")
     private final OnItemClickListener mDeviceClickListener = new OnItemClickListener() {
         public void onItemClick(AdapterView<?> av, View v, int arg2, long arg3) {
             // Cancel discovery because it's costly and we're about to connect
+            if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (!askBluetoothScanPermission()) {
+                        return;
+                    }
+                }
+                else {
+                    if (!askLocationPermission()) {
+                        return;
+                    }
+                }
+            }
             mBtAdapter.cancelDiscovery();
 
             // Get the device MAC address, which is the last 17 chars in the View
@@ -185,7 +306,6 @@ public class DeviceListActivity extends Activity {
 
     // The BroadcastReceiver that listens for discovered devices and
     // changes the title when discovery is finished
-    @SuppressLint("MissingPermission")
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -193,6 +313,18 @@ public class DeviceListActivity extends Activity {
 
             // When discovery finds a device
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        if (!askBluetoothScanPermission()) {
+                            return;
+                        }
+                    }
+                    else {
+                        if (!askLocationPermission()) {
+                            return;
+                        }
+                    }
+                }
                 // Get the BluetoothDevice object from the Intent
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 // If it's already paired, skip it, because it's been listed already
@@ -214,13 +346,10 @@ public class DeviceListActivity extends Activity {
     @Override
     public void onStart() {
         super.onStart();
-
     }
 
     @Override
     public void onStop() {
         super.onStop();
-
-
     }
 }

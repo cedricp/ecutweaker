@@ -16,13 +16,6 @@
     <string name="COMPUTED_FRAME">Computed frame</string>
     <string name="COPY_TO_CLIPBOARD">kopieer naar clipboard</string>
     <string name="DB_NOT_FOUND">Database niet gevonden</string>
-    <string name="DEMO_MESSAGE"><![CDATA[Welkom bij <b>ECU TWEAKER</b>,<br> U gebruikt deze
- applicatie in de demonstratiemodus. Je kunt het gebruiken om alle ECU-parameters te lezen,
- maar je mag geen gebruik maken van de knoppen of de <i>Verwijder DTC</i> functie.
- <br> Je kunt het ontgrendelen door me de aanvraagcode te sturen. Ik stuur je een activeringscode
- terug.<br> <b>Pas op, bij grootse mogelijkheden hoort een grote verantwoordelijkheid, je gebruikt het op
- eigen risico. De ontwikkelaar wijst alle verantwoordelijkheden af, <u>u bent de enige verantwoordelijke
- voor wat u met deze software doet.</u></b>"</string>]]></string>
     <string name="DIAG_VERSION">diagnostische versie</string>
     <string name="DTC_CLEAR_OK">Verwijderen DTC succesvol</string>
     <string name="ECU_FOUND">ECU gevonden</string>
@@ -50,7 +43,6 @@
     <string name="SUPPLIER_VERSION">Leveranciers-versie</string>
     <string name="TO_REQUEST">vragen</string>
     <string name="USER_REQUEST_CODE">Uw aangevraagde code</string>
-    <string name="USER_USES_DEMO_MODE">U gebruikt de demoversie, schrijffuncties zijn gedeactiveerd.</string>
     <string name="VERSION">versie</string>
     <string name="WRONG_CODE">Verkeerde code, sorry !</string>
     <string name="YES">Ja</string>

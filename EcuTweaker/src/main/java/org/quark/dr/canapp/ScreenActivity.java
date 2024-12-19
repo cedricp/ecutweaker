@@ -15,7 +15,9 @@ import android.text.Html;
 import android.text.Spanned;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Pair;
+
 import androidx.appcompat.app.AppCompatActivity;
+
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -93,29 +95,29 @@ public class ScreenActivity extends AppCompatActivity {
     private int mFontSizeOverride;
 
     // Intent request codes
-    private static final int    REQUEST_CONNECT_DEVICE = 1;
-    private static final int    REQUEST_ENABLE_BT      = 3;
+    private static final int REQUEST_CONNECT_DEVICE = 1;
+    private static final int REQUEST_ENABLE_BT = 3;
 
-    public static final int     MESSAGE_STATE_CHANGE    = 1;
-    public static final int     MESSAGE_READ            = 2;
-    public static final int     MESSAGE_WRITE           = 3;
-    public static final int     MESSAGE_DEVICE_NAME     = 4;
-    public static final int     MESSAGE_TOAST           = 5;
-    public static final int     MESSAGE_QUEUE_STATE     = 6;
-    public static final int     MESSAGE_LOG             = 7;
-    public static final String  DEVICE_NAME = "device_name";
-    public static final String  TOAST       = "toast";
-    private String              mConnectedDeviceName = null;
-    private float               mGlobalScale;
-    private long                mLastSDSTime;
-    private boolean             mDemoMode, mSoftFlowControl;
+    public static final int MESSAGE_STATE_CHANGE = 1;
+    public static final int MESSAGE_READ = 2;
+    public static final int MESSAGE_WRITE = 3;
+    public static final int MESSAGE_DEVICE_NAME = 4;
+    public static final int MESSAGE_TOAST = 5;
+    public static final int MESSAGE_QUEUE_STATE = 6;
+    public static final int MESSAGE_LOG = 7;
+    public static final String DEVICE_NAME = "device_name";
+    public static final String TOAST = "toast";
+    private String mConnectedDeviceName = null;
+    private float mGlobalScale;
+    private long mLastSDSTime;
+    private boolean mSoftFlowControl;
 
-    public float convertToPixel(float val){
+    public float convertToPixel(float val) {
         return (val / 8.0f) * mGlobalScale;
     }
 
-    public float convertFontToPixel(int val){
-        return val * 2 * ((float)mFontSizeOverride / 100.0f) * mGlobalScale;
+    public float convertFontToPixel(int val) {
+        return val * 2 * ((float) mFontSizeOverride / 100.0f) * mGlobalScale;
     }
 
     @Override
@@ -127,8 +129,6 @@ public class ScreenActivity extends AppCompatActivity {
 
     private void initialize(Bundle savedInstanceState) {
         mCanTimeOut = 0;
-        //mDemoMode = true;
-        mDemoMode = false;
         String ecuFile = "";
         String ecuHref = "";
         m_autoReload = false;
@@ -147,12 +147,11 @@ public class ScreenActivity extends AppCompatActivity {
         if (b != null) {
             ecuFile = b.getString("ecuFile");
             ecuHref = b.getString("ecuRef");
-            if (b.containsKey("deviceAddress")){
+            if (b.containsKey("deviceAddress")) {
                 String m_deviceAddressPref = b.getString("deviceAddress");
             }
-            //mDemoMode =  ! b.getBoolean("licenseOk");
             linkMode = b.getInt("linkMode", MainActivity.LINK_WIFI);
-        } else if (savedInstanceState != null && savedInstanceState.containsKey("ecu_name")){
+        } else if (savedInstanceState != null && savedInstanceState.containsKey("ecu_name")) {
             ecuFile = savedInstanceState.getString("ecu_name");
         }
 
@@ -164,7 +163,7 @@ public class ScreenActivity extends AppCompatActivity {
         ImageButton m_dtcClearButton = findViewById(R.id.dtcClearButton);
         ImageButton settingsButton = findViewById(R.id.settingsButton);
         settingsButton.setOnClickListener(v -> {
-            LayoutInflater inflater= LayoutInflater.from(ScreenActivity.this);
+            LayoutInflater inflater = LayoutInflater.from(ScreenActivity.this);
             View view = inflater.inflate(R.layout.can_settings, null);
             ArrayList<String> sdsList = new ArrayList<>(m_ecu.getSdsrequests().keySet());
 
@@ -181,15 +180,16 @@ public class ScreenActivity extends AppCompatActivity {
             ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(ScreenActivity.this,
                     android.R.layout.simple_list_item_1, sdsList);
             sdsSpinner.setAdapter(dataAdapter);
-            sdsSpinner.setOnItemSelectedListener(new Spinner.OnItemSelectedListener(){
+            sdsSpinner.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {
                 @Override
                 public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                     String sdsname = ((TextView) view).getText().toString();
                     m_ecu.setDefautSDS(sdsname);
                     m_logView.append("Defaut diag session switched to " + m_ecu.getDefaultSDS() + "\n");
                 }
+
                 @Override
-                public void onNothingSelected(AdapterView<?> parent){
+                public void onNothingSelected(AdapterView<?> parent) {
 
                 }
             });
@@ -233,7 +233,7 @@ public class ScreenActivity extends AppCompatActivity {
 
                 }
             });
-            alert.setButton(AlertDialog.BUTTON_POSITIVE,getResources().
+            alert.setButton(AlertDialog.BUTTON_POSITIVE, getResources().
                             getString(R.string.OK),
                     (dialog, which) -> {
                         applySettings();
@@ -255,12 +255,12 @@ public class ScreenActivity extends AppCompatActivity {
         });
 
         m_reloadButton.setOnLongClickListener(v -> {
-            if (!isChatConnected()){
+            if (!isChatConnected()) {
                 connectDevice();
                 return true;
             }
             m_autoReload = !m_autoReload;
-            if (m_autoReload){
+            if (m_autoReload) {
                 m_reloadButton.setColorFilter(Color.GREEN);
             } else {
                 stopAutoReload();
@@ -270,7 +270,7 @@ public class ScreenActivity extends AppCompatActivity {
         });
 
         m_reloadButton.setOnClickListener(v -> {
-            if (!isChatConnected()){
+            if (!isChatConnected()) {
                 connectDevice();
                 Toast.makeText(getApplicationContext(),
                         getResources().getString(R.string.not_connected),
@@ -338,13 +338,13 @@ public class ScreenActivity extends AppCompatActivity {
 
         mChatService.setSoftFlowControl(mSoftFlowControl);
 
-        if (!ecuFile.isEmpty()){
+        if (!ecuFile.isEmpty()) {
             openEcu(ecuFile, ecuHref);
         }
 
         connectDevice();
 
-        if (savedInstanceState != null && savedInstanceState.containsKey("screen_name")){
+        if (savedInstanceState != null && savedInstanceState.containsKey("screen_name")) {
             m_currentScreenName = savedInstanceState.getString("screen_name");
             drawScreen(m_currentScreenName);
         } else {
@@ -353,8 +353,8 @@ public class ScreenActivity extends AppCompatActivity {
         m_logView.append("Default diag session : " + m_ecu.getDefaultSDS() + "\n");
     }
 
-    void applySettings(){
-        if(isChatConnected()){
+    void applySettings() {
+        if (isChatConnected()) {
             mChatService.setTimeOut(mCanTimeOut);
         }
         SharedPreferences defaultPrefs =
@@ -365,12 +365,12 @@ public class ScreenActivity extends AppCompatActivity {
         edit.apply();
     }
 
-    void stopAutoReload(){
+    void stopAutoReload() {
         m_autoReload = false;
         m_reloadButton.clearColorFilter();
     }
 
-    void openEcu(String ecuFile, String ecuName){
+    void openEcu(String ecuFile, String ecuName) {
         String layoutFileName = ecuName + ".layout";
 
         String appDir = getApplicationContext().getFilesDir().getAbsolutePath();
@@ -382,7 +382,7 @@ public class ScreenActivity extends AppCompatActivity {
             m_ecu = new Ecu(ecuJson);
             m_currentLayoutData = new Layout(layoutJson);
             m_currentEcuName = ecuName;
-        } catch (EcuDatabase.DatabaseException e){
+        } catch (EcuDatabase.DatabaseException e) {
             e.printStackTrace();
         }
     }
@@ -394,8 +394,7 @@ public class ScreenActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
     }
 
-    void drawScreen(String screenName)
-    {
+    void drawScreen(String screenName) {
         // In case the user clicked multiple times on zoom button
         // and there are messages pending
         mChatService.clearMessages();
@@ -407,7 +406,7 @@ public class ScreenActivity extends AppCompatActivity {
         m_buttonsCommand = new HashMap<>();
         m_requestsInputs = new HashMap<>();
         m_displaysRequestSet = new HashSet<>();
-        m_startRequestSet =  new HashSet<>();
+        m_startRequestSet = new HashSet<>();
 
         if (m_currentLayoutData == null)
             return;
@@ -416,7 +415,7 @@ public class ScreenActivity extends AppCompatActivity {
         if (m_currentScreenData == null)
             return;
 
-        for (Pair<Integer, String> pair : m_currentScreenData.getPreSendData()){
+        for (Pair<Integer, String> pair : m_currentScreenData.getPreSendData()) {
             Ecu.EcuRequest request = m_ecu.getRequest(pair.second);
             // Skip start diagnostic session
             if (request.sentbytes.startsWith("10"))
@@ -430,8 +429,8 @@ public class ScreenActivity extends AppCompatActivity {
                 (int) convertToPixel(m_currentScreenData.m_height) + 80));
         m_layoutView.setBackgroundColor(m_currentScreenData.m_color.get());
 
-        for (Layout.LabelData labelData: m_currentScreenData.getLabels()) {
-            if (labelData.text.toUpperCase().startsWith("::PIC:")){
+        for (Layout.LabelData labelData : m_currentScreenData.getLabels()) {
+            if (labelData.text.toUpperCase().startsWith("::PIC:")) {
                 String gifName = labelData.text;
 
                 gifName = gifName.replace("::pic:", "")
@@ -441,9 +440,9 @@ public class ScreenActivity extends AppCompatActivity {
                 String filenamel = "graphics/" + gifName + ".gif";
 
                 byte[] imageBytes = null;
-                if (m_ecuDatabase.getZipFileSystem().fileExists(filenameu)){
+                if (m_ecuDatabase.getZipFileSystem().fileExists(filenameu)) {
                     imageBytes = m_ecuDatabase.getZipFileSystem().getZipFileAsBytes(filenameu);
-                } else if (m_ecuDatabase.getZipFileSystem().fileExists(filenamel)){
+                } else if (m_ecuDatabase.getZipFileSystem().fileExists(filenamel)) {
                     imageBytes = m_ecuDatabase.getZipFileSystem().getZipFileAsBytes(filenamel);
                 }
 
@@ -481,7 +480,7 @@ public class ScreenActivity extends AppCompatActivity {
             }
         }
 
-        for (Layout.DisplayData displaydata : m_currentScreenData.getDisplays()){
+        for (Layout.DisplayData displaydata : m_currentScreenData.getDisplays()) {
             if (displaydata.width > 0) {
                 TextView textView = new TextView(this);
                 textView.setX(convertToPixel(displaydata.rect.x));
@@ -507,7 +506,7 @@ public class ScreenActivity extends AppCompatActivity {
                     convertFontToPixel(displaydata.font.size));
             textEdit.setEnabled(false);
             textEdit.setText("---");
-            textEdit.setPadding(3,3,3,3);
+            textEdit.setPadding(3, 3, 3, 3);
             textEdit.setBackgroundColor(displaydata.color.get());
             textEdit.setTextColor(displaydata.font.color.get());
             textEdit.setFocusable(false);
@@ -516,7 +515,7 @@ public class ScreenActivity extends AppCompatActivity {
             m_displaysRequestSet.add(displaydata.request);
         }
 
-        for (Layout.InputData inputdata: m_currentScreenData.getInputs()){
+        for (Layout.InputData inputdata : m_currentScreenData.getInputs()) {
             if (inputdata.width > 0) {
                 TextView textView = new TextView(this);
                 textView.setX(convertToPixel(inputdata.rect.x));
@@ -547,7 +546,7 @@ public class ScreenActivity extends AppCompatActivity {
             } else {
                 String[] items = new String[m_ecu.getData(inputdata.text).items.size()];
                 int i = 0;
-                for (String item : m_ecu.getData(inputdata.text).items.keySet()){
+                for (String item : m_ecu.getData(inputdata.text).items.keySet()) {
                     items[i++] = item;
                 }
                 Arrays.sort(items);
@@ -563,21 +562,21 @@ public class ScreenActivity extends AppCompatActivity {
                 spinner.setLayoutParams(params);
                 spinner.setBackgroundColor(inputdata.color.get());
                 spinner.setBackgroundResource(R.drawable.spinnerround);
-                dataAdapter.setSpinnerTextSize((int)convertFontToPixel(inputdata.font.size));
+                dataAdapter.setSpinnerTextSize((int) convertFontToPixel(inputdata.font.size));
                 dataAdapter.setSpinnerTextColor(inputdata.font.color.get());
                 spinner.setAdapter(dataAdapter);
                 m_spinnerViews.put(inputdata.text, spinner);
                 m_layoutView.addView(spinner);
             }
-            if (!m_requestsInputs.containsKey(inputdata.request)){
+            if (!m_requestsInputs.containsKey(inputdata.request)) {
                 m_requestsInputs.put(inputdata.request, new ArrayList<>());
             }
             ArrayList<Layout.InputData> tmp = m_requestsInputs.get(inputdata.request);
             tmp.add(inputdata);
         }
 
-        for (Layout.ButtonData buttondata: m_currentScreenData.getButtons()) {
-            if (buttondata.text.toUpperCase().startsWith("::BTN:")){
+        for (Layout.ButtonData buttondata : m_currentScreenData.getButtons()) {
+            if (buttondata.text.toUpperCase().startsWith("::BTN:")) {
                 String gifName = buttondata.text;
 
                 gifName = gifName.replace("::BTN:|", "")
@@ -638,13 +637,13 @@ public class ScreenActivity extends AppCompatActivity {
         //updateScreen("222130", "62213021000115293D55");
     }
 
-    void updateDisplays(){
+    void updateDisplays() {
         if (!isChatConnected()) {
             setConnectionStatus(STATE_DISCONNECTED);
             return;
         }
 
-        if (m_currentScreenData == null){
+        if (m_currentScreenData == null) {
             // No screen defined yet
             return;
         }
@@ -659,7 +658,7 @@ public class ScreenActivity extends AppCompatActivity {
         mChatService.setSessionActive(true);
 
         // screen pre-send data
-        for (Pair<Integer, String> pair : m_currentScreenData.getPreSendData()){
+        for (Pair<Integer, String> pair : m_currentScreenData.getPreSendData()) {
             if (pair.first > 0)
                 sendDelay(pair.first);
             Ecu.EcuRequest request = m_ecu.getRequest(pair.second);
@@ -670,11 +669,11 @@ public class ScreenActivity extends AppCompatActivity {
             return;
 
         // Display requests send
-        for(String requestname : m_displaysRequestSet){
+        for (String requestname : m_displaysRequestSet) {
             Ecu.EcuRequest request = m_ecu.getRequest(requestname);
             if (BuildConfig.DEBUG)
                 Log.i(TAG, "Managing request : " + requestname);
-            if (request == null){
+            if (request == null) {
                 if (BuildConfig.DEBUG)
                     Log.i(TAG, "Cannot find request " + requestname);
             }
@@ -685,16 +684,16 @@ public class ScreenActivity extends AppCompatActivity {
         }
     }
 
-    private void updateScreen(String req, String response){
+    private void updateScreen(String req, String response) {
         if (req.isEmpty() && response.isEmpty()) {
             return;
         }
 
-        if (!isChatConnected()){
+        if (!isChatConnected()) {
             connectDevice();
         }
 
-        if (response.length() < 4){
+        if (response.length() < 4) {
             return;
         }
 
@@ -702,7 +701,7 @@ public class ScreenActivity extends AppCompatActivity {
         try {
             responseHeader = Integer.parseInt(response.substring(0, 2), 16);
             requestHeader = Integer.parseInt(req.substring(0, 2), 16);
-        } catch (Exception e){
+        } catch (Exception e) {
             m_logView.append("Cannot decode service ID of " + response + "/" + req + "\n");
             return;
         }
@@ -761,32 +760,29 @@ public class ScreenActivity extends AppCompatActivity {
     private final View.OnClickListener buttonClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            if (mDemoMode){
-                return;
-            }
-            if (! m_buttonsCommand.containsKey(v))
+            if (!m_buttonsCommand.containsKey(v))
                 return;
             String uniqueName = m_buttonsCommand.get(v);
             exectuteButtonCommands(uniqueName);
         }
     };
 
-    void exectuteButtonCommands(String buttonUniqueName){
+    void exectuteButtonCommands(String buttonUniqueName) {
         Layout.ButtonData buttonData = m_currentScreenData.getButtonData(buttonUniqueName);
         if (buttonData == null)
             return;
 
         ArrayList<Pair<Integer, String>> commands = new ArrayList<>();
-        for(Pair<Integer, String> sendData: buttonData.sendData){
+        for (Pair<Integer, String> sendData : buttonData.sendData) {
             Integer delay = sendData.first;
             Ecu.EcuRequest request = m_ecu.getRequest(sendData.second);
-            if (request == null){
+            if (request == null) {
                 if (BuildConfig.DEBUG)
                     Log.d(TAG, "Cannot find request " + sendData.second);
                 return;
             }
 
-            if (!m_requestsInputs.containsKey(sendData.second)){
+            if (!m_requestsInputs.containsKey(sendData.second)) {
                 commands.add(new Pair<>(delay, request.sentbytes));
                 if (BuildConfig.DEBUG)
                     Log.d(TAG, ">>>>>>>>>>> Computed (no data) " + request.sentbytes);
@@ -796,11 +792,11 @@ public class ScreenActivity extends AppCompatActivity {
             HashMap<String, Object> inputBuilder = new HashMap<>();
 
             ArrayList<Layout.InputData> inputs = m_requestsInputs.get(sendData.second);
-            for (Layout.InputData input : inputs){
-                if (m_editTextViews.containsKey(input.text)){
+            for (Layout.InputData input : inputs) {
+                if (m_editTextViews.containsKey(input.text)) {
                     EditText editText = m_editTextViews.get(input.text);
                     String currentText = editText.getText().toString();
-                    if (request.sendbyte_dataitems.containsKey(input.text)){
+                    if (request.sendbyte_dataitems.containsKey(input.text)) {
                         Ecu.EcuData ecuData = m_ecu.getData(input.text);
                         if (!ecuData.bytesascii) {
                             if (ecuData.scaled) {
@@ -825,7 +821,7 @@ public class ScreenActivity extends AppCompatActivity {
                     inputBuilder.put(input.text, currentText);
                 }
 
-                if (m_spinnerViews.containsKey(input.text)){
+                if (m_spinnerViews.containsKey(input.text)) {
                     Spinner spinner = m_spinnerViews.get(input.text);
                     String currentText = spinner.getSelectedItem().toString();
                     inputBuilder.put(input.text, currentText);
@@ -842,12 +838,12 @@ public class ScreenActivity extends AppCompatActivity {
                 return;
             }
             if (BuildConfig.DEBUG)
-                Log.d(TAG,getResources().getString(R.string.COMPUTED_FRAME)
+                Log.d(TAG, getResources().getString(R.string.COMPUTED_FRAME)
                         + " : " + Ecu.byteArrayToHex(builtStream));
             commands.add(new Pair<>(delay, Ecu.byteArrayToHex(builtStream)));
         }
 
-        for (Pair<Integer, String> command : commands){
+        for (Pair<Integer, String> command : commands) {
             if (command.first > 0)
                 sendDelay(command.first);
             sendCmd(command.second);
@@ -893,16 +889,14 @@ public class ScreenActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onDestroy()
-    {
+    public void onDestroy() {
         Log.e(TAG, "+ ON DESTROY +");
         stopAutoReload();
         super.onDestroy();
     }
 
     @Override
-    public void onStop()
-    {
+    public void onStop() {
         SharedPreferences defaultPrefs =
                 this.getSharedPreferences(MainActivity.DEFAULT_PREF_TAG, MODE_PRIVATE);
         SharedPreferences.Editor edit = defaultPrefs.edit();
@@ -920,20 +914,20 @@ public class ScreenActivity extends AppCompatActivity {
         super.onBackPressed();
     }
 
-    void setConnectionStatus(int c){
-        if (c == STATE_CONNECTED){
+    void setConnectionStatus(int c) {
+        if (c == STATE_CONNECTED) {
             m_btIconStatus.setColorFilter(Color.GREEN);
             m_btIconStatus.setImageResource(R.drawable.ic_link_ok);
-        } else if (c == STATE_DISCONNECTED){
+        } else if (c == STATE_DISCONNECTED) {
             m_btIconStatus.setColorFilter(Color.RED);
             m_btIconStatus.setImageResource(R.drawable.ic_link_nok);
-        } else if (c == STATE_CONNECTING){
+        } else if (c == STATE_CONNECTING) {
             m_btIconStatus.setColorFilter(Color.GRAY);
             m_btIconStatus.setImageResource(R.drawable.ic_link_ok);
         }
     }
 
-    private void chooseCategory(){
+    private void chooseCategory() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getResources().getString(R.string.CATEGORY_CHOOSE));
 
@@ -950,7 +944,7 @@ public class ScreenActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private void chooseScreen(String screenname){
+    private void chooseScreen(String screenname) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getResources().getString(R.string.SCREEN_CHOOSE));
 
@@ -975,12 +969,12 @@ public class ScreenActivity extends AppCompatActivity {
         mChatService.reconnect();
     }
 
-    private boolean isChatConnected(){
+    private boolean isChatConnected() {
         return mChatService != null && (mChatService.getState() == STATE_CONNECTED);
     }
 
-    private boolean isChatConnecting(){
-        return mChatService != null &&  (mChatService.getState() == STATE_CONNECTING);
+    private boolean isChatConnecting() {
+        return mChatService != null && (mChatService.getState() == STATE_CONNECTING);
     }
 
     private void initELM() {
@@ -990,13 +984,13 @@ public class ScreenActivity extends AppCompatActivity {
         }
     }
 
-    public void reconnect(){
-        if(mChatService != null){
+    public void reconnect() {
+        if (mChatService != null) {
             mChatService.reconnect();
         }
     }
 
-    private void initBus(){
+    private void initBus() {
         if (isChatConnected()) {
             if (m_ecu.getProtocol().equals("CAN")) {
                 String txa = m_ecu.getTxId();
@@ -1005,10 +999,10 @@ public class ScreenActivity extends AppCompatActivity {
                 // TODO : Need look for canline and brp here send 0 and value.
                 boolean as_brp = m_ecu.getSdsrequests().containsKey("brp") && Objects.equals(m_ecu.getSdsrequests().get("brp"), "1");
                 mChatService.initCan(rxa, txa, 0, as_brp);
-            } else if (m_ecu.getProtocol().equals("KWP2000")){
+            } else if (m_ecu.getProtocol().equals("KWP2000")) {
                 String fa = m_ecu.getFunctionnalAddress();
                 mChatService.initKwp(fa, m_ecu.getFastInit());
-            } else if (m_ecu.getProtocol().equals("ISO8")){
+            } else if (m_ecu.getProtocol().equals("ISO8")) {
                 String fa = m_ecu.getFunctionnalAddress();
                 mChatService.initIso8(fa);
             }
@@ -1037,28 +1031,28 @@ public class ScreenActivity extends AppCompatActivity {
         mChatService.write("DELAY:" + delay);
     }
 
-    private void setElMWorking(boolean isQueueEmpty){
+    private void setElMWorking(boolean isQueueEmpty) {
         if (m_currentScreenData == null)
             return;
         if (!isQueueEmpty) {
             m_btCommStatus.setColorFilter(Color.GREEN);
-            for (View button : m_buttonsViews.values()){
+            for (View button : m_buttonsViews.values()) {
                 button.setEnabled(false);
             }
         } else {
             m_btCommStatus.clearColorFilter();
-            for (View button : m_buttonsViews.values()){
+            for (View button : m_buttonsViews.values()) {
                 button.setEnabled(true);
             }
         }
-        if (isQueueEmpty && m_autoReload){
+        if (isQueueEmpty && m_autoReload) {
             updateDisplays();
         }
     }
 
-    void handleElmResult(String result){
+    void handleElmResult(String result) {
         String[] results = result.split(";");
-        if (results.length < 2 || results[0] == null || results[1] == null){
+        if (results.length < 2 || results[0] == null || results[1] == null) {
             m_logView.append(getResources().getString(R.string.NO_ELM_RESPONSE) + " (" + result + ")\n");
             return;
         }
@@ -1066,13 +1060,13 @@ public class ScreenActivity extends AppCompatActivity {
         String requestCode = results[0];
         String replyCode = results[1];
 
-        if (requestCode.length() >= 2 && requestCode.substring(0,2).equalsIgnoreCase("AT")){
+        if (requestCode.length() >= 2 && requestCode.substring(0, 2).equalsIgnoreCase("AT")) {
             // Don't worry about ELM configuration
             return;
         }
 
-        if (requestCode.length() >= 2 && requestCode.startsWith("14")){
-            if (replyCode.length() >= 2 && replyCode.startsWith("54")){
+        if (requestCode.length() >= 2 && requestCode.startsWith("14")) {
+            if (replyCode.length() >= 2 && replyCode.startsWith("54")) {
                 m_logView.append(getResources().getString(R.string.DTC_CLEAR_OK) + "\n");
                 return;
             }
@@ -1082,13 +1076,13 @@ public class ScreenActivity extends AppCompatActivity {
             String resultCode = replyCode.substring(0, 6).toUpperCase();
             String nrcode = resultCode.substring(4, 6);
             String translatedErrorCode = mChatService.getEcuErrorCode(nrcode);
-            if (translatedErrorCode != null){
+            if (translatedErrorCode != null) {
                 m_logView.append(getResources().getString(R.string.NEGATIVE_RESPONSE) +
                         " : " + translatedErrorCode + " (" + resultCode + ")\n");
                 return;
             } else {
                 m_logView.append(getResources().getString(R.string.NEGATIVE_RESPONSE) +
-                        " : "  + resultCode + "\n");
+                        " : " + resultCode + "\n");
                 return;
             }
         } else {
@@ -1097,13 +1091,13 @@ public class ScreenActivity extends AppCompatActivity {
                     " " + requestCode + "\n");
         }
 
-        if (replyCode.length() >= 5 && replyCode.startsWith("ERROR")){
-            m_logView.append(getResources().getString(R.string.BAD_RESPONSE) + " : "+ replyCode +
-                    " " +getResources().getString(R.string.TO_REQUEST)+ " '" + requestCode + "'\n");
+        if (replyCode.length() >= 5 && replyCode.startsWith("ERROR")) {
+            m_logView.append(getResources().getString(R.string.BAD_RESPONSE) + " : " + replyCode +
+                    " " + getResources().getString(R.string.TO_REQUEST) + " '" + requestCode + "'\n");
             return;
         }
 
-        if (requestCode.equals(m_currentDtcRequestBytes)){
+        if (requestCode.equals(m_currentDtcRequestBytes)) {
             decodeDTC(replyCode);
             m_currentDtcRequestBytes = "";
             return;
@@ -1112,11 +1106,11 @@ public class ScreenActivity extends AppCompatActivity {
         updateScreen(requestCode, replyCode);
     }
 
-    void readDTC(){
+    void readDTC() {
         Ecu.EcuRequest dtcRequest = m_ecu.getRequest("ReadDTCInformation.ReportDTC");
         if (dtcRequest == null)
             dtcRequest = m_ecu.getRequest("ReadDTC");
-        if (dtcRequest == null){
+        if (dtcRequest == null) {
             Toast.makeText(getApplicationContext(), "No READ_DTC request in this file",
                     Toast.LENGTH_SHORT).show();
             return;
@@ -1127,24 +1121,21 @@ public class ScreenActivity extends AppCompatActivity {
         sendCmd(m_currentDtcRequestBytes);
     }
 
-    void clearDTC(){
-        if (mDemoMode){
-            return;
-        }
+    void clearDTC() {
         Ecu.EcuRequest clearDTCRequest = m_ecu.getRequest("ClearDiagnosticInformation.All");
         if (clearDTCRequest == null)
             clearDTCRequest = m_ecu.getRequest("ClearDTC");
         if (clearDTCRequest == null)
             clearDTCRequest = m_ecu.getRequest("Clear Diagnostic Information");
 
-        if (clearDTCRequest != null){
+        if (clearDTCRequest != null) {
             m_clearDTCCommand = clearDTCRequest.sentbytes;
         } else {
             m_clearDTCCommand = "14FF00";
         }
 
         DialogInterface.OnClickListener dialogClickListener = (dialog, which) -> {
-            switch (which){
+            switch (which) {
                 case DialogInterface.BUTTON_POSITIVE:
                     sendCmd("AT ST FF");
                     sendCmd(m_ecu.getDefaultSDS());
@@ -1164,12 +1155,12 @@ public class ScreenActivity extends AppCompatActivity {
 
     }
 
-    void decodeDTC(String response){
+    void decodeDTC(String response) {
         // Test data ACU4
         // response = "57 06 90 07 41 90 08 41 90 42 52 90 08 42 90 07 42 90 7C 40".replace(" ", "");
         List<List<String>> decodedDtcs = m_ecu.decodeDTC(m_currentDtcRequestName, response);
 
-        if (decodedDtcs.size() == 0){
+        if (decodedDtcs.size() == 0) {
             Toast.makeText(getApplicationContext(), getResources().getString(R.string.NO_DTC_STORED),
                     Toast.LENGTH_SHORT).show();
             return;
@@ -1177,10 +1168,10 @@ public class ScreenActivity extends AppCompatActivity {
 
         StringBuilder dtcReport = new StringBuilder();
         int i = 0;
-        for (List<String> stringList : decodedDtcs){
+        for (List<String> stringList : decodedDtcs) {
             dtcReport.append("<b>DTC #").append(i + 1).append("</b><br>");
             i++;
-            for (String dtcLine : stringList){
+            for (String dtcLine : stringList) {
                 dtcReport.append("* ").append(dtcLine).append("<br>");
             }
         }
@@ -1196,7 +1187,8 @@ public class ScreenActivity extends AppCompatActivity {
 
     private static class messageHandler extends Handler {
         private final ScreenActivity activity;
-        messageHandler(ScreenActivity ac){
+
+        messageHandler(ScreenActivity ac) {
             activity = ac;
         }
 

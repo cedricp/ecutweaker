@@ -30,7 +30,6 @@
     <string name="USER_REQUEST_CODE">Your request code</string>
     <string name="OK">OK</string>
     <string name="CANCEL">Cancel</string>
-    <string name="USER_USES_DEMO_MODE">You are using demo version, write functions deactivated.</string>
     <string name="BT_MANAGER_MESSAGE">ELM manager message</string>
     <string name="ECU_PART_MATCH">ECU partially match file (use with caution)</string>
     <string name="ECU_MATCH">ECU perfectly match file</string>
@@ -41,13 +40,6 @@
     <string name="SUPPLIER_VERSION">supplier version</string>
     <string name="CHOOSE_PROJECT">Choose a project</string>
     <string name="INFORMATION">Information</string>
-    <string name="DEMO_MESSAGE"><![CDATA[Welcome to <b>ECU TWEAKER</b>,<br> You are using this application in demonstration mode.
-You can use it to read all ECU parameters, but you are not allowed to
-use the buttons or the <i>CLEAR DTC</i> functionality.<br>
-You can unlock it by sending me the request code, I\'ll send you back an activation code.<br>
-<b>Beware, with great power comes great responsibility, you\'re using it at your own
-risks. The developer denies all responsibilities, <u>you are the sole responsible of
-what you do with this Software.</u></b>]]></string>
     <string name="BAD_RESPONSE">Bad response</string>
     <string name="TO_REQUEST">to request</string>
     <string name="INVALID_VALUE">Invalid value, check inputs</string>

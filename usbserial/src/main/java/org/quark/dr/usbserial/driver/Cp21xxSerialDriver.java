@@ -77,8 +77,8 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
         private static final int SILABSER_SET_BAUDRATE = 0x1E;
         private static final int SILABSER_FLUSH_REQUEST_CODE = 0x12;
 
-       private static final int FLUSH_READ_CODE = 0x0a;
-       private static final int FLUSH_WRITE_CODE = 0x05;
+        private static final int FLUSH_READ_CODE = 0x0a;
+        private static final int FLUSH_WRITE_CODE = 0x05;
 
         /*
          * SILABSER_IFC_ENABLE_REQUEST_CODE
@@ -151,7 +151,7 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
                 setConfigSingle(SILABSER_IFC_ENABLE_REQUEST_CODE, UART_ENABLE);
                 setConfigSingle(SILABSER_SET_MHS_REQUEST_CODE, MCR_ALL | CONTROL_WRITE_DTR | CONTROL_WRITE_RTS);
                 setConfigSingle(SILABSER_SET_BAUDDIV_REQUEST_CODE, BAUD_RATE_GEN_FREQ / DEFAULT_BAUD_RATE);
-    //            setParameters(DEFAULT_BAUD_RATE, DEFAULT_DATA_BITS, DEFAULT_STOP_BITS, DEFAULT_PARITY);
+                //            setParameters(DEFAULT_BAUD_RATE, DEFAULT_DATA_BITS, DEFAULT_STOP_BITS, DEFAULT_PARITY);
                 opened = true;
             } finally {
                 if (!opened) {
@@ -231,9 +231,9 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
         }
 
         private void setBaudRate(int baudRate) throws IOException {
-            byte[] data = new byte[] {
-                    (byte) ( baudRate & 0xff),
-                    (byte) ((baudRate >> 8 ) & 0xff),
+            byte[] data = new byte[]{
+                    (byte) (baudRate & 0xff),
+                    (byte) ((baudRate >> 8) & 0xff),
                     (byte) ((baudRate >> 16) & 0xff),
                     (byte) ((baudRate >> 24) & 0xff)
             };
@@ -267,7 +267,7 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
                     configDataBits |= 0x0800;
                     break;
             }
-            
+
             switch (parity) {
                 case PARITY_ODD:
                     configDataBits |= 0x0010;
@@ -276,7 +276,7 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
                     configDataBits |= 0x0020;
                     break;
             }
-            
+
             switch (stopBits) {
                 case STOPBITS_1:
                     configDataBits |= 0;
@@ -328,7 +328,7 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
 
         @Override
         public boolean purgeHwBuffers(boolean purgeReadBuffers,
-                boolean purgeWriteBuffers) throws IOException {
+                                      boolean purgeWriteBuffers) throws IOException {
             int value = (purgeReadBuffers ? FLUSH_READ_CODE : 0)
                     | (purgeWriteBuffers ? FLUSH_WRITE_CODE : 0);
 
@@ -344,12 +344,12 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
     public static Map<Integer, int[]> getSupportedDevices() {
         final Map<Integer, int[]> supportedDevices = new LinkedHashMap<Integer, int[]>();
         supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_SILABS),
-                new int[] {
-            org.quark.dr.usbserial.drive.UsbId.SILABS_CP2102,
-            org.quark.dr.usbserial.drive.UsbId.SILABS_CP2105,
-            org.quark.dr.usbserial.drive.UsbId.SILABS_CP2108,
-            org.quark.dr.usbserial.drive.UsbId.SILABS_CP2110
-        });
+                new int[]{
+                        org.quark.dr.usbserial.drive.UsbId.SILABS_CP2102,
+                        org.quark.dr.usbserial.drive.UsbId.SILABS_CP2105,
+                        org.quark.dr.usbserial.drive.UsbId.SILABS_CP2108,
+                        org.quark.dr.usbserial.drive.UsbId.SILABS_CP2110
+                });
         return supportedDevices;
     }
 

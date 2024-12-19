@@ -5,27 +5,27 @@ import java.util.HashMap;
 public class ProjectData {
     /**
      * {
-     *  "projects": {
-     *   "All": {
-     *    "code": "ALL",
-     *    "addressing": {
-     *     "00": [
-     *      "CAN",
-     *      "Primary CAN network"
-     *     ]
-     *    },
-     *    "snat": {
-     *     "E7": "7EC"
-     *    "snat_ext": {
-     *     "E7": "7ECDDDEE"
-     *    },
-     *    "dnat": {
-     *     "E7": "7E4"
-     *    "dnat_ext": {
-     *     "E7": "7E4EEEFF"
-     *    }
-     *   }
-     *  }
+     * "projects": {
+     * "All": {
+     * "code": "ALL",
+     * "addressing": {
+     * "00": [
+     * "CAN",
+     * "Primary CAN network"
+     * ]
+     * },
+     * "snat": {
+     * "E7": "7EC"
+     * "snat_ext": {
+     * "E7": "7ECDDDEE"
+     * },
+     * "dnat": {
+     * "E7": "7E4"
+     * "dnat_ext": {
+     * "E7": "7E4EEEFF"
+     * }
+     * }
+     * }
      * }
      */
 

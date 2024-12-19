@@ -18,27 +18,21 @@ android {
 
     namespace 'org.quark.dr.ecu'
     compileSdk rootProject.ext.compileSdkVersion
-    // deprecated
-    //buildToolsVersion rootProject.ext.buildToolsVersion
     ndkVersion rootProject.ext.ndkVersion
 
     defaultConfig {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode rootProject.ext.appversion_int
-        versionName rootProject.ext.appversion
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         consumerProguardFiles 'consumer-rules.pro'
     }
 
     buildTypes {
         release {
-            //minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
         debug {
-            //minifyEnabled false
             signingConfig signingConfigs.debug
         }
     }
@@ -53,7 +47,6 @@ android {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'androidx.appcompat:appcompat:1.7.0'
-    implementation 'com.google.code.gson:gson:2.11.0'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
 }

@@ -1,13 +1,14 @@
 package org.quark.dr.ecu;
 
 import android.os.Environment;
-import androidx.annotation.Nullable;
 import android.util.Log;
 
-import com.google.gson.Gson;
+import androidx.annotation.Nullable;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
@@ -35,7 +36,7 @@ public class EcuDatabase {
 
     private static ProjectData.Projects Projects = null;
 
-    public class EcuIdent{
+    public class EcuIdent {
         public String supplier_code, soft_version, version, diagnostic_version;
     }
 
@@ -70,14 +71,17 @@ public class EcuDatabase {
     public class EcuIdentifierNew {
         public String supplier, version, soft_version, diag_version;
         public int addr;
+
         public EcuIdentifierNew() {
             reInit(-1);
         }
-        public void reInit(int addr){
+
+        public void reInit(int addr) {
             this.addr = addr;
             supplier = version = soft_version = diag_version = "";
         }
-        public boolean isFullyFilled(){
+
+        public boolean isFullyFilled() {
             return !supplier.isEmpty() && !version.isEmpty() && !soft_version.isEmpty() && !diag_version.isEmpty();
         }
     }
@@ -89,14 +93,14 @@ public class EcuDatabase {
             return null;
         EcuIdent closestEcuIdent = null;
         EcuInfo keptEcuInfo = null;
-        for (EcuInfo ecuInfo : ecuInfos){
-            for(EcuIdent ecuIdent: ecuInfo.ecuIdents) {
+        for (EcuInfo ecuInfo : ecuInfos) {
+            for (EcuIdent ecuIdent : ecuInfo.ecuIdents) {
                 if (ecuIdent.supplier_code.equals(supplier) && ecuIdent.soft_version.equals(soft_version)) {
                     if (ecuIdent.version.equals(version) && diag_version == Integer.parseInt(ecuIdent.diagnostic_version, 10)) {
                         ecuInfo.exact_match = true;
                         return ecuInfo;
                     }
-                    if (closestEcuIdent == null){
+                    if (closestEcuIdent == null) {
                         closestEcuIdent = ecuIdent;
                         continue;
                     }
@@ -105,7 +109,7 @@ public class EcuDatabase {
                             Integer.parseInt(ecuIdent.version, 16) - intVersion);
                     int oldDiff = Math.abs(Integer.parseInt(
                             closestEcuIdent.version, 16) - intVersion);
-                    if (currentDiff < oldDiff){
+                    if (currentDiff < oldDiff) {
                         closestEcuIdent = ecuIdent;
                         keptEcuInfo = ecuInfo;
                     }
@@ -117,9 +121,9 @@ public class EcuDatabase {
         return keptEcuInfo;
     }
 
-    public ArrayList<EcuInfo> identifyNewEcu(EcuIdentifierNew ecuIdentifer){
+    public ArrayList<EcuInfo> identifyNewEcu(EcuIdentifierNew ecuIdentifer) {
         ArrayList<EcuInfo> ecuInfos = m_ecuInfo.get(ecuIdentifer.addr);
-        ArrayList<EcuInfo> keptEcus= new ArrayList<>();
+        ArrayList<EcuInfo> keptEcus = new ArrayList<>();
         for (EcuInfo ecuInfo : ecuInfos) {
             for (EcuIdent ecuIdent : ecuInfo.ecuIdents) {
                 if (ecuIdent.supplier_code.equals(ecuIdentifer.supplier) &&
@@ -182,7 +186,7 @@ public class EcuDatabase {
         loadModels();
     }
 
-    public String[] getProjects(){
+    public String[] getProjects() {
         return m_projectSet.toArray(new String[m_projectSet.size()]);
     }
 
@@ -190,24 +194,28 @@ public class EcuDatabase {
         return MODELSMAP.values().toArray(new String[MODELSMAP.size()]);
     }
 
-    public String getProjectFromModel(String model){
+    public String getProjectFromModel(String model) {
         Iterator it = MODELSMAP.entrySet().iterator();
-        while(it.hasNext()){
-            Map.Entry keyval = (Map.Entry)it.next();
-            if (((String)keyval.getValue()).toUpperCase().equals(model.toUpperCase())){
-                if (!Objects.equals((String) keyval.getKey(), "ALL")) {
-                    buildMaps((String)keyval.getKey());
-                    return (String) keyval.getKey();
+        String result = "";
+        if (!model.toUpperCase().equals("ALL")) {
+            while (it.hasNext()) {
+                Map.Entry keyval = (Map.Entry) it.next();
+                if (((String) keyval.getValue()).toUpperCase().equals(model.toUpperCase())) {
+                    result = (String) keyval.getKey();
+                    break;
                 }
             }
         }
-        buildMaps("ALL");
-        return "";
+        buildMaps(result);
+        return result;
     }
 
-    public void buildMaps(String code){
+    public void buildMaps(String code) {
         if (Projects == null) {
             throw new RuntimeException("projects.json not found or not loaded!");
+        }
+        if (code.isEmpty()) {
+            code = "ALL";
         }
         m_ecuAddressing.clear();
         // dnat
@@ -219,35 +227,35 @@ public class EcuDatabase {
         // snat_ext
         RXADDRMAP_EXT.clear();
 
-        for (Map.Entry<String, ProjectData.Project> p: Projects.projects.entrySet()) {
+        for (Map.Entry<String, ProjectData.Project> p : Projects.projects.entrySet()) {
             if (Objects.equals(p.getValue().code, code)) {
                 current_project_code = code.toUpperCase();
                 current_project_name = p.getKey();
-                for (Map.Entry<String, String[]> a: p.getValue().addressing.entrySet()) {
+                for (Map.Entry<String, String[]> a : p.getValue().addressing.entrySet()) {
                     Integer add_key = Integer.parseInt(a.getKey().trim(), 16);
                     String add_name = a.getValue()[1].trim();
                     m_ecuAddressing.put(add_key, add_name);
                 }
                 // dnat
-                for (Map.Entry<String, String> d: p.getValue().dnat.entrySet()) {
+                for (Map.Entry<String, String> d : p.getValue().dnat.entrySet()) {
                     Integer dnat_key = Integer.parseInt(d.getKey().trim(), 16);
                     String dnat_name = d.getValue().trim();
                     TXADDRMAP.put(dnat_key, dnat_name);
                 }
                 // dnat_ext
-                for (Map.Entry<String, String> d: p.getValue().dnat_ext.entrySet()) {
+                for (Map.Entry<String, String> d : p.getValue().dnat_ext.entrySet()) {
                     Integer dnat_ext_key = Integer.parseInt(d.getKey().trim(), 16);
                     String dnat_ext_name = d.getValue().trim();
                     TXADDRMAP_EXT.put(dnat_ext_key, dnat_ext_name);
                 }
                 // snat
-                for (Map.Entry<String, String> s: p.getValue().snat.entrySet()) {
+                for (Map.Entry<String, String> s : p.getValue().snat.entrySet()) {
                     Integer snat_key = Integer.parseInt(s.getKey().trim(), 16);
                     String snat_name = s.getValue().trim();
                     RXADDRMAP.put(snat_key, snat_name);
                 }
                 // snat_ext
-                for (Map.Entry<String, String> s: p.getValue().snat_ext.entrySet()) {
+                for (Map.Entry<String, String> s : p.getValue().snat_ext.entrySet()) {
                     Integer snat_ext_key = Integer.parseInt(s.getKey().trim(), 16);
                     String snat_ext_name = s.getValue().trim();
                     RXADDRMAP.put(snat_ext_key, snat_ext_name);
@@ -256,29 +264,29 @@ public class EcuDatabase {
         }
     }
 
-    private void loadModels(){
-        for (Map.Entry<String, ProjectData.Project> p: Projects.projects.entrySet()) {
+    private void loadModels() {
+        for (Map.Entry<String, ProjectData.Project> p : Projects.projects.entrySet()) {
             MODELSMAP.put(p.getValue().code, p.getKey());
         }
     }
 
-    private void filterProjects(){
+    private void filterProjects() {
         Iterator<String> its = m_projectSet.iterator();
-        while(its.hasNext()) {
+        while (its.hasNext()) {
             Set<String> modelKeySet = MODELSMAP.keySet();
             String project = its.next();
-            if (!MODELSMAP.containsKey(project)){
+            if (!MODELSMAP.containsKey(project)) {
                 MODELSMAP.remove(project);
             }
         }
     }
 
-    public void checkMissings(){
+    public void checkMissings() {
         Iterator<String> its = m_projectSet.iterator();
-        while(its.hasNext()){
+        while (its.hasNext()) {
             Set<String> modelKeySet = MODELSMAP.keySet();
             String project = its.next();
-            if (!MODELSMAP.containsKey(project)){
+            if (!MODELSMAP.containsKey(project)) {
                 System.out.println("?? Missing " + project);
             }
         }
@@ -302,11 +310,88 @@ public class EcuDatabase {
     }
 
     private void loadProjectsData() {
-        String addressingResource = "projects.json";
-        String projects = getResourceAsString(addressingResource);
-        Gson gson = new Gson();
-        Projects = gson.fromJson(projects, ProjectData.Projects.class);
+        try {
+            // Name of the JSON file
+            String addressingResource = "projects.json";
+
+            // Read the JSON file as a String
+            String projectsJson = getResourceAsString(addressingResource);
+
+            // Convert the JSON string to a JSONObject
+            JSONObject jsonObject = new JSONObject(projectsJson);
+
+            // Extract the 'projects' object from the JSON
+            JSONObject projectsJsonObj = jsonObject.getJSONObject("projects");
+
+            // Create a new Projects object
+            ProjectData.Projects projects = new ProjectData.Projects();
+
+            // Iterate through the project keys (e.g., "All")
+            Iterator<String> keys = projectsJsonObj.keys(); // Get an iterator of the keys
+            while (keys.hasNext()) {
+                String key = keys.next();
+                JSONObject projectJson = projectsJsonObj.getJSONObject(key);
+                ProjectData.Project project = new ProjectData.Project();
+
+                // Load project information
+                project.code = projectJson.getString("code");
+
+                // Load the addressing data
+                JSONObject addressingJson = projectJson.getJSONObject("addressing");
+                Iterator<String> addressingKeys = addressingJson.keys();
+                while (addressingKeys.hasNext()) {
+                    String addressingKey = addressingKeys.next();
+                    JSONArray addressArray = addressingJson.getJSONArray(addressingKey);
+                    String[] addresses = new String[addressArray.length()];
+                    for (int j = 0; j < addressArray.length(); j++) {
+                        addresses[j] = addressArray.getString(j);
+                    }
+                    project.addressing.put(addressingKey, addresses);
+                }
+
+                // Load snat data
+                JSONObject snatJson = projectJson.getJSONObject("snat");
+                Iterator<String> snatKeys = snatJson.keys();
+                while (snatKeys.hasNext()) {
+                    String snatKey = snatKeys.next();
+                    project.snat.put(snatKey, snatJson.getString(snatKey));
+                }
+
+                // Load snat_ext data
+                JSONObject snatExtJson = projectJson.getJSONObject("snat_ext");
+                Iterator<String> snatExtKeys = snatExtJson.keys();
+                while (snatExtKeys.hasNext()) {
+                    String snatExtKey = snatExtKeys.next();
+                    project.snat_ext.put(snatExtKey, snatExtJson.getString(snatExtKey));
+                }
+
+                // Load dnat data
+                JSONObject dnatJson = projectJson.getJSONObject("dnat");
+                Iterator<String> dnatKeys = dnatJson.keys();
+                while (dnatKeys.hasNext()) {
+                    String dnatKey = dnatKeys.next();
+                    project.dnat.put(dnatKey, dnatJson.getString(dnatKey));
+                }
+
+                // Load dnat_ext data
+                JSONObject dnatExtJson = projectJson.getJSONObject("dnat_ext");
+                Iterator<String> dnatExtKeys = dnatExtJson.keys();
+                while (dnatExtKeys.hasNext()) {
+                    String dnatExtKey = dnatExtKeys.next();
+                    project.dnat_ext.put(dnatExtKey, dnatExtJson.getString(dnatExtKey));
+                }
+
+                // Add the project to the projects map
+                projects.projects.put(key, project);
+            }
+
+            // Save the projects in the global variable
+            Projects = projects;
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
+
 
     public String loadDatabase(String ecuFilename, String appDir) throws DatabaseException {
         if (m_loaded) {
@@ -339,7 +424,7 @@ public class EcuDatabase {
 
         File indexFile = new File(indexFileName);
         File ecuFile = new File(m_ecuFilePath);
-        if (!ecuFile.exists()){
+        if (!ecuFile.exists()) {
             throw new DatabaseException("Archive (ecu.zip) file not found");
         }
         long indexTimeStamp = indexFile.lastModified();
@@ -350,9 +435,9 @@ public class EcuDatabase {
          * If index is already made, use it
          * Also check files exists and timestamps to force [re]scan
          */
-        if (indexFile.exists() && (indexTimeStamp > ecuTimeStamp) && m_zipFileSystem.importZipEntries()){
+        if (indexFile.exists() && (indexTimeStamp > ecuTimeStamp) && m_zipFileSystem.importZipEntries()) {
             bytes = m_zipFileSystem.getZipFile("db.json");
-            if (bytes.isEmpty()){
+            if (bytes.isEmpty()) {
                 throw new DatabaseException("Database (db.json) file not found");
             }
         } else {
@@ -362,7 +447,7 @@ public class EcuDatabase {
             m_zipFileSystem.getZipEntries();
             m_zipFileSystem.exportZipEntries();
             bytes = m_zipFileSystem.getZipFile("db.json");
-            if (bytes.isEmpty()){
+            if (bytes.isEmpty()) {
                 throw new DatabaseException("Database (db.json) file not found");
             }
         }
@@ -458,27 +543,27 @@ public class EcuDatabase {
         return "";
     }
 
-    public String getZipFile(String filePath){
+    public String getZipFile(String filePath) {
         return m_zipFileSystem.getZipFile(filePath);
     }
 
-    public String getRxAddressById(int id){
+    public String getRxAddressById(int id) {
         return RXADDRMAP.get(id);
     }
 
-    public String getTxAddressById(int id){
+    public String getTxAddressById(int id) {
         return TXADDRMAP.get(id);
     }
 
-    public String getRxExtAddressById(int id){
+    public String getRxExtAddressById(int id) {
         return RXADDRMAP_EXT.get(id);
     }
 
-    public String getTxExtAddressById(int id){
+    public String getTxExtAddressById(int id) {
         return TXADDRMAP_EXT.get(id);
     }
 
-    public ZipFileSystem getZipFileSystem(){
+    public ZipFileSystem getZipFileSystem() {
         return m_zipFileSystem;
     }
 }

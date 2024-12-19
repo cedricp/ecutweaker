@@ -27,7 +27,6 @@
     <string name="USER_REQUEST_CODE">Váš kód požiadavky</string>
     <string name="OK">Áno</string>
     <string name="CANCEL">Zrušiť</string>
-    <string name="USER_USES_DEMO_MODE">Používate DEMO verziu, funkcie zápisu sú deaktivované.</string>
     <string name="BT_MANAGER_MESSAGE">Správa spravcu Bluetooth</string>
     <string name="ECU_PART_MATCH">ECU čiastocne zodpovedá súboru(použite opatrne)</string>
     <string name="ECU_MATCH">ECU sa dokonale zhoduje so súborom</string>
@@ -38,13 +37,6 @@
     <string name="SUPPLIER_VERSION">Verzia dodávateľa</string>
     <string name="CHOOSE_PROJECT">Vyberte projekt</string>
     <string name="INFORMATION">Informácie</string>
-    <string name="DEMO_MESSAGE"><![CDATA[Vitajte v <b>ECU TWEAKER</b>,<br> Používate aplikáciu v demo režime.
-Môžete ho použiť na čítanie všetkych parametrov ECU, ale nemáte povolenie
-použiť tlačidlá alebo <i>CLEAR DTC</i> funkcie.<br>
-Možete ho odomknút zaslaním kódu požiadavky, pošlem Vám aktivačný kod.
-<b>Dajte si pozor, s veľkou silou prichádza veľká zodpovednosť, budete ju používat na vlastné
-riziko. Vyvojár odmieta všetku zodpovednosť, <u>ste výhradne zodpovední,
-čo robíte s týmto softvérom.</u></b>]]></string>
     <string name="BAD_RESPONSE">Chybná odpoveď</string>
     <string name="TO_REQUEST">na vyžiadanie</string>
     <string name="INVALID_VALUE">Neplatná hodnota, skontrolujte vstupy</string>

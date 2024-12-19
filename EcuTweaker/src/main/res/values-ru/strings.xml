@@ -27,8 +27,7 @@
 <string name="USER_REQUEST_CODE">Ваш код запроса</string>
 <string name="OK">OK</string>
 <string name="CANCEL">Cancel</string>
-<string name="USER_USES_DEMO_MODE">Вы используете demo версию, запись заблокирована.</string>
-<string name="BT_MANAGER_MESSAGE">Сообщение менеджера ELM</string>
+    <string name="BT_MANAGER_MESSAGE">Сообщение менеджера ELM</string>
 <string name="ECU_PART_MATCH">ECU совпадает частично (используйте с осторожностью)</string>
 <string name="ECU_MATCH">ECU полностью совпадает</string>
 <string name="ECU_FOUND">ECU найден</string>
@@ -38,13 +37,7 @@
 <string name="SUPPLIER_VERSION">supplier version</string>
 <string name="CHOOSE_PROJECT">Выберите проект</string>
 <string name="INFORMATION">Информация</string>
-<string name="DEMO_MESSAGE"><![CDATA[Добро пожаловать в <b>ECU TWEAKER</b>,<br> Вы используете приложение в демонстрационном режие.
-Вы можете читать все параметры блоков, но вы не можете
-использовать кнопки или функцию <i>СБРОС DTC</i>.<br>
-Для разблокирования пришлите мне код запроса, и я вышлю Вам код активации.<br>
-<b>Будьте внимательны! Вы используете это приложение на свой страх и риск.
-Разработчик не несёт никакой отвественности за работу приложения и за то, что вы делаете с его помощью.</u></b>]]></string>
-<string name="BAD_RESPONSE">Неверный ответ</string>
+    <string name="BAD_RESPONSE">Неверный ответ</string>
 <string name="TO_REQUEST">на запрос</string>
 <string name="INVALID_VALUE">Неверное значение, проверьте</string>
 <string name="FRAME_COMPUTE_FAILED">Ошибка сборки фрейма</string>

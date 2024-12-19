@@ -1,6 +1,7 @@
 package org.quark.dr.canapp;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -21,12 +22,11 @@ import android.os.Handler;
 import android.os.Message;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.text.Html;
-import android.text.Spanned;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Gravity;
@@ -99,6 +99,8 @@ public class MainActivity extends AppCompatActivity {
     public static final String PREF_PROJECT = "project";
     public static final String PREF_LINK_MODE = "BT";
     public static final String PREF_SOFTFLOW = "softFlowControl";
+    @SuppressLint("StaticFieldLeak")
+    public static TextView mLogView;
 
     public static String mLastLog;
     private EcuDatabase mEcuDatabase;
@@ -110,16 +112,16 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<EcuDatabase.EcuInfo> mCurrentEcuInfoList;
     private String mEcuFilePath, mBtDeviceAddress, mUsbSerialNumber, mCurrentProject;
     private int mCurrentEcuAddressId;
-    private TextView mViewSupplier, mViewDiagVersion, mViewVersion, mViewSoft, mLogView;
+    private TextView mViewSupplier, mViewDiagVersion, mViewVersion, mViewSoft;
 
     private ElmBase mObdDevice;
     private Handler mHandler = null;
     private EcuDatabase.EcuIdentifierNew mEcuIdentifierNew = null;
     private Timer mConnectionTimer;
-    // private LicenseLock mLicenseLock;
     private int mLinkMode;
     private boolean mActivateBluetoothAsked;
     private ProgressDialog mScanProgressDialog;
+    private SharedPreferences defaultPrefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -144,23 +146,19 @@ public class MainActivity extends AppCompatActivity {
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
-                if (fis != null)
+                if (fis != null) {
                     try {
                         fis.close();
                     } catch (IOException ignored) {
                     }
+                }
             }
         }
         return result.toString();
     }
 
     private void initialize() {
-        /*
-        long id = new BigInteger(Settings.Secure.getString(getContentResolver(),
-                Settings.Secure.ANDROID_ID), 16).longValue();
-        mLicenseLock = new LicenseLock(id);
-         */
-        SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
+        defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
         String linkMode = defaultPrefs.getString(PREF_LINK_MODE, "BT");
 
         mCurrentProject = "";
@@ -188,6 +186,9 @@ public class MainActivity extends AppCompatActivity {
         mLogView.setMovementMethod(new ScrollingMovementMethod());
         mLogView.setBackgroundResource(R.drawable.edittextroundgreen);
         mLogView.setTextIsSelectable(true);
+
+        mLogView.append("EcuTweaker " + BuildConfig.BUILD_TYPE + " "
+                + getResources().getString(R.string.VERSION) + "\n");
 
         mBtIconImage.setColorFilter(Color.RED);
 
@@ -273,14 +274,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-//        ImageButton licenseButton = findViewById(R.id.licenseButton);
-//        licenseButton.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                onLicenseCheck();
-//            }
-//        });
-
         mChooseProjectButton.setOnClickListener(v -> chooseProject());
 
         mLinkChooser.setOnClickListener(v -> {
@@ -301,10 +294,9 @@ public class MainActivity extends AppCompatActivity {
         mEcuDatabase = new EcuDatabase();
         mEcuIdentifierNew = mEcuDatabase.new EcuIdentifierNew();
 
-        askStorageReadPermission();
-
-        mLogView.append("EcuTweaker " + BuildConfig.BUILD_TYPE + " "
-                + getResources().getString(R.string.VERSION) + "\n");
+        if (!askStorageReadPermission()) {
+            mLogView.append("You need external storage permission to read database\n");
+        }
     }
 
     private void setLink() {
@@ -314,7 +306,6 @@ public class MainActivity extends AppCompatActivity {
         if (mObdDevice != null)
             mObdDevice.disconnect();
 
-        SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
         SharedPreferences.Editor edit = defaultPrefs.edit();
         if (mLinkMode == LINK_BLUETOOTH) {
             mLinkChooser.setImageResource(R.drawable.ic_bt_connected);
@@ -322,25 +313,31 @@ public class MainActivity extends AppCompatActivity {
             edit.putString(PREF_LINK_MODE, "BT");
             edit.apply();
 
-            int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT);
-            if (askBluetoothPermission()) {
-                return;
-            }
-
             BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
             if (!mActivateBluetoothAsked && btAdapter != null && !btAdapter.isEnabled()) {
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        if (!askBluetoothPermission()) {
+                            return;
+                        }
+                    } else {
+                        if (!askLocationPermission()) {
+                            return;
+                        }
+                    }
+                }
                 mActivateBluetoothAsked = true;
                 Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
             }
-        } else if (mLinkMode == LINK_WIFI){
+        } else if (mLinkMode == LINK_WIFI) {
             mActivateBluetoothAsked = false;
             mLinkChooser.setImageResource(R.drawable.ic_wifi);
             mBtButton.setEnabled(false);
             edit.putString(PREF_LINK_MODE, "WIFI");
             edit.apply();
             askLocationPermission();
-        }  else {
+        } else {
             mActivateBluetoothAsked = false;
             mLinkChooser.setImageResource(R.drawable.ic_usb);
             mBtButton.setEnabled(true);
@@ -349,13 +346,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void startConnectionTimer(){
+    private void startConnectionTimer() {
         stopConnectionTimer();
 
         TimerTask timertask = new TimerTask() {
             @Override
             public void run() {
-                if(!isChatConnected() && !isChatConnecting())
+                if (!isChatConnected() && !isChatConnecting())
                     connectDevice();
             }
         };
@@ -364,7 +361,7 @@ public class MainActivity extends AppCompatActivity {
         mConnectionTimer.schedule(timertask, 1000, 4000);
     }
 
-    private void stopConnectionTimer(){
+    private void stopConnectionTimer() {
         if (mConnectionTimer != null) {
             mConnectionTimer.cancel();
             mConnectionTimer.purge();
@@ -373,8 +370,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void connectDevice() {
-        if (mObdDevice != null){
-            if ((mObdDevice.getMode() == MODE_BT) && (mLinkMode == LINK_BLUETOOTH)){
+        if (mObdDevice != null) {
+            if ((mObdDevice.getMode() == MODE_BT) && (mLinkMode == LINK_BLUETOOTH)) {
                 if (mBtDeviceAddress.isEmpty())
                     return;
                 // No need to recreate ELM manager instance
@@ -383,22 +380,24 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            if ((mObdDevice.getMode() == MODE_WIFI) && (mLinkMode == LINK_WIFI)){
+            if ((mObdDevice.getMode() == MODE_WIFI) && (mLinkMode == LINK_WIFI)) {
                 // No need to recreate ELM manager instance
                 mObdDevice.reconnect();
                 return;
             }
 
-            if ((mObdDevice.getMode() == MODE_USB) && (mLinkMode == LINK_USB)){{
-                mObdDevice.connect(mUsbSerialNumber);
-                return;
-            }}
+            if ((mObdDevice.getMode() == MODE_USB) && (mLinkMode == LINK_USB)) {
+                {
+                    mObdDevice.connect(mUsbSerialNumber);
+                    return;
+                }
+            }
         }
 
         String filesDir = getApplicationContext().getFilesDir().getAbsolutePath();
         if (mLinkMode == LINK_BLUETOOTH) {
             BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
-            if (btAdapter != null && !btAdapter.isEnabled()){
+            if (btAdapter != null && !btAdapter.isEnabled()) {
                 return;
             }
 
@@ -425,31 +424,31 @@ public class MainActivity extends AppCompatActivity {
             if (!mObdDevice.hasDevicePermission()) {
                 mObdDevice.requestPermission();
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             mLogView.append("Exception when trying to get permission : " + e.getMessage() + "\n");
         }
     }
 
-    void initBus(String protocol, boolean fastinit){
+    void initBus(String protocol, boolean fastinit) {
         if (isChatConnected()) {
             if (protocol.equals("CAN")) {
                 // TODO : Need look if is extended for better in this.
-                 String txa = mEcuDatabase.getTxAddressById(mCurrentEcuAddressId);
-                 String rxa = mEcuDatabase.getRxAddressById(mCurrentEcuAddressId);
-                 if (rxa == null || txa == null) {
+                String txa = mEcuDatabase.getTxAddressById(mCurrentEcuAddressId);
+                String rxa = mEcuDatabase.getRxAddressById(mCurrentEcuAddressId);
+                if (rxa == null || txa == null) {
                     txa = mEcuDatabase.getTxExtAddressById(mCurrentEcuAddressId);
                     rxa = mEcuDatabase.getRxExtAddressById(mCurrentEcuAddressId);
-                 }
-                 if (rxa == null || txa == null)
+                }
+                if (rxa == null || txa == null)
                     return;
                 // TODO : Need look for canline and brp here send 0 and false.
                 mObdDevice.initCan(rxa, txa, 0, false);
-            } else if (protocol.equals("KWP2000")){
+            } else if (protocol.equals("KWP2000")) {
                 String hexAddr = Ecu.padLeft(Integer.toHexString(mCurrentEcuAddressId),
                         2, "0");
                 // TODO : Check slow init mode
                 mObdDevice.initKwp(hexAddr, fastinit);
-            } else if (protocol.equals("ISO8")){
+            } else if (protocol.equals("ISO8")) {
                 String hexAddr = Ecu.padLeft(Integer.toHexString(mCurrentEcuAddressId),
                         2, "0");
                 // TODO : Check slow init mode
@@ -458,7 +457,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    void showWaitDialog(){
+    void showWaitDialog() {
         mScanProgressDialog = new ProgressDialog(this);
         mScanProgressDialog.setTitle("Scanning");
         mScanProgressDialog.setMessage("Please wait...");
@@ -471,8 +470,8 @@ public class MainActivity extends AppCompatActivity {
         mScanProgressDialog.show();
     }
 
-    void onScanBus(){
-        if(!isChatConnected()){
+    void onScanBus() {
+        if (!isChatConnected()) {
             Toast.makeText(this, "No ELM connection", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -493,8 +492,8 @@ public class MainActivity extends AppCompatActivity {
         alertDialog.show();
     }
 
-    void scanBus(){
-        if(!isChatConnected()){
+    void scanBus() {
+        if (!isChatConnected()) {
             Toast.makeText(this, "No ELM connection", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -515,8 +514,8 @@ public class MainActivity extends AppCompatActivity {
         sendCmd("2180");
     }
 
-    void scanBusKWP(){
-        if(!isChatConnected()){
+    void scanBusKWP() {
+        if (!isChatConnected()) {
             return;
         }
 
@@ -541,8 +540,8 @@ public class MainActivity extends AppCompatActivity {
         sendCmd("2180");
     }
 
-    void scanBusNew(){
-        if(!isChatConnected()){
+    void scanBusNew() {
+        if (!isChatConnected()) {
             return;
         }
 
@@ -565,7 +564,7 @@ public class MainActivity extends AppCompatActivity {
         sendCmd("22F195");
     }
 
-    void ecuTypeSelected(String type, String project){
+    void ecuTypeSelected(String type, String project) {
         mSpecificEcuListView.setBackgroundColor(Color.BLACK);
 
         int ecuAddress = mEcuDatabase.getAddressByFunction(type);
@@ -581,14 +580,14 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         ArrayList<String> ecuNames = new ArrayList<>();
-        for(EcuDatabase.EcuInfo info : ecuArray){
+        for (EcuDatabase.EcuInfo info : ecuArray) {
             if (project.isEmpty() || info.projects.contains(project))
                 ecuNames.add(info.ecuName);
         }
         Collections.sort(ecuNames);
         ArrayAdapter<String> adapter;
 
-        adapter= new ArrayAdapter<>(this,
+        adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_list_item_1,
                 ecuNames);
         mSpecificEcuListView.setAdapter(adapter);
@@ -630,10 +629,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    void startScreen(String ecuFile, String ecuHREFName){
+    void startScreen(String ecuFile, String ecuHREFName) {
         stopConnectionTimer();
 
-        if (mEcuDatabase == null){
+        if (mEcuDatabase == null) {
             return;
         }
 
@@ -647,7 +646,6 @@ public class MainActivity extends AppCompatActivity {
             b.putString("ecuFile", ecuFile);
             b.putString("ecuRef", ecuHREFName);
             b.putString("deviceAddress", mBtDeviceAddress);
-            //b.putBoolean("licenseOk", mLicenseLock.isLicenseOk());
             b.putInt("linkMode", mLinkMode);
             serverIntent.putExtras(b);
             startActivityForResult(serverIntent, REQUEST_SCREEN);
@@ -656,7 +654,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    boolean askStorageReadPermission(){
+    boolean askStorageReadPermission() {
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
         if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
             mLogView.append("Storage read permission OK\n");
@@ -675,7 +673,7 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    boolean askLocationPermission(){
+    boolean askLocationPermission() {
         int val = 0;
         int permissionCheck = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
         if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
@@ -703,13 +701,14 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    boolean askBluetoothPermission(){
+    @RequiresApi(api = Build.VERSION_CODES.S)
+    boolean askBluetoothPermission() {
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT);
         if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
             mLogView.append("Bluetooth connect permission OK\n");
             return true;
         }
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.BLUETOOTH_CONNECT)){
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.BLUETOOTH_CONNECT)) {
             Toast.makeText(this, "You need location permission to connect to WiFi", Toast.LENGTH_SHORT).show();
         }
         ActivityCompat.requestPermissions(this,
@@ -718,13 +717,14 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    boolean askBluetoothScanPermission(){
+    @RequiresApi(api = Build.VERSION_CODES.S)
+    boolean askBluetoothScanPermission() {
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN);
         if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
             mLogView.append("Bluetooth scan permission OK\n");
             return true;
         }
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.BLUETOOTH_SCAN)){
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.BLUETOOTH_SCAN)) {
             Toast.makeText(this, "You need location permission to connect to WiFi", Toast.LENGTH_SHORT).show();
         }
         ActivityCompat.requestPermissions(this,
@@ -777,8 +777,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onDestroy()
-    {
+    public void onDestroy() {
         super.onDestroy();
         stopConnectionTimer();
         if (mObdDevice != null) {
@@ -788,8 +787,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onStop()
-    {
+    public void onStop() {
         super.onStop();
         stopConnectionTimer();
     }
@@ -799,7 +797,7 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         if (mObdDevice == null)
             mObdDevice = ElmBase.getSingleton();
-        if (mObdDevice != null){
+        if (mObdDevice != null) {
             mObdDevice.changeHandler(mHandler);
             mObdDevice.setSessionActive(false);
         }
@@ -854,9 +852,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    void parseDatabase(){
+    void parseDatabase() {
         String ecuFile = "";
-        SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
         if (defaultPrefs.contains(PREF_ECUZIPFILE)) {
             ecuFile = defaultPrefs.getString(PREF_ECUZIPFILE, "");
         }
@@ -864,15 +861,14 @@ public class MainActivity extends AppCompatActivity {
         new LoadDbTask().execute(ecuFile);
     }
 
-    void updateEcuTypeListView(String ecuFile, String project){
-        if (ecuFile == null || ecuFile.isEmpty()){
+    void updateEcuTypeListView(String ecuFile, String project) {
+        if (ecuFile == null || ecuFile.isEmpty()) {
             mStatusView.setText(getResources().getString(R.string.DB_NOT_FOUND));
             return;
         }
 
         //mEcuDatabase.checkMissings();
 
-        SharedPreferences defaultPrefs = getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
         SharedPreferences.Editor edit = defaultPrefs.edit();
         edit.putString(PREF_ECUZIPFILE, ecuFile);
         edit.apply();
@@ -900,7 +896,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 String appDir = getApplicationContext().getFilesDir().getAbsolutePath();
                 ecuFile = mEcuDatabase.loadDatabase(ecuFile, appDir);
-            } catch (EcuDatabase.DatabaseException e){
+            } catch (EcuDatabase.DatabaseException e) {
                 error = e.getMessage();
                 return "";
             }
@@ -909,37 +905,24 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String ecuFile) {
-            SharedPreferences defaultPrefs = getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
-            mCurrentProject = defaultPrefs.getString(PREF_PROJECT, "");
-            updateEcuTypeListView(ecuFile, mCurrentProject);
-            mEcuDatabase.buildMaps(mCurrentProject);
             CharSequence title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME;
-            if (!error.isEmpty()){
+            if (!error.isEmpty()) {
                 mLogView.append("Database exception : " + error + "\n");
                 mStatusView.setText(title);
-            }
-            else {
+            } else {
+                mCurrentProject = defaultPrefs.getString(PREF_PROJECT, "");
+                mEcuDatabase.buildMaps(mCurrentProject);
+                updateEcuTypeListView(ecuFile, mCurrentProject);
                 String code = mEcuDatabase.current_project_code;
                 String name = mEcuDatabase.current_project_name;
-                mCurrentProject = mEcuDatabase.getProjectFromModel(code);
                 title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
                 mStatusView.setText(title);
-                mLogView.append("Loaded vehicle Code : " + code + " Name: " + name +"\n");
+                mLogView.append("Loaded vehicle Name: " + name + "\n");
             }
         }
     }
 
-    private void displayHelp(){
-        Spanned message = Html.fromHtml(getResources().getString(R.string.DEMO_MESSAGE));
-        AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-        alertDialog.setTitle(getResources().getString(R.string.INFORMATION));
-        alertDialog.setMessage(message);
-        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, getResources().getString(R.string.OK),
-                (dialog, which) -> dialog.dismiss());
-        alertDialog.show();
-    }
-
-    private void chooseProject(){
+    private void chooseProject() {
         if (!mEcuDatabase.isLoaded())
             return;
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -961,7 +944,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 mCurrentProject = mEcuDatabase.getProjectFromModel(projects[which]);
-                SharedPreferences defaultPrefs = getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
                 SharedPreferences.Editor edit = defaultPrefs.edit();
                 edit.putString(PREF_PROJECT, mCurrentProject);
                 edit.apply();
@@ -970,7 +952,7 @@ public class MainActivity extends AppCompatActivity {
                 String name = mEcuDatabase.current_project_name;
                 CharSequence title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
                 mStatusView.setText(title);
-                mLogView.append("Loaded vehicle Code : " + code + " Name: " + name +"\n");
+                mLogView.append("Loaded vehicle Name: " + name + "\n");
             }
         });
 
@@ -978,12 +960,12 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private void handleElmResult(String elmMessage){
+    private void handleElmResult(String elmMessage) {
         String[] results = elmMessage.split(";");
-        if (results.length < 2){
+        if (results.length < 2) {
             return;
         }
-        if (results[1].isEmpty() || results[0].substring(0,2).equalsIgnoreCase("AT")){
+        if (results[1].isEmpty() || results[0].substring(0, 2).equalsIgnoreCase("AT")) {
             return;
         }
 
@@ -1011,7 +993,7 @@ public class MainActivity extends AppCompatActivity {
             mLogView.append(getResources().getString(R.string.ECU_FOUND) + " : " +
                     getResources().getString(R.string.SUPPLIER_VERSION) + " " + supplier +
                     getResources().getString(R.string.DIAG_VERSION) + " : "
-                    + diag_version_string + " " +getResources().getString(R.string.VERSION)
+                    + diag_version_string + " " + getResources().getString(R.string.VERSION)
                     + " : " + version
                     + " " + getResources().getString(R.string.SOFT_VERSION) + " : "
                     + soft_version + "\n");
@@ -1062,7 +1044,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // If we get all ECU info, search in DB
-        if (mEcuIdentifierNew.isFullyFilled()){
+        if (mEcuIdentifierNew.isFullyFilled()) {
             mEcuIdentifierNew.reInit(-1);
             ArrayList<EcuDatabase.EcuInfo> ecuInfos = mEcuDatabase.identifyNewEcu(mEcuIdentifierNew);
             ArrayList<String> ecuNames = new ArrayList<>();
@@ -1078,7 +1060,7 @@ public class MainActivity extends AppCompatActivity {
                     android.R.layout.simple_list_item_1,
                     ecuNames);
             mSpecificEcuListView.setAdapter(adapter);
-            if (isExact){
+            if (isExact) {
                 mSpecificEcuListView.setBackgroundColor(Color.GREEN);
             } else {
                 mSpecificEcuListView.setBackgroundColor(Color.RED);
@@ -1088,7 +1070,8 @@ public class MainActivity extends AppCompatActivity {
 
     private static class messageHandler extends Handler {
         private final MainActivity activity;
-        messageHandler(MainActivity ac){
+
+        messageHandler(MainActivity ac) {
             activity = ac;
         }
 
@@ -1116,8 +1099,8 @@ public class MainActivity extends AppCompatActivity {
                     String readMessage = new String(m, 0, msg.arg1);
                     try {
                         activity.handleElmResult(readMessage);
-                    } catch (Exception e){
-                        AlertDialog.Builder dlgAlert  = new AlertDialog.Builder(activity);
+                    } catch (Exception e) {
+                        AlertDialog.Builder dlgAlert = new AlertDialog.Builder(activity);
                         dlgAlert.setMessage(e.getMessage());
                         dlgAlert.setTitle("Exception caught");
                         dlgAlert.setPositiveButton("OK", null);
@@ -1137,7 +1120,7 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case MESSAGE_QUEUE_STATE:
                     int queue_len = msg.arg1;
-                    if (queue_len == 0){
+                    if (queue_len == 0) {
                         activity.stopProgressDialog();
                     }
                     break;
@@ -1145,21 +1128,21 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    void stopProgressDialog(){
+    void stopProgressDialog() {
         if (mScanProgressDialog != null) {
             mScanProgressDialog.dismiss();
         }
     }
 
-    void setConnectionStatus(int c){
+    void setConnectionStatus(int c) {
         //mScanButton.setEnabled(c == STATE_CONNECTED ? true : false);
-        if (c == STATE_CONNECTED){
+        if (c == STATE_CONNECTED) {
             mBtIconImage.setColorFilter(Color.GREEN);
             mBtIconImage.setImageResource(R.drawable.ic_link_ok);
-        } else if (c == STATE_DISCONNECTED){
+        } else if (c == STATE_DISCONNECTED) {
             mBtIconImage.setColorFilter(Color.RED);
             mBtIconImage.setImageResource(R.drawable.ic_link_nok);
-        } else if (c == STATE_CONNECTING){
+        } else if (c == STATE_CONNECTING) {
             mBtIconImage.setColorFilter(Color.GRAY);
             mBtIconImage.setImageResource(R.drawable.ic_link_ok);
         }
@@ -1175,11 +1158,11 @@ public class MainActivity extends AppCompatActivity {
         mObdDevice.write(cmd);
     }
 
-    private boolean isChatConnected(){
+    private boolean isChatConnected() {
         return mObdDevice != null && (mObdDevice.getState() == STATE_CONNECTED);
     }
 
-    private boolean isChatConnecting(){
+    private boolean isChatConnecting() {
         return mObdDevice != null && (mObdDevice.getState() == STATE_CONNECTING);
     }
 

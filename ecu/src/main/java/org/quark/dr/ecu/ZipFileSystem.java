@@ -27,23 +27,24 @@ import java.util.zip.ZipInputStream;
  */
 
 public class ZipFileSystem {
-    static class CustomZipEntry{
+    static class CustomZipEntry {
         public long compressedSize, pos, uncompressedSize;
     }
+
     private HashMap<String, CustomZipEntry> m_directoryEntries;
     private final String m_zipFilePath;
     private final String m_indexFile;
 
-    public ZipFileSystem(String zipFilePath, String applicationDirectory){
+    public ZipFileSystem(String zipFilePath, String applicationDirectory) {
         m_directoryEntries = new HashMap<>();
         m_zipFilePath = zipFilePath;
         m_indexFile = applicationDirectory + "/ecu.idx";
     }
 
-    public boolean importZipEntries(){
+    public boolean importZipEntries() {
         try {
             JSONArray mainJson = new JSONArray(readFile(m_indexFile));
-            for (int i = 0; i < mainJson.length(); ++i){
+            for (int i = 0; i < mainJson.length(); ++i) {
                 JSONObject zipEntryJson = mainJson.getJSONObject(i);
                 CustomZipEntry ze = new CustomZipEntry();
                 ze.pos = zipEntryJson.getLong("pos");
@@ -59,17 +60,17 @@ public class ZipFileSystem {
         return false;
     }
 
-    public void exportZipEntries(){
+    public void exportZipEntries() {
         Iterator zeit = m_directoryEntries.entrySet().iterator();
-        JSONArray mainJson =  new JSONArray();
-        while(zeit.hasNext()){
-            HashMap.Entry pair = (HashMap.Entry)zeit.next();
+        JSONArray mainJson = new JSONArray();
+        while (zeit.hasNext()) {
+            HashMap.Entry pair = (HashMap.Entry) zeit.next();
             JSONObject jsonEntry = new JSONObject();
             try {
                 jsonEntry.put("pos", ((CustomZipEntry) pair.getValue()).pos);
                 jsonEntry.put("realsize", ((CustomZipEntry) pair.getValue()).uncompressedSize);
                 jsonEntry.put("compsize", ((CustomZipEntry) pair.getValue()).compressedSize);
-                jsonEntry.put("name", ((String)pair.getKey()));
+                jsonEntry.put("name", ((String) pair.getKey()));
                 mainJson.put(jsonEntry);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -99,7 +100,7 @@ public class ZipFileSystem {
             long pos = 0;
             //TODO: https://developer.android.com/about/versions/14/behavior-changes-14?hl=fr#zip-path-traversal
             while ((ze = zis.getNextEntry()) != null) {
-                if(ze.isDirectory())
+                if (ze.isDirectory())
                     continue;
                 String filename = ze.getName();
                 long offset = 30 + ze.getName().length() + (ze.getExtra() != null ? ze.getExtra().length : 0);
@@ -116,7 +117,7 @@ public class ZipFileSystem {
         }
     }
 
-    public boolean fileExists(String filename){
+    public boolean fileExists(String filename) {
         return m_directoryEntries.containsKey(filename);
     }
 
@@ -124,7 +125,7 @@ public class ZipFileSystem {
         byte[] array = getZipFileAsBytes(filename);
         try {
             return new String(array, 0, array.length, "UTF-8");
-        } catch (Exception e){
+        } catch (Exception e) {
             return "";
         }
     }
@@ -134,20 +135,20 @@ public class ZipFileSystem {
             long pos = m_directoryEntries.get(filename).pos;
             long compressedSize = m_directoryEntries.get(filename).compressedSize;
             long realSize = m_directoryEntries.get(filename).uncompressedSize;
-            byte[] array = new byte[(int)compressedSize];
+            byte[] array = new byte[(int) compressedSize];
             FileInputStream zip_is = new FileInputStream(m_zipFilePath);
             zip_is.getChannel().position(pos);
-            zip_is.read(array, 0, (int)compressedSize);
+            zip_is.read(array, 0, (int) compressedSize);
             Inflater inflater = new Inflater(true);
-            inflater.setInput(array, 0, (int)compressedSize);
-            byte[] result = new byte[(int)realSize];
+            inflater.setInput(array, 0, (int) compressedSize);
+            byte[] result = new byte[(int) realSize];
             inflater.inflate(result);
             inflater.end();
             return result;
-        } catch(IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
             return null;
-        } catch (DataFormatException e){
+        } catch (DataFormatException e) {
             e.printStackTrace();
         }
         return null;

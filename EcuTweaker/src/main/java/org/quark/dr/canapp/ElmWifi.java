@@ -14,7 +14,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
-public class ElmWifi extends ElmBase{
+public class ElmWifi extends ElmBase {
     private static final String TAG = "ElmWifiThread";
     private final Context mContext;
     private Socket mSocket;
@@ -39,7 +39,7 @@ public class ElmWifi extends ElmBase{
     }
 
     @Override
-    public int getMode(){
+    public int getMode() {
         return MODE_WIFI;
     }
 
@@ -54,7 +54,7 @@ public class ElmWifi extends ElmBase{
 
         WifiManager wifi = (WifiManager) mContext.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
-        if (wifi == null){
+        if (wifi == null) {
             return false;
         }
 
@@ -62,7 +62,7 @@ public class ElmWifi extends ElmBase{
             wifiLock = wifi.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "HighPerf wifi lock");
         }
 
-        if (wifiLock == null){
+        if (wifiLock == null) {
             return false;
         }
 
@@ -73,9 +73,9 @@ public class ElmWifi extends ElmBase{
         if (wifi.isWifiEnabled() && (name.toUpperCase().contains("OBD") ||
                 name.toUpperCase().contains("ELM") ||
                 name.toUpperCase().contains("ECU") ||
-                name.toUpperCase().contains("LINK") ) ) {
+                name.toUpperCase().contains("LINK"))) {
             mConnecting = true;
-            mDeviceName = name.replace("\"","");
+            mDeviceName = name.replace("\"", "");
             synchronized (this) {
                 if (mConnectionHandler != null) {
                     mConnectionHandler.removeCallbacksAndMessages(null);
@@ -96,7 +96,7 @@ public class ElmWifi extends ElmBase{
     }
 
     @Override
-    public boolean reconnect(){
+    public boolean reconnect() {
         return connect(mServerIPAddress);
     }
 
@@ -123,7 +123,7 @@ public class ElmWifi extends ElmBase{
         setState(STATE_NONE);
     }
 
-    private void createConnectedThread(Socket socket){
+    private void createConnectedThread(Socket socket) {
         mSocket = socket;
         mConnectedThread = new ElmWifi.ConnectedThread(socket);
         mConnectedThread.start();
@@ -179,8 +179,7 @@ public class ElmWifi extends ElmBase{
 
         public void writeToElm(byte[] buffer) {
             try {
-                if(mmSocket != null)
-                {
+                if (mmSocket != null) {
                     mOutStream.write(buffer);
                     mOutStream.flush();
                 }
@@ -188,7 +187,7 @@ public class ElmWifi extends ElmBase{
                 connectionLost(localIOException1.getMessage());
                 try {
                     mmSocket.close();
-                } catch (IOException e){
+                } catch (IOException e) {
 
                 }
             }
@@ -197,16 +196,15 @@ public class ElmWifi extends ElmBase{
         public String readFromElm() {
             while (true) {
                 try {
-                    if(mmSocket != null)
-                    {
+                    if (mmSocket != null) {
                         byte b;
                         StringBuilder res = new StringBuilder();
                         int charCount = 0;
                         while ((char) (b = (byte) mInStream.read()) != '>') {
-                            if (++charCount > 32768){
+                            if (++charCount > 32768) {
                                 try {
                                     mmSocket.close();
-                                } catch (IOException e){
+                                } catch (IOException e) {
 
                                 }
                                 connectionLost("WiFi Socket overflow");
@@ -288,7 +286,7 @@ public class ElmWifi extends ElmBase{
                     mConnectedThread = null;
                 }
 
-                synchronized (this){
+                synchronized (this) {
                     mMessages.clear();
                 }
 

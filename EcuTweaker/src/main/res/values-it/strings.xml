@@ -27,7 +27,6 @@
     <string name="USER_REQUEST_CODE">Il tuo codice di richiesta</string>
     <string name="OK">OK</string>
     <string name="CANCEL">Cancella</string>
-    <string name="USER_USES_DEMO_MODE">Stai usando una versione demo, funzione di scrittura disattivata.</string>
     <string name="BT_MANAGER_MESSAGE">Messaggio gestione ELM</string>
     <string name="ECU_PART_MATCH">ECU parzialmente compatibili (usare con cautela)</string>
     <string name="ECU_MATCH">ECU perfettamente compatibili</string>
@@ -38,12 +37,6 @@
     <string name="SUPPLIER_VERSION">Versione fornitore</string>
     <string name="CHOOSE_PROJECT">Scegli un progetto</string>
     <string name="INFORMATION">Informationi</string>
-    <string name="DEMO_MESSAGE"><![CDATA[Benvenuto su <b>ECU TWEAKER</b>,<br> Stai usando l\'applicazione in modalità dimostrazione.
-Puoi usarlo per leggere i parametri delle ECU, ma non ti è permesso di
-usare il bottone o la funzione <i>CANCELLA DTC</i>.<br>
-Puoi sbloccarlo inviandomi una richiesta con il tuo codice, ti invierò il codice di attivazione.<br>
-<b>Attento, grandi poteri danno grandi responsabilità, usalo a tuo rischio. Lo sviluppatore non si assume nessuna responsabilità,
- <u>tu sei il solo responsabile per l\'uso di questo software.</u></b>]]></string>
     <string name="BAD_RESPONSE">Risposta errata</string>
     <string name="TO_REQUEST">A richiesta</string>
     <string name="INVALID_VALUE">Valore invalido, controlla informazione</string>

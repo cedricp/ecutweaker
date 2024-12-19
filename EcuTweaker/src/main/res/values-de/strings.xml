@@ -16,7 +16,6 @@
     <string name="COMPUTED_FRAME">Berechnete Daten</string>
     <string name="COPY_TO_CLIPBOARD">In die Zwischenablage kopieren</string>
     <string name="DB_NOT_FOUND">KEINE DATENBANK GEFUNDEN</string>
-    <string name="DEMO_MESSAGE">"Willkommen beim &lt;b>ECU TWEAKER&lt;/b>,&lt;br>Du befindest dich im Demonstrations modus. Du kannst alle Parameter und Fehlercode lesen, aber nichts aendern oder Fehler loeschen.&lt;br> Du kannst die APP freischalten, in dem du mir den Anforderungscode sendest. Ich schicke dir einen Aktivierungscode zurueck.&lt;br> &lt;b>Pass auf, mit großer Kraft kommt große Verantwortung. Die Benutzung von EcuTweaker erfolgt auf dein eigenes Risiko. Der Software Entwickler uebernimmt keine Verantwortung fuer dein Handeln!&lt;/u>&lt;/b>"</string>
     <string name="DIAG_VERSION">DIAG VERSION</string>
     <string name="DTC_CLEAR_OK">Fehler loeschen erfolgreich</string>
     <string name="ECU_FOUND">Ecu gefunden</string>
@@ -44,7 +43,6 @@
     <string name="SUPPLIER_VERSION">SUPPLIER VERSION</string>
     <string name="TO_REQUEST">Elm Anfrage senden</string>
     <string name="USER_REQUEST_CODE">Dein Anforderungscode</string>
-    <string name="USER_USES_DEMO_MODE">Du verwendest die Demo-Version, die Schreiboptionen sind deaktiviert.</string>
     <string name="VERSION">VERSION</string>
     <string name="WRONG_CODE">Der Code ist falsch, tut mir leid!</string>
     <string name="YES">Ja</string>

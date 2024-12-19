@@ -24,25 +24,25 @@ public class Layout {
 
         @Override
         public int compare(Object o1, Object o2) {
-            Pair<Integer, String> O1 = (Pair<Integer, String>)o1;
-            Pair<Integer, String> O2 = (Pair<Integer, String>)o2;
+            Pair<Integer, String> O1 = (Pair<Integer, String>) o1;
+            Pair<Integer, String> O2 = (Pair<Integer, String>) o2;
             return O2.first - O1.first;
         }
     }
 
     public static class Color {
-        int r,g,b;
+        int r, g, b;
 
-        Color(){
+        Color() {
             r = g = b = 0;
         }
 
-        Color(JSONObject jobj, String tag){
+        Color(JSONObject jobj, String tag) {
             try {
                 r = g = b = 10;
-                if (jobj.has(tag)){
+                if (jobj.has(tag)) {
                     String scol = jobj.getString(tag);
-                    scol = scol.substring(4, scol.length() -1);
+                    scol = scol.substring(4, scol.length() - 1);
                     String[] cols = scol.split(",");
                     if (cols.length == 3) {
                         r = Integer.parseInt(cols[0]);
@@ -55,7 +55,7 @@ public class Layout {
             }
         }
 
-        public int get(){
+        public int get() {
             return 255 << 24 | r << 16 | g << 8 | b;
         }
     }
@@ -64,7 +64,8 @@ public class Layout {
         public String name;
         public int size;
         public Color color;
-        public Font(JSONObject fobj){
+
+        public Font(JSONObject fobj) {
             color = new Color();
             size = 10;
             try {
@@ -79,7 +80,8 @@ public class Layout {
 
     public static class Rect {
         public int x, y, w, h, area;
-        Rect(JSONObject jrect){
+
+        Rect(JSONObject jrect) {
             try {
                 if (jrect.has("width")) w = jrect.getInt("width");
                 if (jrect.has("height")) h = jrect.getInt("height");
@@ -136,7 +138,7 @@ public class Layout {
         public Color m_color;
         public ArrayList<Pair<Integer, String>> preSendData;
 
-        ScreenData(String name, JSONObject jobj){
+        ScreenData(String name, JSONObject jobj) {
             m_inputs = new ArrayList<>();
             m_labels = new ArrayList<>();
             m_displays = new ArrayList<>();
@@ -187,8 +189,10 @@ public class Layout {
                     if (displayobj.has("text")) data.text = displayobj.getString("text");
                     if (displayobj.has("request")) data.request = displayobj.getString("request");
                     if (displayobj.has("width")) data.width = displayobj.getInt("width");
-                    if (displayobj.has("rect")) data.rect = new Rect(displayobj.getJSONObject("rect"));
-                    if (displayobj.has("font")) data.font = new Font(displayobj.getJSONObject("font"));
+                    if (displayobj.has("rect"))
+                        data.rect = new Rect(displayobj.getJSONObject("rect"));
+                    if (displayobj.has("font"))
+                        data.font = new Font(displayobj.getJSONObject("font"));
                     if (displayobj.has("color")) data.color = new Color(displayobj, "color");
                     m_displays.add(data);
                 }
@@ -205,14 +209,15 @@ public class Layout {
                     if (inputobj.has("text")) data.text = inputobj.getString("text");
                     if (inputobj.has("bbox")) data.rect = new Rect(inputobj.getJSONObject("bbox"));
                     if (inputobj.has("font")) data.font = new Font(inputobj.getJSONObject("font"));
-                    if (inputobj.has("fontcolor")) data.fontcolor = new Color(inputobj, "fontcolor");
+                    if (inputobj.has("fontcolor"))
+                        data.fontcolor = new Color(inputobj, "fontcolor");
                     if (inputobj.has("alignment")) data.alignment = inputobj.getInt("alignment");
                     if (inputobj.has("color")) data.color = new Color(inputobj, "color");
                     areaSort.add(new Pair<>(data.rect.area, data));
                 }
 
                 Collections.sort(areaSort, new ListComparator());
-                for (Pair<Integer, LabelData> pair: areaSort){
+                for (Pair<Integer, LabelData> pair : areaSort) {
                     m_labels.add(pair.second);
                 }
 
@@ -228,7 +233,8 @@ public class Layout {
                     if (inputobj.has("text")) data.text = inputobj.getString("text");
                     if (inputobj.has("rect")) data.rect = new Rect(inputobj.getJSONObject("rect"));
                     if (inputobj.has("font")) data.font = new Font(inputobj.getJSONObject("font"));
-                    if (inputobj.has("uniquename")) data.uniqueName = inputobj.getString("uniquename");
+                    if (inputobj.has("uniquename"))
+                        data.uniqueName = inputobj.getString("uniquename");
                     if (inputobj.has("send")) {
                         JSONArray sendData = inputobj.getJSONArray("send");
                         data.sendData = new ArrayList<>();
@@ -245,23 +251,23 @@ public class Layout {
             }
         }
 
-        public List<InputData> getInputs(){
+        public List<InputData> getInputs() {
             return m_inputs;
         }
 
-        public List<LabelData> getLabels(){
+        public List<LabelData> getLabels() {
             return m_labels;
         }
 
-        public List<DisplayData> getDisplays(){
+        public List<DisplayData> getDisplays() {
             return m_displays;
         }
 
-        public List<ButtonData> getButtons(){
+        public List<ButtonData> getButtons() {
             return m_buttons;
         }
 
-        public ButtonData getButtonData(String buttonname){
+        public ButtonData getButtonData(String buttonname) {
             for (ButtonData currentData : m_buttons) {
                 if (currentData.uniqueName.equals(buttonname)) {
                     return currentData;
@@ -270,12 +276,12 @@ public class Layout {
             return null;
         }
 
-        public ArrayList<Pair<Integer, String>> getPreSendData(){
+        public ArrayList<Pair<Integer, String>> getPreSendData() {
             return preSendData;
         }
     }
 
-    public Layout(InputStream is){
+    public Layout(InputStream is) {
         String line;
         BufferedReader br;
         StringBuilder sb = new StringBuilder();
@@ -291,20 +297,20 @@ public class Layout {
 
         try {
             init(new JSONObject(sb.toString()));
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public Layout(String js){
+    public Layout(String js) {
         try {
             init(new JSONObject(js));
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    void init(JSONObject jobj){
+    void init(JSONObject jobj) {
         m_screens = new HashMap<>();
         m_categories = new HashMap<>();
         try {
@@ -319,15 +325,15 @@ public class Layout {
                     m_screens.put(key, sdata);
                 }
             }
-        }  catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
-        try{
+        try {
 
             JSONObject categories = jobj.getJSONObject("categories");
             Iterator<String> iterator = categories.keys();
-            while(iterator.hasNext()) {
+            while (iterator.hasNext()) {
                 String currentKey = iterator.next();
                 ArrayList<String> screennames = new ArrayList<>();
                 JSONArray jscreenarry = categories.getJSONArray(currentKey);
@@ -342,16 +348,16 @@ public class Layout {
         }
     }
 
-    public Set<String> getCategories(){
+    public Set<String> getCategories() {
         return m_categories.keySet();
     }
 
-    public ArrayList<String> getScreenNames(String category){
+    public ArrayList<String> getScreenNames(String category) {
         return m_categories.get(category);
     }
 
-    public ScreenData getScreen(String screenName){
-        if(m_screens.containsKey(screenName)) {
+    public ScreenData getScreen(String screenName) {
+        if (m_screens.containsKey(screenName)) {
             return m_screens.get(screenName);
         } else {
             return null;

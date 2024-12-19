@@ -33,64 +33,98 @@ import java.io.IOException;
  */
 public interface UsbSerialPort {
 
-    /** 5 data bits. */
+    /**
+     * 5 data bits.
+     */
     public static final int DATABITS_5 = 5;
 
-    /** 6 data bits. */
+    /**
+     * 6 data bits.
+     */
     public static final int DATABITS_6 = 6;
 
-    /** 7 data bits. */
+    /**
+     * 7 data bits.
+     */
     public static final int DATABITS_7 = 7;
 
-    /** 8 data bits. */
+    /**
+     * 8 data bits.
+     */
     public static final int DATABITS_8 = 8;
 
-    /** No flow control. */
+    /**
+     * No flow control.
+     */
     public static final int FLOWCONTROL_NONE = 0;
 
-    /** RTS/CTS input flow control. */
+    /**
+     * RTS/CTS input flow control.
+     */
     public static final int FLOWCONTROL_RTSCTS_IN = 1;
 
-    /** RTS/CTS output flow control. */
+    /**
+     * RTS/CTS output flow control.
+     */
     public static final int FLOWCONTROL_RTSCTS_OUT = 2;
 
-    /** XON/XOFF input flow control. */
+    /**
+     * XON/XOFF input flow control.
+     */
     public static final int FLOWCONTROL_XONXOFF_IN = 4;
 
-    /** XON/XOFF output flow control. */
+    /**
+     * XON/XOFF output flow control.
+     */
     public static final int FLOWCONTROL_XONXOFF_OUT = 8;
 
-    /** No parity. */
+    /**
+     * No parity.
+     */
     public static final int PARITY_NONE = 0;
 
-    /** Odd parity. */
+    /**
+     * Odd parity.
+     */
     public static final int PARITY_ODD = 1;
 
-    /** Even parity. */
+    /**
+     * Even parity.
+     */
     public static final int PARITY_EVEN = 2;
 
-    /** Mark parity. */
+    /**
+     * Mark parity.
+     */
     public static final int PARITY_MARK = 3;
 
-    /** Space parity. */
+    /**
+     * Space parity.
+     */
     public static final int PARITY_SPACE = 4;
 
-    /** 1 stop bit. */
+    /**
+     * 1 stop bit.
+     */
     public static final int STOPBITS_1 = 1;
 
-    /** 1.5 stop bits. */
+    /**
+     * 1.5 stop bits.
+     */
     public static final int STOPBITS_1_5 = 3;
 
-    /** 2 stop bits. */
+    /**
+     * 2 stop bits.
+     */
     public static final int STOPBITS_2 = 2;
 
     public UsbSerialDriver getDriver();
-    
+
     /**
      * Port number within driver.
      */
     public int getPortNumber();
-    
+
     /**
      * The serial number of the underlying UsbDeviceConnection, or {@code null}.
      */
@@ -101,7 +135,7 @@ public interface UsbSerialPort {
      * {@link #close()} is eventually called.
      *
      * @param connection an open device connection, acquired with
-     *            {@link UsbManager#openDevice(android.hardware.usb.UsbDevice)}
+     *                   {@link UsbManager#openDevice(android.hardware.usb.UsbDevice)}
      * @throws IOException on error opening or initializing the port.
      */
     public void open(UsbDeviceConnection connection) throws IOException;
@@ -116,7 +150,7 @@ public interface UsbSerialPort {
     /**
      * Reads as many bytes as possible into the destination buffer.
      *
-     * @param dest the destination byte buffer
+     * @param dest          the destination byte buffer
      * @param timeoutMillis the timeout for reading
      * @return the actual number of bytes read
      * @throws IOException if an error occurred during reading
@@ -126,7 +160,7 @@ public interface UsbSerialPort {
     /**
      * Writes as many bytes as possible from the source buffer.
      *
-     * @param src the source byte buffer
+     * @param src           the source byte buffer
      * @param timeoutMillis the timeout for writing
      * @return the actual number of bytes written
      * @throws IOException if an error occurred during writing
@@ -138,12 +172,12 @@ public interface UsbSerialPort {
      *
      * @param baudRate baud rate as an integer, for example {@code 115200}.
      * @param dataBits one of {@link #DATABITS_5}, {@link #DATABITS_6},
-     *            {@link #DATABITS_7}, or {@link #DATABITS_8}.
+     *                 {@link #DATABITS_7}, or {@link #DATABITS_8}.
      * @param stopBits one of {@link #STOPBITS_1}, {@link #STOPBITS_1_5}, or
-     *            {@link #STOPBITS_2}.
-     * @param parity one of {@link #PARITY_NONE}, {@link #PARITY_ODD},
-     *            {@link #PARITY_EVEN}, {@link #PARITY_MARK}, or
-     *            {@link #PARITY_SPACE}.
+     *                 {@link #STOPBITS_2}.
+     * @param parity   one of {@link #PARITY_NONE}, {@link #PARITY_ODD},
+     *                 {@link #PARITY_EVEN}, {@link #PARITY_MARK}, or
+     *                 {@link #PARITY_SPACE}.
      * @throws IOException on error setting the port parameters
      */
     public void setParameters(
@@ -217,6 +251,7 @@ public interface UsbSerialPort {
 
     /**
      * Flush non-transmitted output data and / or non-read input data
+     *
      * @param flushRX {@code true} to flush non-transmitted output data
      * @param flushTX {@code true} to flush non-read input data
      * @return {@code true} if the operation was successful, or

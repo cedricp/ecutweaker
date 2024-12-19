@@ -51,93 +51,98 @@ public abstract class ElmBase {
         return mSingleton;
     }
 
-    static public ElmBase createBluetoothSingleton(Context context, Handler handler, String logDir){
+    static public ElmBase createBluetoothSingleton(Context context, Handler handler, String logDir) {
         mSingleton = new ElmBluetooth(context, handler, logDir);
         return mSingleton;
     }
 
-    static public ElmBase createWifiSingleton(Context context, Handler handler, String logDir){
+    static public ElmBase createWifiSingleton(Context context, Handler handler, String logDir) {
         mSingleton = new ElmWifi(context, handler, logDir);
         return mSingleton;
     }
 
-    static public ElmBase createSerialSingleton(Context context, Handler handler, String logDir){
+    static public ElmBase createSerialSingleton(Context context, Handler handler, String logDir) {
         mSingleton = new ElmUsbSerial(context, handler, logDir);
         return mSingleton;
     }
 
-    EcuDatabase getDB(){
+    EcuDatabase getDB() {
         return mEcuDatabase;
     }
 
-    void setDB(EcuDatabase db){
+    void setDB(EcuDatabase db) {
         mEcuDatabase = db;
     }
 
     protected static final String mEcuErrorCodeString =
             "10:General Reject," +
-            "11:Service Not Supported," +
-            "12:SubFunction Not Supported," +
-            "13:Incorrect Message Length Or Invalid Format," +
-            "21:Busy Repeat Request," +
-            "22:Conditions Not Correct Or Request Sequence Error," +
-            "23:Routine Not Complete," +
-            "24:Request Sequence Error," +
-            "31:Request Out Of Range," +
-            "33:Security Access Denied- Security Access Requested," +
-            "35:Invalid Key," +
-            "36:Exceed Number Of Attempts," +
-            "37:Required Time Delay Not Expired," +
-            "40:Download not accepted," +
-            "41:Improper download type," +
-            "42:Can not download to specified address," +
-            "43:Can not download number of bytes requested," +
-            "50:Upload not accepted," +
-            "51:Improper upload type," +
-            "52:Can not upload from specified address," +
-            "53:Can not upload number of bytes requested," +
-            "70:Upload Download NotAccepted," +
-            "71:Transfer Data Suspended," +
-            "72:General Programming Failure," +
-            "73:Wrong Block Sequence Counter," +
-            "74:Illegal Address In Block Transfer," +
-            "75:Illegal Byte Count In Block Transfer," +
-            "76:Illegal Block Transfer Type," +
-            "77:Block Transfer Data Checksum Error," +
-            "78:Request Correctly Received-Response Pending," +
-            "79:Incorrect ByteCount During Block Transfer," +
-            "7E:SubFunction Not Supported In Active Session," +
-            "7F:Service Not Supported In Active Session," +
-            "80:Service Not Supported In Active Diagnostic Mode," +
-            "81:Rpm Too High," +
-            "82:Rpm Too Low," +
-            "83:Engine Is Running," +
-            "84:Engine Is Not Running," +
-            "85:Engine RunTime TooLow," +
-            "86:Temperature Too High," +
-            "87:Temperature Too Low," +
-            "88:Vehicle Speed Too High," +
-            "89:Vehicle Speed Too Low," +
-            "8A:Throttle/Pedal Too High," +
-            "8B:Throttle/Pedal Too Low," +
-            "8C:Transmission Range In Neutral," +
-            "8D:Transmission Range In Gear," +
-            "8F:Brake Switch(es)NotClosed (brake pedal not pressed or not applied)," +
-            "90:Shifter Lever Not In Park ," +
-            "91:Torque Converter Clutch Locked," +
-            "92:Voltage Too High," +
-            "93:Voltage Too Low";
+                    "11:Service Not Supported," +
+                    "12:SubFunction Not Supported," +
+                    "13:Incorrect Message Length Or Invalid Format," +
+                    "21:Busy Repeat Request," +
+                    "22:Conditions Not Correct Or Request Sequence Error," +
+                    "23:Routine Not Complete," +
+                    "24:Request Sequence Error," +
+                    "31:Request Out Of Range," +
+                    "33:Security Access Denied- Security Access Requested," +
+                    "35:Invalid Key," +
+                    "36:Exceed Number Of Attempts," +
+                    "37:Required Time Delay Not Expired," +
+                    "40:Download not accepted," +
+                    "41:Improper download type," +
+                    "42:Can not download to specified address," +
+                    "43:Can not download number of bytes requested," +
+                    "50:Upload not accepted," +
+                    "51:Improper upload type," +
+                    "52:Can not upload from specified address," +
+                    "53:Can not upload number of bytes requested," +
+                    "70:Upload Download NotAccepted," +
+                    "71:Transfer Data Suspended," +
+                    "72:General Programming Failure," +
+                    "73:Wrong Block Sequence Counter," +
+                    "74:Illegal Address In Block Transfer," +
+                    "75:Illegal Byte Count In Block Transfer," +
+                    "76:Illegal Block Transfer Type," +
+                    "77:Block Transfer Data Checksum Error," +
+                    "78:Request Correctly Received-Response Pending," +
+                    "79:Incorrect ByteCount During Block Transfer," +
+                    "7E:SubFunction Not Supported In Active Session," +
+                    "7F:Service Not Supported In Active Session," +
+                    "80:Service Not Supported In Active Diagnostic Mode," +
+                    "81:Rpm Too High," +
+                    "82:Rpm Too Low," +
+                    "83:Engine Is Running," +
+                    "84:Engine Is Not Running," +
+                    "85:Engine RunTime TooLow," +
+                    "86:Temperature Too High," +
+                    "87:Temperature Too Low," +
+                    "88:Vehicle Speed Too High," +
+                    "89:Vehicle Speed Too Low," +
+                    "8A:Throttle/Pedal Too High," +
+                    "8B:Throttle/Pedal Too Low," +
+                    "8C:Transmission Range In Neutral," +
+                    "8D:Transmission Range In Gear," +
+                    "8F:Brake Switch(es)NotClosed (brake pedal not pressed or not applied)," +
+                    "90:Shifter Lever Not In Park ," +
+                    "91:Torque Converter Clutch Locked," +
+                    "92:Voltage Too High," +
+                    "93:Voltage Too Low";
 
     public abstract void disconnect();
+
     public abstract boolean connect(String address);
+
     public abstract boolean reconnect();
+
     public abstract int getMode();
 
     protected abstract String writeRaw(String raw_buffer);
-    public boolean hasDevicePermission(){
+
+    public boolean hasDevicePermission() {
         return true;
     }
-    public void requestPermission(){
+
+    public void requestPermission() {
     }
 
 
@@ -155,7 +160,7 @@ public abstract class ElmBase {
         buildMaps();
     }
 
-    public void setSoftFlowControl(boolean b){
+    public void setSoftFlowControl(boolean b) {
         mCFC0 = b;
     }
 
@@ -217,7 +222,7 @@ public abstract class ElmBase {
         if (!file.exists()) {
             try {
                 boolean ok = file.createNewFile();
-                if(!ok){
+                if (!ok) {
                     logInfo("Log file create error");
                 }
             } catch (IOException e) {
@@ -235,7 +240,7 @@ public abstract class ElmBase {
         try {
             mLogFile.append(getTimeStamp()).append(" Log file created\n");
             mLogFile.flush();
-        } catch (Exception e){
+        } catch (Exception e) {
             logInfo("Log file write error : " + e.getMessage());
             e.printStackTrace();
         }
@@ -245,18 +250,18 @@ public abstract class ElmBase {
         if (mLogFile != null) {
             try {
                 mLogFile.flush();
-            } catch (IOException e){
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public void closeLogFile(){
-        if (mLogFile != null){
+    public void closeLogFile() {
+        if (mLogFile != null) {
             flushLogs();
             try {
                 mLogFile.close();
-            } catch (IOException e){
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
@@ -298,8 +303,7 @@ public abstract class ElmBase {
         if (extended_can) {
             write("AT CP " + txa.substring(0, 2));
             write("AT SH " + txa.substring(2));
-        }
-        else {
+        } else {
             write("AT SH " + txa.toUpperCase());
         }
         write("AT CRA " + rxa.toUpperCase());
@@ -349,7 +353,7 @@ public abstract class ElmBase {
         mTxa = Integer.parseInt(txa, 16);
     }
 
-    private void initIso(){
+    private void initIso() {
         write("AT WS");
         write("AT E1");
         write("AT L0");
@@ -443,7 +447,7 @@ public abstract class ElmBase {
         return true;
     }
 
-    public synchronized void clearMessages(){
+    public synchronized void clearMessages() {
         mMessages.clear();
     }
 
@@ -462,7 +466,7 @@ public abstract class ElmBase {
 
             // Synchronized message extraction
             synchronized (this) {
-                if ( ! ElmBase.this.mMessages.isEmpty() ) {
+                if (!ElmBase.this.mMessages.isEmpty()) {
                     message = mMessages.get(0);
                     mMessages.remove(0);
                     num_queue = mMessages.size();
@@ -470,7 +474,7 @@ public abstract class ElmBase {
                 }
             }
 
-            if (messagePresent){
+            if (messagePresent) {
                 int message_len = message.length();
                 if ((message_len > 6) && message.substring(0, 6).equalsIgnoreCase("DELAY:")) {
                     int delay = Integer.parseInt(message.substring(6));
@@ -537,15 +541,15 @@ public abstract class ElmBase {
         mSessionActive = active;
     }
 
-    protected void sendISO(String message){
+    protected void sendISO(String message) {
         String messageResult = writeRaw(message);
 
         // Parse response
         StringBuilder resultMess = new StringBuilder();
-        for (String s : messageResult.split("\n")){
+        for (String s : messageResult.split("\n")) {
             // Remove useless whitespaces
             String cleanedMessage = s.replace(" ", "");
-            if (cleanedMessage.equals(message)){
+            if (cleanedMessage.equals(message)) {
                 // Echo cancellation
                 continue;
             }
@@ -576,7 +580,7 @@ public abstract class ElmBase {
         }
     }
 
-    protected void sendCanCFC0(String message){
+    protected void sendCanCFC0(String message) {
         if (!isHexadecimal(message))
             return;
 
@@ -594,54 +598,54 @@ public abstract class ElmBase {
         int Fn = raw_command.size();
 
         // Set ELM timeout to 300ms for first frame response
-        if (Fn > 1 && raw_command.get(0).length() > 15){
+        if (Fn > 1 && raw_command.get(0).length() > 15) {
             writeRaw("ATST4B");
         }
 
-        while(Fc < Fn){
+        while (Fc < Fn) {
             String frsp;
-            if (!ATR1){
+            if (!ATR1) {
                 writeRaw("ATR1");
                 ATR1 = true;
             }
             long tb = System.currentTimeMillis();
 
-            if (Fn > 1 && Fc == (Fn - 1)){
+            if (Fn > 1 && Fc == (Fn - 1)) {
                 writeRaw("ATSTFF");
                 writeRaw("ATAT1");
             }
 
             String currentRawCommand = raw_command.get(Fc);
-            if (Fc == 0 || Fc == (Fn-1) && currentRawCommand.length() < 16){
+            if (Fc == 0 || Fc == (Fn - 1) && currentRawCommand.length() < 16) {
                 // We'll get only 1 frame: nr, fc, ff or sf
                 frsp = writeRaw(currentRawCommand + '1');
             } else {
-                frsp = writeRaw(currentRawCommand );
+                frsp = writeRaw(currentRawCommand);
             }
 
             ++Fc;
 
             ArrayList<String> s0 = new ArrayList<>();
-            for (String s: frsp.split("\n")){
+            for (String s : frsp.split("\n")) {
                 // Echo cancellation
-                int raw_cmd_len = raw_command.get(Fc-1).length();
-                String subs = s ;
+                int raw_cmd_len = raw_command.get(Fc - 1).length();
+                String subs = s;
                 if (subs.length() > raw_cmd_len)
                     subs = s.substring(0, raw_cmd_len);
-                if (subs.equals(raw_command.get(Fc-1)))
+                if (subs.equals(raw_command.get(Fc - 1)))
                     continue;
 
                 s = s.replace(" ", "");
-                if(s.isEmpty())
+                if (s.isEmpty())
                     continue;
 
                 if (isHexadecimal(s))
                     s0.add(s);
             }
 
-            for (String s: s0){
+            for (String s : s0) {
                 // Some data
-                if (s.charAt(0) == '3'){
+                if (s.charAt(0) == '3') {
                     // Flow control frame
 
                     // Extract burst size
@@ -659,14 +663,14 @@ public abstract class ElmBase {
                         frameInterval = s.substring(4, 6);
                     else
                         frameInterval = "EF";
-                    if (frameInterval.toUpperCase().charAt(0) == 'F'){
-                        ST = Integer.parseInt(frameInterval.substring(1,2), 16) * 100;
+                    if (frameInterval.toUpperCase().charAt(0) == 'F') {
+                        ST = Integer.parseInt(frameInterval.substring(1, 2), 16) * 100;
                     } else {
                         ST = Integer.parseInt(frameInterval, 16);
                     }
                     break;
                 } else if (s.startsWith("037F") && s.startsWith("78", 6)) {
-                    if (s0.size() > 0 && s.equals(s0.get(s0.size()-1))){
+                    if (s0.size() > 0 && s.equals(s0.get(s0.size() - 1))) {
                         noerrors = false;
                         errorMsg = "Cannot handle 037F78 yet !";
                         break;
@@ -683,19 +687,19 @@ public abstract class ElmBase {
             // Number of frames to send without response
             int cf = min(BS - 1, (Fn - Fc) - 1);
 
-            if (cf > 0){
+            if (cf > 0) {
                 writeRaw("ATR0");
                 ATR1 = false;
             }
 
-            while (cf > 0){
+            while (cf > 0) {
                 --cf;
 
                 long tc = System.currentTimeMillis();
-                if ((tc - tb) < ST){
+                if ((tc - tb) < ST) {
                     try {
                         Thread.sleep(ST - (tc - tb));
-                    } catch (InterruptedException ie){
+                    } catch (InterruptedException ie) {
                         return;
                     }
                 }
@@ -707,52 +711,52 @@ public abstract class ElmBase {
         }
 
         StringBuilder result = new StringBuilder();
-        if (responses.size() != 1){
+        if (responses.size() != 1) {
             noerrors = false;
             errorMsg = "Cannot send CAN frame with software flow control";
         } else {
             int nbytes = 0;
             String response0 = responses.get(0);
-            if (response0.charAt(0) == '0'){
+            if (response0.charAt(0) == '0') {
                 // Single frame
-                nbytes = Integer.parseInt(response0.substring(1,2), 16);
+                nbytes = Integer.parseInt(response0.substring(1, 2), 16);
                 result = new StringBuilder(responses.get(0).substring(2, 2 + (nbytes * 2)));
             } else if (response0.charAt(0) == '1') {
                 nbytes = Integer.parseInt(response0.substring(1, 4), 16);
                 // We assume that it should be more than 7
                 nbytes -= 6;
-                int nframes = 1 + nbytes / 7 + ((nbytes%7) > 0 ? 1 : 0);
+                int nframes = 1 + nbytes / 7 + ((nbytes % 7) > 0 ? 1 : 0);
                 int cframe = 1;
                 result = new StringBuilder(response0.substring(4, 16));
 
-                while (cframe < nframes){
-                    String sBS =  String.format("%x", min(nframes - responses.size(), 0xf));
+                while (cframe < nframes) {
+                    String sBS = String.format("%x", min(nframes - responses.size(), 0xf));
                     String frsp = writeRaw("300" + sBS + "00" + sBS);
 
                     // Analyse response
                     boolean nodataflag = false;
-                    for (String s: frsp.split("\n")){
+                    for (String s : frsp.split("\n")) {
                         // Echo cancel
-                        if (s.startsWith(raw_command.get(Fc - 1))){
+                        if (s.startsWith(raw_command.get(Fc - 1))) {
                             continue;
                         }
 
-                        if (s.contains("NO DATA")){
+                        if (s.contains("NO DATA")) {
                             nodataflag = true;
                             break;
                         }
 
                         s = s.replace(" ", "");
-                        if (s.isEmpty()){
+                        if (s.isEmpty()) {
                             continue;
                         }
 
-                        if (isHexadecimal(s)){
+                        if (isHexadecimal(s)) {
                             responses.add(s);
-                            if (s.charAt(0) == '2'){
+                            if (s.charAt(0) == '2') {
                                 // Consecutive frame
-                                int tmp_fn = Integer.parseInt(s.substring(1,2), 16);
-                                if (tmp_fn != (cframe % 16)){
+                                int tmp_fn = Integer.parseInt(s.substring(1, 2), 16);
+                                if (tmp_fn != (cframe % 16)) {
                                     noerrors = false;
                                     errorMsg = "Multiline software flow control lost frame";
                                     continue;
@@ -763,7 +767,7 @@ public abstract class ElmBase {
                             continue;
                         }
 
-                        if (nodataflag){
+                        if (nodataflag) {
                             break;
                         }
                     }
@@ -774,7 +778,7 @@ public abstract class ElmBase {
             }
         }
 
-        if (!noerrors){
+        if (!noerrors) {
             message = "ERROR : " + errorMsg;
         } else {
             // Decode received ISO_TP data
@@ -804,7 +808,7 @@ public abstract class ElmBase {
         }
     }
 
-    protected void sendCan(String message){
+    protected void sendCan(String message) {
         IsoTPEncode isotpm = new IsoTPEncode(message);
         // Encode ISO_TP data
         ArrayList<String> raw_command = isotpm.getFormattedArray();
@@ -813,10 +817,10 @@ public abstract class ElmBase {
         StringBuilder errorMsg = new StringBuilder();
 
         // Send data
-        for (String frame: raw_command) {
+        for (String frame : raw_command) {
             String frsp = writeRaw(frame);
 
-            for(String s: frsp.split("\n")){
+            for (String s : frsp.split("\n")) {
                 // Remove unwanted characters
                 s = s.replace("\n", "");
                 // Echo cancellation
@@ -828,7 +832,7 @@ public abstract class ElmBase {
                 if (s.length() == 0)
                     continue;
 
-                if (isHexadecimal(s)){
+                if (isHexadecimal(s)) {
                     // Filter out frame control (FC) response
                     if (s.charAt(0) == '3')
                         continue;
@@ -841,7 +845,7 @@ public abstract class ElmBase {
         }
 
         String result;
-        if (error){
+        if (error) {
             result = "ERROR : " + errorMsg;
         } else {
             // Decode received ISO_TP data
@@ -875,11 +879,11 @@ public abstract class ElmBase {
         mMessages.add(out);
     }
 
-    public void setEcuName(String name){
-        if (mLogFile != null){
+    public void setEcuName(String name) {
+        if (mLogFile != null) {
             try {
                 mLogFile.append("New session with ECU ").append(name).append("\n");
-            } catch (IOException e){
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
