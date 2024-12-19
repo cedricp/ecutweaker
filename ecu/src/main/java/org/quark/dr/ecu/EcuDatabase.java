@@ -1,14 +1,12 @@
 package org.quark.dr.ecu;
 
 import android.os.Environment;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 
-import android.util.Log;
-
-import com.google.gson.Gson;
-
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -312,11 +310,88 @@ public class EcuDatabase {
     }
 
     private void loadProjectsData() {
-        String addressingResource = "projects.json";
-        String projects = getResourceAsString(addressingResource);
-        Gson gson = new Gson();
-        Projects = gson.fromJson(projects, ProjectData.Projects.class);
+        try {
+            // Name of the JSON file
+            String addressingResource = "projects.json";
+
+            // Read the JSON file as a String
+            String projectsJson = getResourceAsString(addressingResource);
+
+            // Convert the JSON string to a JSONObject
+            JSONObject jsonObject = new JSONObject(projectsJson);
+
+            // Extract the 'projects' object from the JSON
+            JSONObject projectsJsonObj = jsonObject.getJSONObject("projects");
+
+            // Create a new Projects object
+            ProjectData.Projects projects = new ProjectData.Projects();
+
+            // Iterate through the project keys (e.g., "All")
+            Iterator<String> keys = projectsJsonObj.keys(); // Get an iterator of the keys
+            while (keys.hasNext()) {
+                String key = keys.next();
+                JSONObject projectJson = projectsJsonObj.getJSONObject(key);
+                ProjectData.Project project = new ProjectData.Project();
+
+                // Load project information
+                project.code = projectJson.getString("code");
+
+                // Load the addressing data
+                JSONObject addressingJson = projectJson.getJSONObject("addressing");
+                Iterator<String> addressingKeys = addressingJson.keys();
+                while (addressingKeys.hasNext()) {
+                    String addressingKey = addressingKeys.next();
+                    JSONArray addressArray = addressingJson.getJSONArray(addressingKey);
+                    String[] addresses = new String[addressArray.length()];
+                    for (int j = 0; j < addressArray.length(); j++) {
+                        addresses[j] = addressArray.getString(j);
+                    }
+                    project.addressing.put(addressingKey, addresses);
+                }
+
+                // Load snat data
+                JSONObject snatJson = projectJson.getJSONObject("snat");
+                Iterator<String> snatKeys = snatJson.keys();
+                while (snatKeys.hasNext()) {
+                    String snatKey = snatKeys.next();
+                    project.snat.put(snatKey, snatJson.getString(snatKey));
+                }
+
+                // Load snat_ext data
+                JSONObject snatExtJson = projectJson.getJSONObject("snat_ext");
+                Iterator<String> snatExtKeys = snatExtJson.keys();
+                while (snatExtKeys.hasNext()) {
+                    String snatExtKey = snatExtKeys.next();
+                    project.snat_ext.put(snatExtKey, snatExtJson.getString(snatExtKey));
+                }
+
+                // Load dnat data
+                JSONObject dnatJson = projectJson.getJSONObject("dnat");
+                Iterator<String> dnatKeys = dnatJson.keys();
+                while (dnatKeys.hasNext()) {
+                    String dnatKey = dnatKeys.next();
+                    project.dnat.put(dnatKey, dnatJson.getString(dnatKey));
+                }
+
+                // Load dnat_ext data
+                JSONObject dnatExtJson = projectJson.getJSONObject("dnat_ext");
+                Iterator<String> dnatExtKeys = dnatExtJson.keys();
+                while (dnatExtKeys.hasNext()) {
+                    String dnatExtKey = dnatExtKeys.next();
+                    project.dnat_ext.put(dnatExtKey, dnatExtJson.getString(dnatExtKey));
+                }
+
+                // Add the project to the projects map
+                projects.projects.put(key, project);
+            }
+
+            // Save the projects in the global variable
+            Projects = projects;
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
+
 
     public String loadDatabase(String ecuFilename, String appDir) throws DatabaseException {
         if (m_loaded) {
