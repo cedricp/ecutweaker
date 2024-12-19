@@ -27,8 +27,8 @@ allprojects {
 ext {
     debug = file("$rootDir/EcuTweaker/debug")
     release = file("$rootDir/EcuTweaker/release")
-    appversion = "2.2"
-    appversion_int = 22
+    appversion = "2.3"
+    appversion_int = 23
     minSdkVersion = 21
     // TODO: If increasing 29 it need review permissions READ_EXTERNAL_STORAGE + MANAGE_EXTERNAL_STORAGE
     targetSdkVersion = 29
