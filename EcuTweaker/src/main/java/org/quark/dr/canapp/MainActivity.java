@@ -1,6 +1,7 @@
 package org.quark.dr.canapp;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -98,6 +99,8 @@ public class MainActivity extends AppCompatActivity {
     public static final String PREF_PROJECT = "project";
     public static final String PREF_LINK_MODE = "BT";
     public static final String PREF_SOFTFLOW = "softFlowControl";
+    @SuppressLint("StaticFieldLeak")
+    public static TextView mLogView;
 
     public static String mLastLog;
     private EcuDatabase mEcuDatabase;
@@ -109,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<EcuDatabase.EcuInfo> mCurrentEcuInfoList;
     private String mEcuFilePath, mBtDeviceAddress, mUsbSerialNumber, mCurrentProject;
     private int mCurrentEcuAddressId;
-    private TextView mViewSupplier, mViewDiagVersion, mViewVersion, mViewSoft, mLogView;
+    private TextView mViewSupplier, mViewDiagVersion, mViewVersion, mViewSoft;
 
     private ElmBase mObdDevice;
     private Handler mHandler = null;
@@ -183,6 +186,9 @@ public class MainActivity extends AppCompatActivity {
         mLogView.setMovementMethod(new ScrollingMovementMethod());
         mLogView.setBackgroundResource(R.drawable.edittextroundgreen);
         mLogView.setTextIsSelectable(true);
+
+        mLogView.append("EcuTweaker " + BuildConfig.BUILD_TYPE + " "
+                + getResources().getString(R.string.VERSION) + "\n");
 
         mBtIconImage.setColorFilter(Color.RED);
 
@@ -287,9 +293,6 @@ public class MainActivity extends AppCompatActivity {
 
         mEcuDatabase = new EcuDatabase();
         mEcuIdentifierNew = mEcuDatabase.new EcuIdentifierNew();
-
-        mLogView.append("EcuTweaker " + BuildConfig.BUILD_TYPE + " "
-                + getResources().getString(R.string.VERSION) + "\n");
 
         if (!askStorageReadPermission()) {
             mLogView.append("You need external storage permission to read database\n");
