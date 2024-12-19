@@ -27,7 +27,6 @@
     <string name="USER_REQUEST_CODE">Ваш код запиту</string>
     <string name="OK">OK</string>
     <string name="CANCEL">Скасувати</string>
-    <string name="USER_USES_DEMO_MODE">Ви використовуєте демо-версію, запис заблоковано.</string>
     <string name="BT_MANAGER_MESSAGE">Повідомлення менеджера ELM</string>
     <string name="ECU_PART_MATCH">ECU частково збігається (використовуйте обережно)</string>
     <string name="ECU_MATCH">ECU повністю збігається</string>
@@ -38,12 +37,6 @@
     <string name="SUPPLIER_VERSION">версія постачальника</string>
     <string name="CHOOSE_PROJECT">Виберіть проєкт</string>
     <string name="INFORMATION">Інформація</string>
-    <string name="DEMO_MESSAGE"><![CDATA[Ласкаво просимо до <b>ECU TWEAKER</b>,<br> Ви використовуєте застосунок у демонстраційному режимі.
-Ви можете читати всі параметри блоків, але не можете
-використовувати кнопки чи функцію <i>СБРОС DTC</i>.<br>
-Для розблокування надішліть мені код запиту, і я надішлю Вам код активації.<br>
-<b>Будьте уважні! Ви використовуєте цей застосунок на власний ризик.
-Розробник не несе жодної відповідальності за роботу застосунку та за те, що ви робите з його допомогою.</u></b>]]></string>
     <string name="BAD_RESPONSE">Невірна відповідь</string>
     <string name="TO_REQUEST">на запит</string>
     <string name="INVALID_VALUE">Невірне значення, перевірте</string>

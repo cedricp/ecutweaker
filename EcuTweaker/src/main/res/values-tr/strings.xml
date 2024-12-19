@@ -26,7 +26,6 @@
     <string name="USER_REQUEST_CODE">İstek Kodunuz</string>
     <string name="OK">Tamam</string>
     <string name="CANCEL">Çıkış</string>
-    <string name="USER_USES_DEMO_MODE">Demo versiyonunu kullanıyorsunuz, yazma fonksiyonu devre dışı.</string>
     <string name="BT_MANAGER_MESSAGE">Bluetooth Yöneticisi Mesajı</string>
     <string name="ECU_PART_MATCH">Kısmen eşleşen ECU\'lar(dikkatli kullanın)</string>
     <string name="ECU_MATCH">Tam eşleşen ECU\'lar</string>
@@ -37,7 +36,6 @@
     <string name="SUPPLIER_VERSION">üretici versiyonu</string>
     <string name="CHOOSE_PROJECT">Bir proje seçin</string>
     <string name="INFORMATION">Bilgi</string>
-    <string name="DEMO_MESSAGE"><![CDATA[Welcome to <b>ECU TWEAKER</b>,<br> You are using this application in demonstration mode. You can use it to read all ECU parameters, but you are not allowed to use the buttons or the <i>CLEAR DTC</i> functionality.<br> You can unlock it by sending me the request code, I\'ll send you back an activation code.<br> <b>Beware, with great power comes great responsibility, you\'re using it at your own risks. The developer denies all responsibilities, <u>you are the sole responsible of what you do with this Software.</u></b>]]></string>
     <string name="BAD_RESPONSE">Hatalı cevap</string>
     <string name="TO_REQUEST">istek</string>
     <string name="INVALID_VALUE">Geçersiz değer, girişleri kontrol edin.</string>

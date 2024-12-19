@@ -2,7 +2,6 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="OK">OK</string>
     <string name="CANCEL">Abandonner</string>
-    <string name="USER_USES_DEMO_MODE">Vous utilisez la version démonstration, les fonctions d\'écritures sont desactivées</string>
     <string name="BT_MANAGER_MESSAGE">Message ELM</string>
     <string name="ECU_PART_MATCH">Correspondance ECU partielle</string>
     <string name="ECU_MATCH">Correspondance ECU totale</string>
@@ -40,11 +39,6 @@
     <string name="WRONG_CODE">Mauvais code</string>
     <string name="DB_NOT_FOUND">Base de donnée non trouvée</string>
     <string name="INDEXING_DB">Indexation de la base de donnée</string>
-    <string name="DEMO_MESSAGE"><![CDATA[Bienvenue dans <b>ECU TWEAKER</b>,<br>Vous utilisez cette application en mode démonstration.
-Vous pouvez utiliser toutes les fonctionnalités de lecture, mais les requêtes d\'écriture sont bloquées ansi que la fonction d\'effacement des défauts.<br>
-Vous pouvez débloquer l\'application en m\'envoyant le code de requête, je vous enverrai en retour le code de déblocage.<br>
-<b>Attention, vous utilisez ce logiciel a vos propres risques, tout ce que vous faites avec est de votre propre responsabilité, le developpeur
-se dégage de toute responsablite.</u></b>]]></string>
     <string name="send">Envoie</string>
     <string name="not_connected">Non connecté</string>
     <string name="bt_not_enabled_leaving">Connection Bluetooth non activée</string>

@@ -27,7 +27,6 @@
     <string name="USER_REQUEST_CODE">Váš kód požadavky</string>
     <string name="OK">Ano</string>
     <string name="CANCEL">Zrušit</string>
-    <string name="USER_USES_DEMO_MODE">Používáte DEMO verzi, funkce zápisu jsou deaktivovány.</string>
     <string name="BT_MANAGER_MESSAGE">Správa správce ELM</string>
     <string name="ECU_PART_MATCH">ECU částečně odpovídá souboru (použijte opatrně)</string>
     <string name="ECU_MATCH">ECU se dokonale shoduje se souborem</string>
@@ -38,13 +37,6 @@
     <string name="SUPPLIER_VERSION">Verze dodavatele</string>
     <string name="CHOOSE_PROJECT">Vyberte projekt</string>
     <string name="INFORMATION">Informace</string>
-    <string name="DEMO_MESSAGE"><![CDATA[Vítejte v <b>ECU TWEAKER</b>,<br> Používáte aplikaci v demo režimu.
-Můžete jej použít ke čtení všech parametrů ECU, ale nemáte povolení
-použít tlačítka zápisu nebo <i>CLEAR DTC</i> funkce.<br>
-Můžete ho odemknout zasláním kódu požadavky, pošlu Vám aktivační kód.
-<b>Dejte si pozor, s velkou silou přichází velká zodpovědnost, budete ji používat na vlastní
-riziko. Vývojář odmítá veškerou zodpovědnost, <u>jste výhradně zodpovědní,
-co děláte s tímto softwarem.</u></b>]]></string>
     <string name="BAD_RESPONSE">Chybná odpověď</string>
     <string name="TO_REQUEST">Na vyžádání</string>
     <string name="INVALID_VALUE">Neplatná hodnota, zkontrolujte vstupy</string>
