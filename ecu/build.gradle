@@ -18,8 +18,6 @@ android {
 
     namespace 'org.quark.dr.ecu'
     compileSdk rootProject.ext.compileSdkVersion
-    // deprecated
-    //buildToolsVersion rootProject.ext.buildToolsVersion
     ndkVersion rootProject.ext.ndkVersion
 
     defaultConfig {
@@ -33,12 +31,10 @@ android {
 
     buildTypes {
         release {
-            //minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
         debug {
-            //minifyEnabled false
             signingConfig signingConfigs.debug
         }
     }

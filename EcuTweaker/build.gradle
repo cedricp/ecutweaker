@@ -18,8 +18,6 @@ android {
 
     namespace 'org.quark.dr.canapp'
     compileSdk rootProject.ext.compileSdkVersion
-    // deprecated
-    //buildToolsVersion rootProject.ext.buildToolsVersion
     ndkVersion rootProject.ext.ndkVersion
 
     defaultConfig {
@@ -28,11 +26,8 @@ android {
         versionCode rootProject.ext.appversion_int
         versionName rootProject.ext.appversion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles 'consumer-rules.pro'
     }
 
-    // deprecated android.defaults.buildfeatures.buildconfig=true
-    // uses buildFeatures.
     buildFeatures {
         buildConfig = true
     }
@@ -40,18 +35,12 @@ android {
     buildTypes {
         release {
             minifyEnabled true
-            // Obfuscate
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
             buildConfigField "String", "TYPE", '"release"'
-            // deprecated
-            //zipAlignEnabled true
         }
         debug {
-            minifyEnabled false
-            // Obfuscate
-            shrinkResources false
             buildConfigField "String", "TYPE", '"debug"'
             signingConfig signingConfigs.debug
         }
