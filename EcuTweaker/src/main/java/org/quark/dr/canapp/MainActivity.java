@@ -923,16 +923,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void displayHelp(){
-        Spanned message = Html.fromHtml(getResources().getString(R.string.DEMO_MESSAGE));
-        AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-        alertDialog.setTitle(getResources().getString(R.string.INFORMATION));
-        alertDialog.setMessage(message);
-        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, getResources().getString(R.string.OK),
-                (dialog, which) -> dialog.dismiss());
-        alertDialog.show();
-    }
-
     private void chooseProject(){
         if (!mEcuDatabase.isLoaded())
             return;
