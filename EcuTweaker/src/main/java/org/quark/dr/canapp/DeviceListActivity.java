@@ -12,7 +12,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.Bundle;
+
 import androidx.annotation.NonNull;
+
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,6 +44,7 @@ public class DeviceListActivity extends Activity {
     // Member fields
     private BluetoothAdapter mBtAdapter;
     private ArrayAdapter<String> mNewDevicesArrayAdapter;
+
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.

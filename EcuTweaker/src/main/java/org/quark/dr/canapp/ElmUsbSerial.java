@@ -33,7 +33,7 @@ public class ElmUsbSerial extends ElmBase {
     }
 
     @Override
-    public int getMode(){
+    public int getMode() {
         return MODE_USB;
     }
 
@@ -54,12 +54,12 @@ public class ElmUsbSerial extends ElmBase {
         for (final UsbSerialDriver driver : drivers) {
             final List<UsbSerialPort> ports = driver.getPorts();
             result.addAll(ports);
-            for (UsbSerialPort port : ports){
-                if (!usbManager.hasPermission(port.getDriver().getDevice())){
+            for (UsbSerialPort port : ports) {
+                if (!usbManager.hasPermission(port.getDriver().getDevice())) {
                     logInfo("No permission to access USB device " + serial);
                 }
                 UsbDeviceConnection connection = usbManager.openDevice(port.getDriver().getDevice());
-                if (connection == null){
+                if (connection == null) {
                     logInfo("USB : error opening device connection");
                     continue;
                 }
@@ -78,7 +78,7 @@ public class ElmUsbSerial extends ElmBase {
             }
         }
 
-        if (msPort == null){
+        if (msPort == null) {
             return false;
         }
 
@@ -105,7 +105,7 @@ public class ElmUsbSerial extends ElmBase {
     }
 
     @Override
-    public boolean reconnect(){
+    public boolean reconnect() {
         disconnect();
         return connect(mUsbSerial);
     }
@@ -163,16 +163,15 @@ public class ElmUsbSerial extends ElmBase {
 
         public void writeToElm(byte[] buffer) {
             try {
-                if(mUsbSerialPort != null)
-                {
+                if (mUsbSerialPort != null) {
                     byte[] arrayOfBytes = buffer;
                     mUsbSerialPort.write(arrayOfBytes, 500);
                 }
             } catch (Exception localIOException1) {
-                connectionLost("USBWRITE IO Exception : " +  localIOException1.getMessage());
+                connectionLost("USBWRITE IO Exception : " + localIOException1.getMessage());
                 try {
                     mUsbSerialPort.close();
-                } catch (IOException e){
+                } catch (IOException e) {
 
                 }
             }
@@ -183,27 +182,26 @@ public class ElmUsbSerial extends ElmBase {
             while (true) {
                 byte[] bytes = new byte[2048];
                 int bytes_count = 0;
-                long millis =System.currentTimeMillis();
-                if(mUsbSerialPort != null)
-                {
+                long millis = System.currentTimeMillis();
+                if (mUsbSerialPort != null) {
                     try {
                         bytes_count = mUsbSerialPort.read(bytes, 1500);
-                    } catch (IOException e){
+                    } catch (IOException e) {
                         logInfo("USB read IO exception : " + e.getMessage());
                         bytes_count = 0;
-                    } catch (NullPointerException pne){
+                    } catch (NullPointerException pne) {
                         connectionLost("USB read exception (closing) : " + pne.getMessage());
                         break;
                     } catch (Exception e) {
                         logInfo("USB read exception : " + e.getMessage());
                     }
 
-                    if (bytes_count > 0){
+                    if (bytes_count > 0) {
                         boolean eof = false;
                         String res = new String(bytes, 0, bytes_count);
                         res = res.substring(0, bytes_count);
 
-                        if(res.length() > 0) {
+                        if (res.length() > 0) {
                             // Only break when ELM has sent termination char
                             if (res.charAt(res.length() - 1) == '>') {
                                 if (res.length() > 2)
@@ -220,11 +218,11 @@ public class ElmUsbSerial extends ElmBase {
                     } else {
                         try {
                             Thread.sleep(5);
-                        } catch (Exception e){
+                        } catch (Exception e) {
 
                         }
                     }
-                    if ((System.currentTimeMillis() - millis) > 4000){
+                    if ((System.currentTimeMillis() - millis) > 4000) {
                         connectionLost("USB read : Timeout");
                         break;
                     }
@@ -251,16 +249,16 @@ public class ElmUsbSerial extends ElmBase {
     }
 
     @Override
-    public boolean hasDevicePermission(){
+    public boolean hasDevicePermission() {
         if (msPort == null)
             return true;
         final UsbManager usbManager = (UsbManager) mContext.getApplicationContext().getSystemService(Context.USB_SERVICE);
-        if( usbManager == null) return false;
+        if (usbManager == null) return false;
         return usbManager.hasPermission(msPort.getDriver().getDevice());
     }
 
     @Override
-    public void requestPermission(){
+    public void requestPermission() {
         if (msPort == null)
             return;
         final UsbManager usbManager = (UsbManager) mContext.getApplicationContext().getSystemService(Context.USB_SERVICE);

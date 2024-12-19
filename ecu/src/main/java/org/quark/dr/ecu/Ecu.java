@@ -2,8 +2,10 @@ package org.quark.dr.ecu;
 
 import android.util.Log;
 import android.util.Pair;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -31,14 +33,15 @@ public class Ecu {
     private boolean fastinit;
     private String m_defaultSDS;
 
-    private class EcuDataItem{
+    private class EcuDataItem {
         public int firstbyte;
         public int bitoffset;
         public boolean ref;
         public String endian = "";
         public String req_endian;
         public String name;
-        EcuDataItem(JSONObject json, String name){
+
+        EcuDataItem(JSONObject json, String name) {
             req_endian = global_endian;
             this.name = name;
             try {
@@ -46,17 +49,17 @@ public class Ecu {
                 if (json.has("bitoffset")) bitoffset = json.getInt("bitoffset");
                 if (json.has("ref")) ref = json.getBoolean("ref");
                 if (json.has("endian")) endian = json.getString("endian");
-            } catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public HashMap<String, String> getSdsrequests(){
+    public HashMap<String, String> getSdsrequests() {
         return sdsrequests;
     }
 
-    public void setDefautSDS(String sdsname){
+    public void setDefautSDS(String sdsname) {
         if (sdsrequests.containsKey(sdsname))
             m_defaultSDS = sdsrequests.get(sdsname);
     }
@@ -67,7 +70,7 @@ public class Ecu {
         HashMap<String, String> devicedata;
         public String name;
 
-        EcuDevice(JSONObject json){
+        EcuDevice(JSONObject json) {
             devicedata = new HashMap<>();
             try {
                 this.name = json.getString("name");
@@ -80,7 +83,7 @@ public class Ecu {
                     String key = keys.next();
                     devicedata.put(key, devdataobj.getString(key));
                 }
-            } catch (Exception e){
+            } catch (Exception e) {
 
             }
         }
@@ -104,50 +107,51 @@ public class Ecu {
         public String unit = "";
         public String comment = "";
         public String name;
+
         EcuData(JSONObject json, String name) {
             this.name = name;
             try {
                 lists = new HashMap<>();
                 items = new HashMap<>();
-                if(json.has("bitscount"))
+                if (json.has("bitscount"))
                     bitscount = json.getInt("bitscount");
 
-                if(json.has("scaled"))
+                if (json.has("scaled"))
                     scaled = json.getBoolean("scaled");
 
-                if(json.has("byte"))
+                if (json.has("byte"))
                     isbyte = json.getBoolean("byte");
 
-                if(json.has("signed"))
+                if (json.has("signed"))
                     signed = json.getBoolean("signed");
-                if(json.has("binary"))
+                if (json.has("binary"))
 
                     binary = json.getBoolean("binary");
-                if(json.has("bytesascii"))
+                if (json.has("bytesascii"))
                     bytesascii = json.getBoolean("bytesascii");
 
-                if(json.has("bytescount"))
+                if (json.has("bytescount"))
                     bytescount = json.getInt("bytescount");
 
-                if(json.has("step"))
-                    step = (float)json.getDouble("step");
+                if (json.has("step"))
+                    step = (float) json.getDouble("step");
 
-                if(json.has("offset"))
-                    offset = (float)json.getDouble("offset");
+                if (json.has("offset"))
+                    offset = (float) json.getDouble("offset");
 
-                if(json.has("divideby"))
-                    divideby = (float)json.getDouble("divideby");
+                if (json.has("divideby"))
+                    divideby = (float) json.getDouble("divideby");
 
-                if(json.has("format"))
+                if (json.has("format"))
                     format = json.getString("format");
 
-                if(json.has("description"))
+                if (json.has("description"))
                     description = json.getString("description");
 
-                if(json.has("unit"))
+                if (json.has("unit"))
                     unit = json.getString("unit");
 
-                if(json.has("comment"))
+                if (json.has("comment"))
                     comment = json.getString("comment");
 
                 if (json.has("lists")) {
@@ -164,12 +168,12 @@ public class Ecu {
             }
         }
 
-        public byte[] setValue(Object value, byte[] byte_list, EcuDataItem dataitem){
+        public byte[] setValue(Object value, byte[] byte_list, EcuDataItem dataitem) {
             int start_byte = dataitem.firstbyte - 1;
             int startBit = dataitem.bitoffset;
             boolean little_endian = false;
 
-            int requiredDataBytesLen = (int)(Math.ceil(((float)bitscount + (float)startBit) / 8.0f));
+            int requiredDataBytesLen = (int) (Math.ceil(((float) bitscount + (float) startBit) / 8.0f));
 
             if (global_endian.equals("Little"))
                 little_endian = true;
@@ -189,11 +193,11 @@ public class Ecu {
 
             String finalbinvalue;
 
-            if (bytesascii){
-                if (!(value instanceof String)){
+            if (bytesascii) {
+                if (!(value instanceof String)) {
                     throw new ClassCastException("Value must be a string");
                 }
-                String strvalue = (String)value;
+                String strvalue = (String) value;
                 if (bytescount > strvalue.length())
                     strvalue = padLeft(strvalue, bytescount, " ");
                 if (bytescount < strvalue.length())
@@ -213,7 +217,7 @@ public class Ecu {
                         // Replace comma with point and remove spaces
                         value = ((String) value).replace(",", ".");
                         value = ((String) value).replace(" ", "");
-                        floatval = Float.parseFloat((String)value);
+                        floatval = Float.parseFloat((String) value);
                     } else {
                         throw new ClassCastException("Value must be an integer or float");
                     }
@@ -227,13 +231,13 @@ public class Ecu {
                     if (!(value instanceof String)) {
                         throw new ClassCastException("Value must be a hex string");
                     }
-                    String vv = (String)value;
+                    String vv = (String) value;
                     finalbinvalue = hexToBinary(vv.replaceAll(" ", ""));
                 }
             }
 
             finalbinvalue = padLeft(finalbinvalue, bitscount, "0");
-            int numreqbytes = (int)(Math.ceil(((float)(bitscount + startBit) / 8.f)));
+            int numreqbytes = (int) (Math.ceil(((float) (bitscount + startBit) / 8.f)));
 
             byte[] request_bytes = Arrays.copyOfRange(byte_list, start_byte, start_byte + numreqbytes);
             StringBuilder requestasbin = new StringBuilder();
@@ -243,7 +247,7 @@ public class Ecu {
                 requestasbin.append(byteToBinaryString(request_byte, 8));
             }
 
-            if (little_endian){
+            if (little_endian) {
                 /*
                  * Handle little endian value (not an easy task...)
                  */
@@ -257,7 +261,7 @@ public class Ecu {
                 bitmask = padLeft(bitmask, requiredDataBytesLen * 8, "0");
                 String tmp = "";
                 String tmpmask = "";
-                for (int i = requiredDataBytesLen - 1; i >= 0 ; --i){
+                for (int i = requiredDataBytesLen - 1; i >= 0; --i) {
                     tmp += finalbinvalue.substring(i * 8, i * 8 + 8);
                     tmpmask += bitmask.substring(i * 8, i * 8 + 8);
                 }
@@ -276,7 +280,7 @@ public class Ecu {
                 }
             } else {
                 for (int i = 0; i < bitscount; ++i) {
-                    if (little_endian && bitmask.charAt(i) == '1'){
+                    if (little_endian && bitmask.charAt(i) == '1') {
                         binaryRequest[i + startBit] = binaryValue[i];
                     } else {
                         binaryRequest[i + startBit] = binaryValue[i];
@@ -285,10 +289,10 @@ public class Ecu {
             }
 
             BigInteger valueashex = new BigInteger(new String(binaryRequest), 2);
-            String str16 = padLeft(valueashex.toString(16), bytescount*2, "0");
+            String str16 = padLeft(valueashex.toString(16), bytescount * 2, "0");
 
-            for (int i = 0; i < bytescount; ++i){
-                String hexpart = str16.substring(i*2, i*2 + 2);
+            for (int i = 0; i < bytescount; ++i) {
+                String hexpart = str16.substring(i * 2, i * 2 + 2);
                 byte[] b = hexStringToByteArray(hexpart);
                 byte_list[i + start_byte] = b[0];
             }
@@ -296,7 +300,7 @@ public class Ecu {
             return byte_list;
         }
 
-        public String getHexValue(byte[] resp, EcuDataItem dataitem){
+        public String getHexValue(byte[] resp, EcuDataItem dataitem) {
             int startByte = dataitem.firstbyte;
             int startBit = dataitem.bitoffset;
             int bits = bitscount;
@@ -311,8 +315,8 @@ public class Ecu {
             if (dataitem.endian.equals("Big"))
                 little_endian = false;
 
-            int dataBytesLen = (int)(Math.ceil((float)bits / 8.0f));
-            int requiredDataBytesLen = (int)(Math.ceil(((float)bits + (float)startBit) / 8.0f));
+            int dataBytesLen = (int) (Math.ceil((float) bits / 8.0f));
+            int requiredDataBytesLen = (int) (Math.ceil(((float) bits + (float) startBit) / 8.0f));
             int sb = startByte - 1;
 
             if ((sb + dataBytesLen) > resp.length) {
@@ -322,10 +326,10 @@ public class Ecu {
             String hexToBin = "";
             String hex;
 
-            if (little_endian){
+            if (little_endian) {
                 int bitlength = requiredDataBytesLen * 8;
-                for (int i = 0; i < requiredDataBytesLen; ++i){
-                    byte b = resp[i+sb];
+                for (int i = 0; i < requiredDataBytesLen; ++i) {
+                    byte b = resp[i + sb];
                     hexToBin = byteToBinaryString(b, 8) + hexToBin;
                 }
 
@@ -333,8 +337,8 @@ public class Ecu {
                 BigInteger bigValue = new BigInteger(hexToBin, 2);
                 hex = bigValue.toString(16);
             } else {
-                for (int i = 0; i < requiredDataBytesLen; ++i){
-                    byte b = resp[i+sb];
+                for (int i = 0; i < requiredDataBytesLen; ++i) {
+                    byte b = resp[i + sb];
                     hexToBin += byteToBinaryString(b, 8);
                 }
 
@@ -346,67 +350,66 @@ public class Ecu {
             return padLeft(hex, dataBytesLen * 2, "0");
         }
 
-        public String fmt(double d)
-        {
-            if(d == (long) d)
-                return String.format(Locale.US, "%d",(long)d);
+        public String fmt(double d) {
+            if (d == (long) d)
+                return String.format(Locale.US, "%d", (long) d);
             else
-                return String.format(Locale.US, "%.2f",d);
+                return String.format(Locale.US, "%.2f", d);
         }
 
-        public String getDisplayValueWithUnit(byte[] resp, EcuDataItem dataitem){
+        public String getDisplayValueWithUnit(byte[] resp, EcuDataItem dataitem) {
             return getDisplayValue(resp, dataitem) + " " + unit;
         }
 
-        public String getDisplayValue(byte[] resp, EcuDataItem dataItem){
+        public String getDisplayValue(byte[] resp, EcuDataItem dataItem) {
             String hexval = getHexValue(resp, dataItem);
-             if (bytesascii){
-                 byte[] s = hexStringToByteArray(hexval);
-                 return new String(s);
-             }
+            if (bytesascii) {
+                byte[] s = hexStringToByteArray(hexval);
+                return new String(s);
+            }
 
-             if (!scaled){
-                 BigInteger bigInteger = new BigInteger(hexval, 16);
-                 int val = bigInteger.intValue();
+            if (!scaled) {
+                BigInteger bigInteger = new BigInteger(hexval, 16);
+                int val = bigInteger.intValue();
 
-                 if (signed){
-                     // Check that
-                     if (bytescount == 1) {
-                         val = hex8ToSigned(val);
-                     } else if (bytescount == 2){
-                         val = hex16ToSigned(val);
-                     } // 32 bits are already signed
-                 }
+                if (signed) {
+                    // Check that
+                    if (bytescount == 1) {
+                        val = hex8ToSigned(val);
+                    } else if (bytescount == 2) {
+                        val = hex16ToSigned(val);
+                    } // 32 bits are already signed
+                }
 
-                 if (lists.containsKey(val))
-                     return lists.get(val);
+                if (lists.containsKey(val))
+                    return lists.get(val);
 
-                 return hexval;
-             }
+                return hexval;
+            }
 
             BigInteger bigInteger = new BigInteger(hexval, 16);
             int val = bigInteger.intValue();
 
-            if (signed){
-                if (bytescount == 1){
+            if (signed) {
+                if (bytescount == 1) {
                     val = hex8ToSigned(val);
-                } else if (bytescount == 2){
+                } else if (bytescount == 2) {
                     val = hex16ToSigned(val);
                 }
             }
 
-            if (divideby == 0.f){
+            if (divideby == 0.f) {
                 throw new ArithmeticException("Division by zero");
             }
 
-            float res = ((float)val * step + (offset)) / divideby;
+            float res = ((float) val * step + (offset)) / divideby;
 
             if (!format.isEmpty()) {
                 try {
 
                     DecimalFormat df = new DecimalFormat(format, new DecimalFormatSymbols(Locale.US));
                     return df.format(res);
-                } catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -414,26 +417,25 @@ public class Ecu {
         }
     }
 
-    public static String integerToBinaryString(int b, int padding){
+    public static String integerToBinaryString(int b, int padding) {
         return padLeft(Integer.toBinaryString(b), padding, "0");
     }
 
-    public static String byteToBinaryString(int b, int padding){
+    public static String byteToBinaryString(int b, int padding) {
         return padLeft(Integer.toBinaryString(b & 0xFF), padding, "0");
     }
 
-    public String hexToBinary(String Hex)
-    {
+    public String hexToBinary(String Hex) {
         BigInteger i = new BigInteger(Hex, 16);
         String Bin = i.toString(2);
         return Bin;
     }
 
-    public static int hex8ToSigned(int val){
+    public static int hex8ToSigned(int val) {
         return -((val) & 0x80) | (val & 0x7f);
     }
 
-    public static int hex16ToSigned(int val){
+    public static int hex16ToSigned(int val) {
         return -((val) & 0x8000) | (val & 0x7fff);
     }
 
@@ -443,14 +445,14 @@ public class Ecu {
         byte[] data = new byte[len / 2];
         for (int i = 0, j = 0; i < len; i += 2, ++j) {
             data[j] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i+1), 16));
+                    + Character.digit(s.charAt(i + 1), 16));
         }
         return data;
     }
 
     public static String stringToHex(String string) {
         StringBuilder buf = new StringBuilder(1024);
-        for (char ch: string.toCharArray()) {
+        for (char ch : string.toCharArray()) {
             buf.append(String.format("%02x", (int) ch));
         }
         return buf.toString();
@@ -474,6 +476,7 @@ public class Ecu {
             public boolean engineering = true;
             public boolean supplier = true;
         }
+
         public int minbytes = 0;
         public int shiftbytescount = 0;
         public String replybytes;
@@ -484,7 +487,7 @@ public class Ecu {
         public String name;
         public SDS sds;
 
-        EcuDataItem getSendDataItem(String item){
+        EcuDataItem getSendDataItem(String item) {
             return sendbyte_dataitems.get(item);
         }
 
@@ -502,7 +505,7 @@ public class Ecu {
 
                 if (json.has("deny_sds")) {
                     JSONArray denysdsobj = json.getJSONArray("deny_sds");
-                    for (int i = 0; i < denysdsobj.length(); ++i){
+                    for (int i = 0; i < denysdsobj.length(); ++i) {
                         String s = denysdsobj.getString(i);
                         if (s.equals("nosds")) sds.nosds = false;
                         if (s.equals("plant")) sds.plant = false;
@@ -538,7 +541,7 @@ public class Ecu {
         }
     }
 
-    public Ecu(InputStream is){
+    public Ecu(InputStream is) {
         String line;
         BufferedReader br;
         StringBuilder sb = new StringBuilder();
@@ -554,59 +557,59 @@ public class Ecu {
 
         try {
             init(new JSONObject(sb.toString()));
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public Ecu(String json){
+    public Ecu(String json) {
         try {
             init(new JSONObject(json));
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public EcuData getData(String dataname){
+    public EcuData getData(String dataname) {
         return data.get(dataname);
     }
 
-    public EcuRequest getRequest(String req_name){
+    public EcuRequest getRequest(String req_name) {
         return requests.get(req_name);
     }
 
-    public String getRequestData(byte[] bytes, String requestname, String dataname){
+    public String getRequestData(byte[] bytes, String requestname, String dataname) {
         EcuDataItem dataitem = getRequest(requestname).recvbyte_dataitems.get(dataname);
         EcuData ecudata = getData(dataname);
         return ecudata.getDisplayValue(bytes, dataitem);
     }
 
-    public String getProtocol(){
+    public String getProtocol() {
         return protocol;
     }
 
-    public String getFunctionnalAddress(){
+    public String getFunctionnalAddress() {
         return funcaddr;
     }
 
-    public boolean getFastInit(){
+    public boolean getFastInit() {
         return fastinit;
     }
 
-    public String getTxId(){
+    public String getTxId() {
         return ecu_send_id;
     }
 
-    public String getRxId(){
+    public String getRxId() {
         return ecu_recv_id;
     }
 
-    public HashMap<String, String> getRequestValues(byte[] bytes, String requestname, boolean with_units){
+    public HashMap<String, String> getRequestValues(byte[] bytes, String requestname, boolean with_units) {
         EcuRequest request = getRequest(requestname);
         HashMap<String, String> hash = new HashMap<>();
         Set<String> keys = request.recvbyte_dataitems.keySet();
         Iterator<String> it = keys.iterator();
-        for (;it.hasNext();){
+        for (; it.hasNext(); ) {
             String key = it.next();
             EcuDataItem dataitem = request.recvbyte_dataitems.get(key);
             EcuData ecudata = getData(key);
@@ -621,12 +624,12 @@ public class Ecu {
         return hash;
     }
 
-    public HashMap<String, Pair<String, String>> getRequestValuesWithUnit(byte[] bytes, String requestname){
+    public HashMap<String, Pair<String, String>> getRequestValuesWithUnit(byte[] bytes, String requestname) {
         EcuRequest request = getRequest(requestname);
         HashMap<String, Pair<String, String>> hash = new HashMap<>();
         Set<String> keys = request.recvbyte_dataitems.keySet();
         Iterator<String> it = keys.iterator();
-        for (;it.hasNext();){
+        for (; it.hasNext(); ) {
             String key = it.next();
             EcuDataItem dataitem = request.recvbyte_dataitems.get(key);
             EcuData ecudata = getData(key);
@@ -640,23 +643,23 @@ public class Ecu {
 
     public static String byteArrayToHex(byte[] a) {
         StringBuilder sb = new StringBuilder(a.length * 2);
-        for(byte b: a)
+        for (byte b : a)
             sb.append(String.format("%02x", b));
         return sb.toString().toUpperCase();
     }
 
-    public byte[] setRequestValues(String requestname, HashMap<String, Object> hash){
+    public byte[] setRequestValues(String requestname, HashMap<String, Object> hash) {
         EcuRequest req = getRequest(requestname);
         byte[] barray = hexStringToByteArray(req.sentbytes);
         Log.i("canapp", "Sentbytes : " + req.sentbytes);
-        for (Map.Entry<String, Object> entry: hash.entrySet()){
+        for (Map.Entry<String, Object> entry : hash.entrySet()) {
             EcuDataItem item = req.getSendDataItem(entry.getKey());
             EcuData data = getData(entry.getKey());
 
             Log.i("canapp", "set key " + entry.getKey());
-            if (!data.items.isEmpty() && (entry.getValue() instanceof String == true)){
-                String val = (String)entry.getValue();
-                if (data.items.containsKey(val)){
+            if (!data.items.isEmpty() && (entry.getValue() instanceof String == true)) {
+                String val = (String) entry.getValue();
+                if (data.items.containsKey(val)) {
                     Log.i("canapp", "set key " + val + " with " + data.items.get(val));
                     barray = data.setValue(Integer.toHexString(data.items.get(val)), barray, item);
                     continue;
@@ -669,11 +672,11 @@ public class Ecu {
         return barray;
     }
 
-    public String getDefaultSDS(){
+    public String getDefaultSDS() {
         return m_defaultSDS;
     }
 
-    public List<List<String>> decodeDTC(String dtcRequestName, String response){
+    public List<List<String>> decodeDTC(String dtcRequestName, String response) {
         List<List<String>> dtcList = new ArrayList<>();
 
         Ecu.EcuRequest dtcRequest = getRequest(dtcRequestName);
@@ -685,7 +688,7 @@ public class Ecu {
 
         int numDtc = bytesResponse[1] & 0xFF;
 
-        for (int i = 0; i < numDtc; ++i){
+        for (int i = 0; i < numDtc; ++i) {
             HashMap<String, String> currentDTC;
             if (bytesResponse.length < shiftBytesCount)
                 break;
@@ -701,7 +704,7 @@ public class Ecu {
                 String key = it.next();
                 if (key.equals("NDTC"))
                     continue;
-                currentDtcList.add(key+":"+currentDTC.get(key));
+                currentDtcList.add(key + ":" + currentDTC.get(key));
             }
             dtcList.add(currentDtcList);
             if (bytesResponse.length >= shiftBytesCount)
@@ -712,11 +715,11 @@ public class Ecu {
         return dtcList;
     }
 
-    public String getName(){
+    public String getName() {
         return ecu_name;
     }
 
-    private void init(JSONObject ecudef){
+    private void init(JSONObject ecudef) {
         requests = new HashMap<>();
         HashMap<String, EcuDevice> devices = new HashMap<>();
         data = new HashMap<>();
@@ -770,34 +773,34 @@ public class Ecu {
         }
 
         // Gather StartDiagnosticSession requests
-        for (String requestName : requests.keySet()){
+        for (String requestName : requests.keySet()) {
             String upperReqName = requestName.toUpperCase();
             if (upperReqName.contains("START")
                     && upperReqName.contains("DIAG")
-                    && upperReqName.contains("SESSION")){
+                    && upperReqName.contains("SESSION")) {
                 // Case StartDiagnosticSession.Extended
                 EcuRequest request = requests.get(requestName);
-                if (upperReqName.contains("EXTENDED") && !request.sentbytes.isEmpty()){
+                if (upperReqName.contains("EXTENDED") && !request.sentbytes.isEmpty()) {
                     m_defaultSDS = request.sentbytes;
                 }
-                for (String sdsDataItemName : request.sendbyte_dataitems.keySet()){
+                for (String sdsDataItemName : request.sendbyte_dataitems.keySet()) {
 
                     EcuDataItem ecuDataItem = request.sendbyte_dataitems.get(sdsDataItemName);
                     String upperSdsDataItemName = sdsDataItemName.toUpperCase();
 
-                    if (upperSdsDataItemName.contains("SESSION") && upperSdsDataItemName.contains("NAME")){
-                        for (String dataItemName: data.get(sdsDataItemName).items.keySet()) {
+                    if (upperSdsDataItemName.contains("SESSION") && upperSdsDataItemName.contains("NAME")) {
+                        for (String dataItemName : data.get(sdsDataItemName).items.keySet()) {
                             HashMap sdsBuildValues = new HashMap();
                             sdsBuildValues.put(ecuDataItem.name, dataItemName);
                             byte[] dataStream = setRequestValues(requestName, sdsBuildValues);
                             sdsrequests.put(dataItemName, byteArrayToHex(dataStream).toUpperCase());
-                            if (ecuDataItem.name.toUpperCase().contains("EXTENDED")){
+                            if (ecuDataItem.name.toUpperCase().contains("EXTENDED")) {
                                 m_defaultSDS = byteArrayToHex(dataStream).toUpperCase();
                             }
                         }
                     }
                 }
-                if (request.sendbyte_dataitems.keySet().size() == 0){
+                if (request.sendbyte_dataitems.keySet().size() == 0) {
                     sdsrequests.put(requestName, request.sentbytes);
                 }
             }

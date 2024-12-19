@@ -16,6 +16,7 @@ import android.hardware.usb.UsbManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -281,7 +282,7 @@ public class ElmBluetooth extends ElmBase {
                 // Start the service over to restart listening mode
                 try {
                     mmSocket.close();
-                } catch (IOException ioe){
+                } catch (IOException ioe) {
 
                 }
                 return "ERROR : DISCONNECTED";

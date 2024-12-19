@@ -42,8 +42,8 @@ import java.util.Map;
  *
  * @author mike wakerly (opensource@hoho.com)
  * @see <a
- *      href="http://www.usb.org/developers/devclass_docs/usbcdc11.pdf">Universal
- *      Serial Bus Class Definitions for Communication Devices, v1.1</a>
+ * href="http://www.usb.org/developers/devclass_docs/usbcdc11.pdf">Universal
+ * Serial Bus Class Definitions for Communication Devices, v1.1</a>
  */
 public class CdcAcmSerialDriver implements UsbSerialDriver {
 
@@ -109,10 +109,10 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
             try {
 
                 if (1 == mDevice.getInterfaceCount()) {
-                    Log.d(TAG,"device might be castrated ACM device, trying single interface logic");
+                    Log.d(TAG, "device might be castrated ACM device, trying single interface logic");
                     openSingleInterface();
                 } else {
-                    Log.d(TAG,"trying default interface logic");
+                    Log.d(TAG, "trying default interface logic");
                     openInterface();
                 }
 
@@ -152,7 +152,7 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
             int endCount = mControlInterface.getEndpointCount();
 
             if (endCount < 3) {
-                Log.d(TAG,"not enough endpoints - need 3. count=" + mControlInterface.getEndpointCount());
+                Log.d(TAG, "not enough endpoints - need 3. count=" + mControlInterface.getEndpointCount());
                 throw new IOException("Insufficient number of endpoints(" + mControlInterface.getEndpointCount() + ")");
             }
 
@@ -163,24 +163,24 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
             for (int i = 0; i < endCount; ++i) {
                 UsbEndpoint ep = mControlInterface.getEndpoint(i);
                 if ((ep.getDirection() == UsbConstants.USB_DIR_IN) &&
-                    (ep.getType() == UsbConstants.USB_ENDPOINT_XFER_INT)) {
-                    Log.d(TAG,"Found controlling endpoint");
+                        (ep.getType() == UsbConstants.USB_ENDPOINT_XFER_INT)) {
+                    Log.d(TAG, "Found controlling endpoint");
                     mControlEndpoint = ep;
                 } else if ((ep.getDirection() == UsbConstants.USB_DIR_IN) &&
-                           (ep.getType() == UsbConstants.USB_ENDPOINT_XFER_BULK)) {
-                    Log.d(TAG,"Found reading endpoint");
+                        (ep.getType() == UsbConstants.USB_ENDPOINT_XFER_BULK)) {
+                    Log.d(TAG, "Found reading endpoint");
                     mReadEndpoint = ep;
                 } else if ((ep.getDirection() == UsbConstants.USB_DIR_OUT) &&
                         (ep.getType() == UsbConstants.USB_ENDPOINT_XFER_BULK)) {
-                    Log.d(TAG,"Found writing endpoint");
+                    Log.d(TAG, "Found writing endpoint");
                     mWriteEndpoint = ep;
                 }
 
 
                 if ((mControlEndpoint != null) &&
-                    (mReadEndpoint != null) &&
-                    (mWriteEndpoint != null)) {
-                    Log.d(TAG,"Found all required endpoints");
+                        (mReadEndpoint != null) &&
+                        (mWriteEndpoint != null)) {
+                    Log.d(TAG, "Found all required endpoints");
                     break;
                 }
             }
@@ -188,7 +188,7 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
             if ((mControlEndpoint == null) ||
                     (mReadEndpoint == null) ||
                     (mWriteEndpoint == null)) {
-                Log.d(TAG,"Could not establish all endpoints");
+                Log.d(TAG, "Could not establish all endpoints");
                 throw new IOException("Could not establish all endpoints");
             }
         }
@@ -238,29 +238,29 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
         @Override
         public int read(byte[] dest, int timeoutMillis) throws IOException {
             if (mEnableAsyncReads) {
-              final UsbRequest request = new UsbRequest();
-              try {
-                request.initialize(mConnection, mReadEndpoint);
-                final ByteBuffer buf = ByteBuffer.wrap(dest);
-                if (!request.queue(buf, dest.length)) {
-                  throw new IOException("Error queueing request.");
-                }
+                final UsbRequest request = new UsbRequest();
+                try {
+                    request.initialize(mConnection, mReadEndpoint);
+                    final ByteBuffer buf = ByteBuffer.wrap(dest);
+                    if (!request.queue(buf, dest.length)) {
+                        throw new IOException("Error queueing request.");
+                    }
 
-                final UsbRequest response = mConnection.requestWait();
-                if (response == null) {
-                  throw new IOException("Null response");
-                }
+                    final UsbRequest response = mConnection.requestWait();
+                    if (response == null) {
+                        throw new IOException("Null response");
+                    }
 
-                final int nread = buf.position();
-                if (nread > 0) {
-                  //Log.d(TAG, HexDump.dumpHexString(dest, 0, Math.min(32, dest.length)));
-                  return nread;
-                } else {
-                  return 0;
+                    final int nread = buf.position();
+                    if (nread > 0) {
+                        //Log.d(TAG, HexDump.dumpHexString(dest, 0, Math.min(32, dest.length)));
+                        return nread;
+                    } else {
+                        return 0;
+                    }
+                } finally {
+                    request.close();
                 }
-              } finally {
-                request.close();
-              }
             }
 
             final int numBytesRead;
@@ -323,25 +323,43 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
         public void setParameters(int baudRate, int dataBits, int stopBits, int parity) {
             byte stopBitsByte;
             switch (stopBits) {
-                case STOPBITS_1: stopBitsByte = 0; break;
-                case STOPBITS_1_5: stopBitsByte = 1; break;
-                case STOPBITS_2: stopBitsByte = 2; break;
-                default: throw new IllegalArgumentException("Bad value for stopBits: " + stopBits);
+                case STOPBITS_1:
+                    stopBitsByte = 0;
+                    break;
+                case STOPBITS_1_5:
+                    stopBitsByte = 1;
+                    break;
+                case STOPBITS_2:
+                    stopBitsByte = 2;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Bad value for stopBits: " + stopBits);
             }
 
             byte parityBitesByte;
             switch (parity) {
-                case PARITY_NONE: parityBitesByte = 0; break;
-                case PARITY_ODD: parityBitesByte = 1; break;
-                case PARITY_EVEN: parityBitesByte = 2; break;
-                case PARITY_MARK: parityBitesByte = 3; break;
-                case PARITY_SPACE: parityBitesByte = 4; break;
-                default: throw new IllegalArgumentException("Bad value for parity: " + parity);
+                case PARITY_NONE:
+                    parityBitesByte = 0;
+                    break;
+                case PARITY_ODD:
+                    parityBitesByte = 1;
+                    break;
+                case PARITY_EVEN:
+                    parityBitesByte = 2;
+                    break;
+                case PARITY_MARK:
+                    parityBitesByte = 3;
+                    break;
+                case PARITY_SPACE:
+                    parityBitesByte = 4;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Bad value for parity: " + parity);
             }
 
             byte[] msg = {
-                    (byte) ( baudRate & 0xff),
-                    (byte) ((baudRate >> 8 ) & 0xff),
+                    (byte) (baudRate & 0xff),
+                    (byte) ((baudRate >> 8) & 0xff),
                     (byte) ((baudRate >> 16) & 0xff),
                     (byte) ((baudRate >> 24) & 0xff),
                     stopBitsByte,
@@ -402,7 +420,7 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
     public static Map<Integer, int[]> getSupportedDevices() {
         final Map<Integer, int[]> supportedDevices = new LinkedHashMap<Integer, int[]>();
         supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_ARDUINO),
-                new int[] {
+                new int[]{
                         org.quark.dr.usbserial.drive.UsbId.ARDUINO_UNO,
                         org.quark.dr.usbserial.drive.UsbId.ARDUINO_UNO_R3,
                         org.quark.dr.usbserial.drive.UsbId.ARDUINO_MEGA_2560,
@@ -415,16 +433,16 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
                         org.quark.dr.usbserial.drive.UsbId.ARDUINO_MICRO,
                 });
         supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_VAN_OOIJEN_TECH),
-                new int[] {
-                    org.quark.dr.usbserial.drive.UsbId.VAN_OOIJEN_TECH_TEENSYDUINO_SERIAL,
+                new int[]{
+                        org.quark.dr.usbserial.drive.UsbId.VAN_OOIJEN_TECH_TEENSYDUINO_SERIAL,
                 });
         supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_ATMEL),
-                new int[] {
-                    org.quark.dr.usbserial.drive.UsbId.ATMEL_LUFA_CDC_DEMO_APP,
+                new int[]{
+                        org.quark.dr.usbserial.drive.UsbId.ATMEL_LUFA_CDC_DEMO_APP,
                 });
         supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_LEAFLABS),
-                new int[] {
-                    org.quark.dr.usbserial.drive.UsbId.LEAFLABS_MAPLE,
+                new int[]{
+                        org.quark.dr.usbserial.drive.UsbId.LEAFLABS_MAPLE,
                 });
         return supportedDevices;
     }

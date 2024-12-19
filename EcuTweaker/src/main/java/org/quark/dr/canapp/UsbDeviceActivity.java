@@ -35,7 +35,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
+
 import androidx.annotation.NonNull;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -107,9 +109,9 @@ public class UsbDeviceActivity extends Activity {
                         // Shouldn't happen, but who knows...
                         if (connection == null)
                             return;
-                        try{
+                        try {
                             mCurrentUsbSerial.open(connection);
-                        } catch (IOException e){
+                        } catch (IOException e) {
                             return;
                         }
 
@@ -146,7 +148,7 @@ public class UsbDeviceActivity extends Activity {
             @Override
             public View getView(int position, View convertView, @NonNull ViewGroup parent) {
                 final TwoLineListItem row;
-                if (convertView == null){
+                if (convertView == null) {
                     final LayoutInflater inflater =
                             (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                     row = (TwoLineListItem) inflater.inflate(android.R.layout.simple_list_item_2, null);
@@ -238,9 +240,11 @@ public class UsbDeviceActivity extends Activity {
 
     private static class SearchUSBTask extends AsyncTask<Void, Void, List<UsbSerialPort>> {
         private final WeakReference<UsbDeviceActivity> mActivity;
-        SearchUSBTask(UsbDeviceActivity activity){
-            mActivity =  new WeakReference<>(activity);
+
+        SearchUSBTask(UsbDeviceActivity activity) {
+            mActivity = new WeakReference<>(activity);
         }
+
         @Override
         protected List<UsbSerialPort> doInBackground(Void... params) {
             SystemClock.sleep(1000);
@@ -262,7 +266,7 @@ public class UsbDeviceActivity extends Activity {
             mActivity.get().mEntries.clear();
             mActivity.get().mEntries.addAll(result);
             mActivity.get().mAdapter.notifyDataSetChanged();
-            mActivity.get(). mProgressBarTitle.setText(
+            mActivity.get().mProgressBarTitle.setText(
                     String.format("%s device(s) found", mActivity.get().mEntries.size()));
             mActivity.get().hideProgressBar();
         }
