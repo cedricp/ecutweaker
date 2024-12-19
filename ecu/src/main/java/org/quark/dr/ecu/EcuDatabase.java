@@ -192,22 +192,26 @@ public class EcuDatabase {
 
     public String getProjectFromModel(String model){
         Iterator it = MODELSMAP.entrySet().iterator();
-        while(it.hasNext()){
-            Map.Entry keyval = (Map.Entry)it.next();
-            if (((String)keyval.getValue()).toUpperCase().equals(model.toUpperCase())){
-                if (!Objects.equals((String) keyval.getKey(), "ALL")) {
-                    buildMaps((String)keyval.getKey());
-                    return (String) keyval.getKey();
+        String result = "";
+        if (!model.toUpperCase().equals("ALL")) {
+            while (it.hasNext()) {
+                Map.Entry keyval = (Map.Entry) it.next();
+                if (((String) keyval.getValue()).toUpperCase().equals(model.toUpperCase())) {
+                    result = (String) keyval.getKey();
+                    break;
                 }
             }
         }
-        buildMaps("ALL");
-        return "";
+        buildMaps(result);
+        return result;
     }
 
     public void buildMaps(String code){
         if (Projects == null) {
             throw new RuntimeException("projects.json not found or not loaded!");
+        }
+        if (code.isEmpty()) {
+            code = "ALL";
         }
         m_ecuAddressing.clear();
         // dnat

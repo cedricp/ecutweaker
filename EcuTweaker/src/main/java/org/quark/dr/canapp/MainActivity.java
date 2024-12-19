@@ -21,6 +21,7 @@ import android.os.Handler;
 import android.os.Message;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
@@ -116,10 +117,10 @@ public class MainActivity extends AppCompatActivity {
     private Handler mHandler = null;
     private EcuDatabase.EcuIdentifierNew mEcuIdentifierNew = null;
     private Timer mConnectionTimer;
-    // private LicenseLock mLicenseLock;
     private int mLinkMode;
     private boolean mActivateBluetoothAsked;
     private ProgressDialog mScanProgressDialog;
+    private SharedPreferences defaultPrefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -144,23 +145,19 @@ public class MainActivity extends AppCompatActivity {
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
-                if (fis != null)
+                if (fis != null) {
                     try {
                         fis.close();
                     } catch (IOException ignored) {
                     }
+                }
             }
         }
         return result.toString();
     }
 
     private void initialize() {
-        /*
-        long id = new BigInteger(Settings.Secure.getString(getContentResolver(),
-                Settings.Secure.ANDROID_ID), 16).longValue();
-        mLicenseLock = new LicenseLock(id);
-         */
-        SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
+        defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
         String linkMode = defaultPrefs.getString(PREF_LINK_MODE, "BT");
 
         mCurrentProject = "";
@@ -273,14 +270,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-//        ImageButton licenseButton = findViewById(R.id.licenseButton);
-//        licenseButton.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                onLicenseCheck();
-//            }
-//        });
-
         mChooseProjectButton.setOnClickListener(v -> chooseProject());
 
         mLinkChooser.setOnClickListener(v -> {
@@ -301,10 +290,12 @@ public class MainActivity extends AppCompatActivity {
         mEcuDatabase = new EcuDatabase();
         mEcuIdentifierNew = mEcuDatabase.new EcuIdentifierNew();
 
-        askStorageReadPermission();
-
         mLogView.append("EcuTweaker " + BuildConfig.BUILD_TYPE + " "
                 + getResources().getString(R.string.VERSION) + "\n");
+
+        if (!askStorageReadPermission()) {
+            mLogView.append("You need external storage permission to read database");
+        }
     }
 
     private void setLink() {
@@ -314,7 +305,6 @@ public class MainActivity extends AppCompatActivity {
         if (mObdDevice != null)
             mObdDevice.disconnect();
 
-        SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
         SharedPreferences.Editor edit = defaultPrefs.edit();
         if (mLinkMode == LINK_BLUETOOTH) {
             mLinkChooser.setImageResource(R.drawable.ic_bt_connected);
@@ -322,13 +312,20 @@ public class MainActivity extends AppCompatActivity {
             edit.putString(PREF_LINK_MODE, "BT");
             edit.apply();
 
-            int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT);
-            if (askBluetoothPermission()) {
-                return;
-            }
-
             BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
             if (!mActivateBluetoothAsked && btAdapter != null && !btAdapter.isEnabled()) {
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        if (!askBluetoothPermission()) {
+                            return;
+                        }
+                    }
+                    else {
+                        if (!askLocationPermission()) {
+                            return;
+                        }
+                    }
+                }
                 mActivateBluetoothAsked = true;
                 Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
@@ -647,7 +644,6 @@ public class MainActivity extends AppCompatActivity {
             b.putString("ecuFile", ecuFile);
             b.putString("ecuRef", ecuHREFName);
             b.putString("deviceAddress", mBtDeviceAddress);
-            //b.putBoolean("licenseOk", mLicenseLock.isLicenseOk());
             b.putInt("linkMode", mLinkMode);
             serverIntent.putExtras(b);
             startActivityForResult(serverIntent, REQUEST_SCREEN);
@@ -703,6 +699,7 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.S)
     boolean askBluetoothPermission(){
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT);
         if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
@@ -718,6 +715,7 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.S)
     boolean askBluetoothScanPermission(){
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN);
         if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
@@ -856,7 +854,6 @@ public class MainActivity extends AppCompatActivity {
 
     void parseDatabase(){
         String ecuFile = "";
-        SharedPreferences defaultPrefs = this.getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
         if (defaultPrefs.contains(PREF_ECUZIPFILE)) {
             ecuFile = defaultPrefs.getString(PREF_ECUZIPFILE, "");
         }
@@ -872,7 +869,6 @@ public class MainActivity extends AppCompatActivity {
 
         //mEcuDatabase.checkMissings();
 
-        SharedPreferences defaultPrefs = getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
         SharedPreferences.Editor edit = defaultPrefs.edit();
         edit.putString(PREF_ECUZIPFILE, ecuFile);
         edit.apply();
@@ -909,22 +905,20 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String ecuFile) {
-            SharedPreferences defaultPrefs = getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
-            mCurrentProject = defaultPrefs.getString(PREF_PROJECT, "");
-            updateEcuTypeListView(ecuFile, mCurrentProject);
-            mEcuDatabase.buildMaps(mCurrentProject);
             CharSequence title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME;
             if (!error.isEmpty()){
                 mLogView.append("Database exception : " + error + "\n");
                 mStatusView.setText(title);
             }
             else {
+                mCurrentProject = defaultPrefs.getString(PREF_PROJECT, "");
+                mEcuDatabase.buildMaps(mCurrentProject);
+                updateEcuTypeListView(ecuFile, mCurrentProject);
                 String code = mEcuDatabase.current_project_code;
                 String name = mEcuDatabase.current_project_name;
-                mCurrentProject = mEcuDatabase.getProjectFromModel(code);
                 title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
                 mStatusView.setText(title);
-                mLogView.append("Loaded vehicle Code : " + code + " Name: " + name +"\n");
+                mLogView.append("Loaded vehicle Name: " + name +"\n");
             }
         }
     }
@@ -961,7 +955,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 mCurrentProject = mEcuDatabase.getProjectFromModel(projects[which]);
-                SharedPreferences defaultPrefs = getSharedPreferences(DEFAULT_PREF_TAG, MODE_PRIVATE);
                 SharedPreferences.Editor edit = defaultPrefs.edit();
                 edit.putString(PREF_PROJECT, mCurrentProject);
                 edit.apply();
@@ -970,7 +963,7 @@ public class MainActivity extends AppCompatActivity {
                 String name = mEcuDatabase.current_project_name;
                 CharSequence title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
                 mStatusView.setText(title);
-                mLogView.append("Loaded vehicle Code : " + code + " Name: " + name +"\n");
+                mLogView.append("Loaded vehicle Name: " + name +"\n");
             }
         });
 

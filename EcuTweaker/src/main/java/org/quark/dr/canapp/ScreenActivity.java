@@ -150,8 +150,7 @@ public class ScreenActivity extends AppCompatActivity {
             if (b.containsKey("deviceAddress")){
                 String m_deviceAddressPref = b.getString("deviceAddress");
             }
-            //mDemoMode =  ! b.getBoolean("licenseOk");
-            linkMode = b.getInt("linkMode", MainActivity.LINK_WIFI);
+               linkMode = b.getInt("linkMode", MainActivity.LINK_WIFI);
         } else if (savedInstanceState != null && savedInstanceState.containsKey("ecu_name")){
             ecuFile = savedInstanceState.getString("ecu_name");
         }
