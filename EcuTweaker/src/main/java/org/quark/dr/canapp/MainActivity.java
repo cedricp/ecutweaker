@@ -294,7 +294,7 @@ public class MainActivity extends AppCompatActivity {
                 + getResources().getString(R.string.VERSION) + "\n");
 
         if (!askStorageReadPermission()) {
-            mLogView.append("You need external storage permission to read database");
+            mLogView.append("You need external storage permission to read database\n");
         }
     }
 
