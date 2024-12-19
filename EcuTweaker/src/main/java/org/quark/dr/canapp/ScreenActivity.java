@@ -108,7 +108,7 @@ public class ScreenActivity extends AppCompatActivity {
     private String              mConnectedDeviceName = null;
     private float               mGlobalScale;
     private long                mLastSDSTime;
-    private boolean             mDemoMode, mSoftFlowControl;
+    private boolean             mSoftFlowControl;
 
     public float convertToPixel(float val){
         return (val / 8.0f) * mGlobalScale;
@@ -127,8 +127,6 @@ public class ScreenActivity extends AppCompatActivity {
 
     private void initialize(Bundle savedInstanceState) {
         mCanTimeOut = 0;
-        //mDemoMode = true;
-        mDemoMode = false;
         String ecuFile = "";
         String ecuHref = "";
         m_autoReload = false;
@@ -150,7 +148,7 @@ public class ScreenActivity extends AppCompatActivity {
             if (b.containsKey("deviceAddress")){
                 String m_deviceAddressPref = b.getString("deviceAddress");
             }
-               linkMode = b.getInt("linkMode", MainActivity.LINK_WIFI);
+            linkMode = b.getInt("linkMode", MainActivity.LINK_WIFI);
         } else if (savedInstanceState != null && savedInstanceState.containsKey("ecu_name")){
             ecuFile = savedInstanceState.getString("ecu_name");
         }
@@ -760,9 +758,6 @@ public class ScreenActivity extends AppCompatActivity {
     private final View.OnClickListener buttonClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            if (mDemoMode){
-                return;
-            }
             if (! m_buttonsCommand.containsKey(v))
                 return;
             String uniqueName = m_buttonsCommand.get(v);
@@ -1127,9 +1122,6 @@ public class ScreenActivity extends AppCompatActivity {
     }
 
     void clearDTC(){
-        if (mDemoMode){
-            return;
-        }
         Ecu.EcuRequest clearDTCRequest = m_ecu.getRequest("ClearDiagnosticInformation.All");
         if (clearDTCRequest == null)
             clearDTCRequest = m_ecu.getRequest("ClearDTC");
