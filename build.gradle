@@ -30,8 +30,7 @@ ext {
     appversion = "2.3"
     appversion_int = 23
     minSdkVersion = 21
-    // TODO: If increasing 29 it need review permissions READ_EXTERNAL_STORAGE + MANAGE_EXTERNAL_STORAGE
-    targetSdkVersion = 29
+    targetSdkVersion = 34
     compileSdkVersion = 34
     ndkVersion = '26.0.10792818'
     compileOptions_encoding = 'utf-8'
