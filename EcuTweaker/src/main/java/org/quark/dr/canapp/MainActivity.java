@@ -673,7 +673,7 @@ public class MainActivity extends AppCompatActivity {
                 parseDatabase();
                 return true;
             }
-        }else {
+        } else {
             int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
             if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
                 mLogView.append("Storage read permission OK\n");
