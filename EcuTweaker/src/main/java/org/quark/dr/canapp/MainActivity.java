@@ -737,7 +737,7 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
         if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.BLUETOOTH_CONNECT)) {
-            Toast.makeText(this, "You need location permission to connect to WiFi", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "You need Bluetooth connect permission to connect to Bluetooth", Toast.LENGTH_SHORT).show();
         }
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.BLUETOOTH_CONNECT},
@@ -753,7 +753,7 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
         if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.BLUETOOTH_SCAN)) {
-            Toast.makeText(this, "You need location permission to connect to WiFi", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "You need Bluetooth scan permission to connect to Bluetooth", Toast.LENGTH_SHORT).show();
         }
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.BLUETOOTH_SCAN},
