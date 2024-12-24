@@ -667,6 +667,14 @@ public class MainActivity extends AppCompatActivity {
                                 uri
                         )
                 );
+                AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+                alertDialog.setTitle("Reload App");
+                alertDialog.setMessage("You need external storage permission to read database");
+                alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok",
+                        (dialog, which) -> {
+                            this.recreate();
+                        });
+                alertDialog.show();
                 return false;
             } else {
                 mLogView.append("Storage read permission OK\n");
