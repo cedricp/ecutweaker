@@ -5,10 +5,7 @@ import static org.quark.dr.canapp.MainActivity.PERMISSIONS_BLUETOOTH_SCAN;
 import static org.quark.dr.canapp.MainActivity.PERMISSIONS_LOCATION;
 import static org.quark.dr.canapp.MainActivity.mLogView;
 
-import java.util.Set;
-
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -20,23 +17,24 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.Window;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.Toast;
+import java.util.Set;
 
 
 /**
@@ -65,7 +63,7 @@ public class DeviceListActivity extends Activity {
             return true;
         }
         if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.BLUETOOTH_CONNECT)) {
-            Toast.makeText(this, "You need location permission to connect to WiFi", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "You need Bluetooth connect permission to connect to Bluetooth", Toast.LENGTH_SHORT).show();
         }
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.BLUETOOTH_CONNECT},
@@ -109,7 +107,7 @@ public class DeviceListActivity extends Activity {
             return true;
         }
         if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.BLUETOOTH_SCAN)) {
-            Toast.makeText(this, "You need location permission to connect to WiFi", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "You need Bluetooth scan permission to connect to Bluetooth", Toast.LENGTH_SHORT).show();
         }
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.BLUETOOTH_SCAN},
@@ -146,7 +144,7 @@ public class DeviceListActivity extends Activity {
         ArrayAdapter<String> mPairedDevicesArrayAdapter = new ArrayAdapter<String>(this, R.layout.device_name) {
             @NonNull
             @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
+            public View getView(int position, View convertView, @NonNull ViewGroup parent) {
                 TextView textView = (TextView) super.getView(position, convertView, parent);
                 if (textView.getText().toString().toUpperCase().contains("OBD")) {
                     textView.setBackgroundColor(Color.GREEN);
@@ -223,8 +221,7 @@ public class DeviceListActivity extends Activity {
                     if (!askBluetoothScanPermission()) {
                         return;
                     }
-                }
-                else {
+                } else {
                     if (!askLocationPermission()) {
                         return;
                     }
@@ -257,8 +254,7 @@ public class DeviceListActivity extends Activity {
                 if (!askBluetoothScanPermission()) {
                     return;
                 }
-            }
-            else {
+            } else {
                 if (!askLocationPermission()) {
                     return;
                 }
@@ -281,8 +277,7 @@ public class DeviceListActivity extends Activity {
                     if (!askBluetoothScanPermission()) {
                         return;
                     }
-                }
-                else {
+                } else {
                     if (!askLocationPermission()) {
                         return;
                     }
@@ -318,8 +313,7 @@ public class DeviceListActivity extends Activity {
                         if (!askBluetoothScanPermission()) {
                             return;
                         }
-                    }
-                    else {
+                    } else {
                         if (!askLocationPermission()) {
                             return;
                         }
@@ -328,6 +322,7 @@ public class DeviceListActivity extends Activity {
                 // Get the BluetoothDevice object from the Intent
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 // If it's already paired, skip it, because it's been listed already
+                assert device != null;
                 if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
                     mNewDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
                 }
