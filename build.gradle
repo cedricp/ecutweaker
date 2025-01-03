@@ -27,8 +27,8 @@ allprojects {
 ext {
     debug = file("$rootDir/EcuTweaker/debug")
     release = file("$rootDir/EcuTweaker/release")
-    appversion = "2.3"
-    appversion_int = 23
+    appversion = "2.4"
+    appversion_int = 24
     minSdkVersion = 21
     targetSdkVersion = 35
     compileSdkVersion = 35
