@@ -35,9 +35,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
-
-import androidx.annotation.NonNull;
-
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -47,6 +44,8 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.TwoLineListItem;
+
+import androidx.annotation.NonNull;
 
 import org.quark.dr.usbserial.driver.UsbSerialDriver;
 import org.quark.dr.usbserial.driver.UsbSerialPort;
@@ -65,36 +64,15 @@ import java.util.List;
  */
 public class UsbDeviceActivity extends Activity {
 
-    private final String TAG = DeviceListActivity.class.getSimpleName();
-    public static String EXTRA_DEVICE_SERIAL = "device_serial";
-
-    private UsbManager mUsbManager;
-    private ListView mListView;
-    private TextView mProgressBarTitle;
-    private ProgressBar mProgressBar;
-
-    private static PendingIntent mPermissionIntent;
     private static final int MESSAGE_REFRESH = 101;
     private static final long REFRESH_TIMEOUT_MILLIS = 5000;
     private static final String ACTION_USB_PERMISSION = "org.quark.dr.canapp.USB_PERMISSION";
+    public static String EXTRA_DEVICE_SERIAL = "device_serial";
+    private static PendingIntent mPermissionIntent;
     private static UsbSerialPort mCurrentUsbSerial = null;
-
-    private final Handler mHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case MESSAGE_REFRESH:
-                    refreshDeviceList();
-                    mHandler.sendEmptyMessageDelayed(MESSAGE_REFRESH, REFRESH_TIMEOUT_MILLIS);
-                    break;
-                default:
-                    super.handleMessage(msg);
-                    break;
-            }
-        }
-
-    };
-
+    private final String TAG = DeviceListActivity.class.getSimpleName();
+    private final List<UsbSerialPort> mEntries = new ArrayList<>();
+    private UsbManager mUsbManager;
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
@@ -125,9 +103,26 @@ public class UsbDeviceActivity extends Activity {
             }
         }
     };
-
-    private final List<UsbSerialPort> mEntries = new ArrayList<>();
+    private ListView mListView;
+    private TextView mProgressBarTitle;
+    private ProgressBar mProgressBar;
     private ArrayAdapter<UsbSerialPort> mAdapter;
+    @SuppressLint("HandlerLeak")
+    private final Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case MESSAGE_REFRESH:
+                    refreshDeviceList();
+                    mHandler.sendEmptyMessageDelayed(MESSAGE_REFRESH, REFRESH_TIMEOUT_MILLIS);
+                    break;
+                default:
+                    super.handleMessage(msg);
+                    break;
+            }
+        }
+
+    };
 
     @SuppressLint("InlinedApi")
     @Override
@@ -238,6 +233,15 @@ public class UsbDeviceActivity extends Activity {
         new SearchUSBTask(this).execute();
     }
 
+    private void showProgressBar() {
+        mProgressBar.setVisibility(View.VISIBLE);
+        mProgressBarTitle.setText("Refreshing");
+    }
+
+    private void hideProgressBar() {
+        mProgressBar.setVisibility(View.INVISIBLE);
+    }
+
     private static class SearchUSBTask extends AsyncTask<Void, Void, List<UsbSerialPort>> {
         private final WeakReference<UsbDeviceActivity> mActivity;
 
@@ -273,12 +277,7 @@ public class UsbDeviceActivity extends Activity {
 
     }
 
-    private void showProgressBar() {
-        mProgressBar.setVisibility(View.VISIBLE);
-        mProgressBarTitle.setText("Refreshing");
-    }
 
-    private void hideProgressBar() {
-        mProgressBar.setVisibility(View.INVISIBLE);
-    }
+
+
 }

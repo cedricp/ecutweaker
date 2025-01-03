@@ -16,13 +16,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ElmUsbSerial extends ElmBase {
+    private static final String ACTION_USB_PERMISSION = "org.quark.dr.canapp.USB_PERMISSION";
     private static UsbSerialPort msPort = null;
+    private static PendingIntent mPermissionIntent;
     private final Context mContext;
     private ConnectedThread mConnectedThread;
     private String mUsbSerial;
-    private static PendingIntent mPermissionIntent;
-
-    private static final String ACTION_USB_PERMISSION = "org.quark.dr.canapp.USB_PERMISSION";
 
     ElmUsbSerial(Context context, Handler handler, String logDir) {
         super(handler, logDir);
@@ -140,6 +139,24 @@ public class ElmUsbSerial extends ElmBase {
         setState(STATE_DISCONNECTED);
     }
 
+    @Override
+    public boolean hasDevicePermission() {
+        if (msPort == null)
+            return true;
+        final UsbManager usbManager = (UsbManager) mContext.getApplicationContext().getSystemService(Context.USB_SERVICE);
+        if (usbManager == null) return false;
+        return usbManager.hasPermission(msPort.getDriver().getDevice());
+    }
+
+    @Override
+    public void requestPermission() {
+        if (msPort == null)
+            return;
+        final UsbManager usbManager = (UsbManager) mContext.getApplicationContext().getSystemService(Context.USB_SERVICE);
+        if (usbManager == null) return;
+        usbManager.requestPermission(msPort.getDriver().getDevice(), mPermissionIntent);
+    }
+
     /*
      * Connected thread class
      * Asynchronously manage ELM connection
@@ -246,23 +263,5 @@ public class ElmUsbSerial extends ElmBase {
             } catch (InterruptedException e) {
             }
         }
-    }
-
-    @Override
-    public boolean hasDevicePermission() {
-        if (msPort == null)
-            return true;
-        final UsbManager usbManager = (UsbManager) mContext.getApplicationContext().getSystemService(Context.USB_SERVICE);
-        if (usbManager == null) return false;
-        return usbManager.hasPermission(msPort.getDriver().getDevice());
-    }
-
-    @Override
-    public void requestPermission() {
-        if (msPort == null)
-            return;
-        final UsbManager usbManager = (UsbManager) mContext.getApplicationContext().getSystemService(Context.USB_SERVICE);
-        if (usbManager == null) return;
-        usbManager.requestPermission(msPort.getDriver().getDevice(), mPermissionIntent);
     }
 }

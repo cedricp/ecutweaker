@@ -1,5 +1,7 @@
 package org.quark.dr.canapp;
 
+import static java.lang.Math.min;
+
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
@@ -19,8 +21,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
-import static java.lang.Math.min;
-
 public abstract class ElmBase {
     // Constants that indicate the current connection state
     public static final int STATE_NONE = 0;
@@ -31,49 +31,6 @@ public abstract class ElmBase {
     public static final int MODE_WIFI = 0;
     public static final int MODE_BT = 1;
     public static final int MODE_USB = 2;
-
-    protected ArrayList<String> mMessages;
-    protected int mRxa, mTxa;
-    protected HashMap<String, String> mEcuErrorCodeMap;
-    protected volatile Handler mConnectionHandler;
-    protected OutputStreamWriter mLogFile;
-    protected String mLogDir;
-    protected volatile boolean mRunningStatus;
-    static protected ElmBase mSingleton = null;
-    protected boolean mConnecting = false;
-    private int mState;
-    protected boolean mSessionActive;
-    private EcuDatabase mEcuDatabase;
-    private boolean mCFC0;
-    private String mProtocol;
-
-    static public ElmBase getSingleton() {
-        return mSingleton;
-    }
-
-    static public ElmBase createBluetoothSingleton(Context context, Handler handler, String logDir) {
-        mSingleton = new ElmBluetooth(context, handler, logDir);
-        return mSingleton;
-    }
-
-    static public ElmBase createWifiSingleton(Context context, Handler handler, String logDir) {
-        mSingleton = new ElmWifi(context, handler, logDir);
-        return mSingleton;
-    }
-
-    static public ElmBase createSerialSingleton(Context context, Handler handler, String logDir) {
-        mSingleton = new ElmUsbSerial(context, handler, logDir);
-        return mSingleton;
-    }
-
-    EcuDatabase getDB() {
-        return mEcuDatabase;
-    }
-
-    void setDB(EcuDatabase db) {
-        mEcuDatabase = db;
-    }
-
     protected static final String mEcuErrorCodeString =
             "10:General Reject," +
                     "11:Service Not Supported," +
@@ -127,6 +84,61 @@ public abstract class ElmBase {
                     "91:Torque Converter Clutch Locked," +
                     "92:Voltage Too High," +
                     "93:Voltage Too Low";
+    static protected ElmBase mSingleton = null;
+    protected ArrayList<String> mMessages;
+    protected int mRxa, mTxa;
+    protected HashMap<String, String> mEcuErrorCodeMap;
+    protected volatile Handler mConnectionHandler;
+    protected OutputStreamWriter mLogFile;
+    protected String mLogDir;
+    protected volatile boolean mRunningStatus;
+    protected boolean mConnecting = false;
+    protected boolean mSessionActive;
+    private int mState;
+    private EcuDatabase mEcuDatabase;
+    private boolean mCFC0;
+    private String mProtocol;
+
+    public ElmBase(Handler handler, String logDir) {
+        mProtocol = "UNDEFINED";
+        mMessages = new ArrayList<>();
+        mConnectionHandler = handler;
+        mLogFile = null;
+        mLogDir = logDir;
+        mRxa = mTxa = -1;
+        mSessionActive = false;
+        mState = STATE_NONE;
+        mCFC0 = false;
+        createLogFile();
+        buildMaps();
+    }
+
+    static public ElmBase getSingleton() {
+        return mSingleton;
+    }
+
+    static public ElmBase createBluetoothSingleton(Context context, Handler handler, String logDir) {
+        mSingleton = new ElmBluetooth(context, handler, logDir);
+        return mSingleton;
+    }
+
+    static public ElmBase createWifiSingleton(Context context, Handler handler, String logDir) {
+        mSingleton = new ElmWifi(context, handler, logDir);
+        return mSingleton;
+    }
+
+    static public ElmBase createSerialSingleton(Context context, Handler handler, String logDir) {
+        mSingleton = new ElmUsbSerial(context, handler, logDir);
+        return mSingleton;
+    }
+
+    EcuDatabase getDB() {
+        return mEcuDatabase;
+    }
+
+    void setDB(EcuDatabase db) {
+        mEcuDatabase = db;
+    }
 
     public abstract void disconnect();
 
@@ -143,21 +155,6 @@ public abstract class ElmBase {
     }
 
     public void requestPermission() {
-    }
-
-
-    public ElmBase(Handler handler, String logDir) {
-        mProtocol = "UNDEFINED";
-        mMessages = new ArrayList<>();
-        mConnectionHandler = handler;
-        mLogFile = null;
-        mLogDir = logDir;
-        mRxa = mTxa = -1;
-        mSessionActive = false;
-        mState = STATE_NONE;
-        mCFC0 = false;
-        createLogFile();
-        buildMaps();
     }
 
     public void setSoftFlowControl(boolean b) {
@@ -190,6 +187,10 @@ public abstract class ElmBase {
         }
     }
 
+    public int getState() {
+        return mState;
+    }
+
     protected void setState(int state) {
         mState = state;
         // Give the new state to the Handler so the UI Activity can update
@@ -199,10 +200,6 @@ public abstract class ElmBase {
                         .sendToTarget();
             }
         }
-    }
-
-    public int getState() {
-        return mState;
     }
 
     protected void logInfo(String log) {

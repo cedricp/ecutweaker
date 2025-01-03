@@ -1,10 +1,5 @@
 package org.quark.dr.canapp;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.UUID;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
@@ -12,23 +7,26 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.hardware.usb.UsbManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.UUID;
 
 public class ElmBluetooth extends ElmBase {
     // Debugging
     private static final String TAG = "ElmBluetoothThread";
     private static final boolean D = false;
     private static final UUID SPP_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    private final Context mContext;
     private ConnectThread mConnectThread;
     private ConnectedThread mConnectedThread;
     private String mBtAddress;
-    private final Context mContext;
 
     protected ElmBluetooth(Context context, Handler handler, String logDir) {
         super(handler, logDir);
@@ -152,8 +150,8 @@ public class ElmBluetooth extends ElmBase {
      */
     @SuppressLint("MissingPermission")
     private class ConnectThread extends Thread {
-        private BluetoothSocket mmSocket;
         private final BluetoothDevice mmDevice;
+        private BluetoothSocket mmSocket;
 
         public ConnectThread(BluetoothDevice device) {
             mmDevice = device;

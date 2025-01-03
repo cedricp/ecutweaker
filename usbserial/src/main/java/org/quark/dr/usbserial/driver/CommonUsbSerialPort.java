@@ -38,13 +38,10 @@ abstract class CommonUsbSerialPort implements UsbSerialPort {
 
     protected final UsbDevice mDevice;
     protected final int mPortNumber;
-
-    // non-null when open()
-    protected UsbDeviceConnection mConnection = null;
-
     protected final Object mReadBufferLock = new Object();
     protected final Object mWriteBufferLock = new Object();
-
+    // non-null when open()
+    protected UsbDeviceConnection mConnection = null;
     /**
      * Internal read buffer.  Guarded by {@link #mReadBufferLock}.
      */

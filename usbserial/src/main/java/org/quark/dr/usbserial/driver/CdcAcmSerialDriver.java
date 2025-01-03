@@ -57,6 +57,36 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
         mPort = new CdcAcmSerialPort(device, 0);
     }
 
+    public static Map<Integer, int[]> getSupportedDevices() {
+        final Map<Integer, int[]> supportedDevices = new LinkedHashMap<Integer, int[]>();
+        supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_ARDUINO),
+                new int[]{
+                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_UNO,
+                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_UNO_R3,
+                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_MEGA_2560,
+                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_MEGA_2560_R3,
+                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_SERIAL_ADAPTER,
+                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_SERIAL_ADAPTER_R3,
+                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_MEGA_ADK,
+                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_MEGA_ADK_R3,
+                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_LEONARDO,
+                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_MICRO,
+                });
+        supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_VAN_OOIJEN_TECH),
+                new int[]{
+                        org.quark.dr.usbserial.drive.UsbId.VAN_OOIJEN_TECH_TEENSYDUINO_SERIAL,
+                });
+        supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_ATMEL),
+                new int[]{
+                        org.quark.dr.usbserial.drive.UsbId.ATMEL_LUFA_CDC_DEMO_APP,
+                });
+        supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_LEAFLABS),
+                new int[]{
+                        org.quark.dr.usbserial.drive.UsbId.LEAFLABS_MAPLE,
+                });
+        return supportedDevices;
+    }
+
     @Override
     public UsbDevice getDevice() {
         return mDevice;
@@ -69,24 +99,20 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
 
     class CdcAcmSerialPort extends CommonUsbSerialPort {
 
-        private final boolean mEnableAsyncReads;
-        private UsbInterface mControlInterface;
-        private UsbInterface mDataInterface;
-
-        private UsbEndpoint mControlEndpoint;
-        private UsbEndpoint mReadEndpoint;
-        private UsbEndpoint mWriteEndpoint;
-
-        private boolean mRts = false;
-        private boolean mDtr = false;
-
         private static final int USB_RECIP_INTERFACE = 0x01;
         private static final int USB_RT_ACM = UsbConstants.USB_TYPE_CLASS | USB_RECIP_INTERFACE;
-
         private static final int SET_LINE_CODING = 0x20;  // USB CDC 1.1 section 6.2
         private static final int GET_LINE_CODING = 0x21;
         private static final int SET_CONTROL_LINE_STATE = 0x22;
         private static final int SEND_BREAK = 0x23;
+        private final boolean mEnableAsyncReads;
+        private UsbInterface mControlInterface;
+        private UsbInterface mDataInterface;
+        private UsbEndpoint mControlEndpoint;
+        private UsbEndpoint mReadEndpoint;
+        private UsbEndpoint mWriteEndpoint;
+        private boolean mRts = false;
+        private boolean mDtr = false;
 
         public CdcAcmSerialPort(UsbDevice device, int portNumber) {
             super(device, portNumber);
@@ -415,36 +441,6 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
             sendAcmControlMessage(SET_CONTROL_LINE_STATE, value, null);
         }
 
-    }
-
-    public static Map<Integer, int[]> getSupportedDevices() {
-        final Map<Integer, int[]> supportedDevices = new LinkedHashMap<Integer, int[]>();
-        supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_ARDUINO),
-                new int[]{
-                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_UNO,
-                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_UNO_R3,
-                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_MEGA_2560,
-                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_MEGA_2560_R3,
-                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_SERIAL_ADAPTER,
-                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_SERIAL_ADAPTER_R3,
-                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_MEGA_ADK,
-                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_MEGA_ADK_R3,
-                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_LEONARDO,
-                        org.quark.dr.usbserial.drive.UsbId.ARDUINO_MICRO,
-                });
-        supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_VAN_OOIJEN_TECH),
-                new int[]{
-                        org.quark.dr.usbserial.drive.UsbId.VAN_OOIJEN_TECH_TEENSYDUINO_SERIAL,
-                });
-        supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_ATMEL),
-                new int[]{
-                        org.quark.dr.usbserial.drive.UsbId.ATMEL_LUFA_CDC_DEMO_APP,
-                });
-        supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_LEAFLABS),
-                new int[]{
-                        org.quark.dr.usbserial.drive.UsbId.LEAFLABS_MAPLE,
-                });
-        return supportedDevices;
     }
 
 }

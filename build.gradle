@@ -30,8 +30,8 @@ ext {
     appversion = "2.3"
     appversion_int = 23
     minSdkVersion = 21
-    targetSdkVersion = 34
-    compileSdkVersion = 34
+    targetSdkVersion = 35
+    compileSdkVersion = 35
     ndkVersion = '26.0.10792818'
     compileOptions_encoding = 'utf-8'
     compileOptions_sourceCompatibility = JavaVersion.VERSION_1_8

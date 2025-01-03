@@ -49,31 +49,10 @@ public class SerialInputOutputManager implements Runnable {
 
     // Synchronized by 'mWriteBuffer'
     private final ByteBuffer mWriteBuffer = ByteBuffer.allocate(BUFSIZ);
-
-    private enum State {
-        STOPPED,
-        RUNNING,
-        STOPPING
-    }
-
     // Synchronized by 'this'
     private State mState = State.STOPPED;
-
     // Synchronized by 'this'
     private Listener mListener;
-
-    public interface Listener {
-        /**
-         * Called when new incoming data is available.
-         */
-        void onNewData(byte[] data);
-
-        /**
-         * Called when {@link SerialInputOutputManager#run()} aborts due to an
-         * error.
-         */
-        void onRunError(Exception e);
-    }
 
     /**
      * Creates a new instance with no listener.
@@ -90,12 +69,12 @@ public class SerialInputOutputManager implements Runnable {
         mListener = listener;
     }
 
-    public synchronized void setListener(Listener listener) {
-        mListener = listener;
-    }
-
     public synchronized Listener getListener() {
         return mListener;
+    }
+
+    public synchronized void setListener(Listener listener) {
+        mListener = listener;
     }
 
     public void writeAsync(byte[] data) {
@@ -185,6 +164,25 @@ public class SerialInputOutputManager implements Runnable {
             }
             mDriver.write(outBuff, READ_WAIT_MILLIS);
         }
+    }
+
+    private enum State {
+        STOPPED,
+        RUNNING,
+        STOPPING
+    }
+
+    public interface Listener {
+        /**
+         * Called when new incoming data is available.
+         */
+        void onNewData(byte[] data);
+
+        /**
+         * Called when {@link SerialInputOutputManager#run()} aborts due to an
+         * error.
+         */
+        void onRunError(Exception e);
     }
 
 }

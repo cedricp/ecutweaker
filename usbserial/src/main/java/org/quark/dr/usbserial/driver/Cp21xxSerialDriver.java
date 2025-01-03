@@ -46,6 +46,18 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
         mPort = new Cp21xxSerialPort(mDevice, 0);
     }
 
+    public static Map<Integer, int[]> getSupportedDevices() {
+        final Map<Integer, int[]> supportedDevices = new LinkedHashMap<Integer, int[]>();
+        supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_SILABS),
+                new int[]{
+                        org.quark.dr.usbserial.drive.UsbId.SILABS_CP2102,
+                        org.quark.dr.usbserial.drive.UsbId.SILABS_CP2105,
+                        org.quark.dr.usbserial.drive.UsbId.SILABS_CP2108,
+                        org.quark.dr.usbserial.drive.UsbId.SILABS_CP2110
+                });
+        return supportedDevices;
+    }
+
     @Override
     public UsbDevice getDevice() {
         return mDevice;
@@ -339,18 +351,6 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
             return true;
         }
 
-    }
-
-    public static Map<Integer, int[]> getSupportedDevices() {
-        final Map<Integer, int[]> supportedDevices = new LinkedHashMap<Integer, int[]>();
-        supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_SILABS),
-                new int[]{
-                        org.quark.dr.usbserial.drive.UsbId.SILABS_CP2102,
-                        org.quark.dr.usbserial.drive.UsbId.SILABS_CP2105,
-                        org.quark.dr.usbserial.drive.UsbId.SILABS_CP2108,
-                        org.quark.dr.usbserial.drive.UsbId.SILABS_CP2110
-                });
-        return supportedDevices;
     }
 
 }

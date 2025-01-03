@@ -20,6 +20,89 @@ public class Layout {
     public HashMap<String, ScreenData> m_screens;
     HashMap<String, ArrayList<String>> m_categories;
 
+    public Layout(InputStream is) {
+        String line;
+        BufferedReader br;
+        StringBuilder sb = new StringBuilder();
+
+        try {
+            br = new BufferedReader(new InputStreamReader(is));
+            while ((line = br.readLine()) != null) {
+                sb.append(line).append("\n");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            init(new JSONObject(sb.toString()));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public Layout(String js) {
+        try {
+            init(new JSONObject(js));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    void init(JSONObject jobj) {
+        m_screens = new HashMap<>();
+        m_categories = new HashMap<>();
+        try {
+            // Gather all screens
+            if (jobj.has("screens")) {
+                JSONObject scr_object = jobj.getJSONObject("screens");
+                Iterator<String> keys = scr_object.keys();
+                while (keys.hasNext()) {
+                    String key = keys.next();
+                    JSONObject sobj = scr_object.getJSONObject(key);
+                    ScreenData sdata = new ScreenData(key, sobj);
+                    m_screens.put(key, sdata);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+
+            JSONObject categories = jobj.getJSONObject("categories");
+            Iterator<String> iterator = categories.keys();
+            while (iterator.hasNext()) {
+                String currentKey = iterator.next();
+                ArrayList<String> screennames = new ArrayList<>();
+                JSONArray jscreenarry = categories.getJSONArray(currentKey);
+                for (int i = 0; i < jscreenarry.length(); ++i) {
+                    screennames.add(jscreenarry.getString(i));
+                }
+                m_categories.put(currentKey, screennames);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public Set<String> getCategories() {
+        return m_categories.keySet();
+    }
+
+    public ArrayList<String> getScreenNames(String category) {
+        return m_categories.get(category);
+    }
+
+    public ScreenData getScreen(String screenName) {
+        if (m_screens.containsKey(screenName)) {
+            return m_screens.get(screenName);
+        } else {
+            return null;
+        }
+    }
+
     private static class ListComparator implements Comparator {
 
         @Override
@@ -127,16 +210,15 @@ public class Layout {
         public ArrayList<Pair<Integer, String>> sendData;
     }
 
-
     public static class ScreenData {
-        List<InputData> m_inputs;
-        List<LabelData> m_labels;
-        List<DisplayData> m_displays;
-        List<ButtonData> m_buttons;
         public String m_screen_name;
         public int m_width, m_height;
         public Color m_color;
         public ArrayList<Pair<Integer, String>> preSendData;
+        List<InputData> m_inputs;
+        List<LabelData> m_labels;
+        List<DisplayData> m_displays;
+        List<ButtonData> m_buttons;
 
         ScreenData(String name, JSONObject jobj) {
             m_inputs = new ArrayList<>();
@@ -278,89 +360,6 @@ public class Layout {
 
         public ArrayList<Pair<Integer, String>> getPreSendData() {
             return preSendData;
-        }
-    }
-
-    public Layout(InputStream is) {
-        String line;
-        BufferedReader br;
-        StringBuilder sb = new StringBuilder();
-
-        try {
-            br = new BufferedReader(new InputStreamReader(is));
-            while ((line = br.readLine()) != null) {
-                sb.append(line).append("\n");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        try {
-            init(new JSONObject(sb.toString()));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public Layout(String js) {
-        try {
-            init(new JSONObject(js));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    void init(JSONObject jobj) {
-        m_screens = new HashMap<>();
-        m_categories = new HashMap<>();
-        try {
-            // Gather all screens
-            if (jobj.has("screens")) {
-                JSONObject scr_object = jobj.getJSONObject("screens");
-                Iterator<String> keys = scr_object.keys();
-                while (keys.hasNext()) {
-                    String key = keys.next();
-                    JSONObject sobj = scr_object.getJSONObject(key);
-                    ScreenData sdata = new ScreenData(key, sobj);
-                    m_screens.put(key, sdata);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        try {
-
-            JSONObject categories = jobj.getJSONObject("categories");
-            Iterator<String> iterator = categories.keys();
-            while (iterator.hasNext()) {
-                String currentKey = iterator.next();
-                ArrayList<String> screennames = new ArrayList<>();
-                JSONArray jscreenarry = categories.getJSONArray(currentKey);
-                for (int i = 0; i < jscreenarry.length(); ++i) {
-                    screennames.add(jscreenarry.getString(i));
-                }
-                m_categories.put(currentKey, screennames);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public Set<String> getCategories() {
-        return m_categories.keySet();
-    }
-
-    public ArrayList<String> getScreenNames(String category) {
-        return m_categories.get(category);
-    }
-
-    public ScreenData getScreen(String screenName) {
-        if (m_screens.containsKey(screenName)) {
-            return m_screens.get(screenName);
-        } else {
-            return null;
         }
     }
 }
