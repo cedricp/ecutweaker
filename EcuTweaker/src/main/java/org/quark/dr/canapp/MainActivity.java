@@ -1,5 +1,20 @@
 package org.quark.dr.canapp;
 
+import static org.quark.dr.canapp.ElmBase.MODE_BT;
+import static org.quark.dr.canapp.ElmBase.MODE_USB;
+import static org.quark.dr.canapp.ElmBase.MODE_WIFI;
+import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTED;
+import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTING;
+import static org.quark.dr.canapp.ElmBluetooth.STATE_DISCONNECTED;
+import static org.quark.dr.canapp.ElmBluetooth.STATE_NONE;
+import static org.quark.dr.canapp.ScreenActivity.MESSAGE_DEVICE_NAME;
+import static org.quark.dr.canapp.ScreenActivity.MESSAGE_LOG;
+import static org.quark.dr.canapp.ScreenActivity.MESSAGE_QUEUE_STATE;
+import static org.quark.dr.canapp.ScreenActivity.MESSAGE_READ;
+import static org.quark.dr.canapp.ScreenActivity.MESSAGE_STATE_CHANGE;
+import static org.quark.dr.canapp.ScreenActivity.MESSAGE_TOAST;
+import static org.quark.dr.canapp.ScreenActivity.TOAST;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -21,13 +36,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.PowerManager;
 import android.provider.Settings;
 import android.text.method.ScrollingMovementMethod;
@@ -43,6 +51,12 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import org.quark.dr.ecu.Ecu;
 import org.quark.dr.ecu.EcuDatabase;
@@ -63,22 +77,19 @@ import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static org.quark.dr.canapp.ElmBase.MODE_BT;
-import static org.quark.dr.canapp.ElmBase.MODE_USB;
-import static org.quark.dr.canapp.ElmBase.MODE_WIFI;
-import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTED;
-import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTING;
-import static org.quark.dr.canapp.ElmBluetooth.STATE_DISCONNECTED;
-import static org.quark.dr.canapp.ElmBluetooth.STATE_NONE;
-import static org.quark.dr.canapp.ScreenActivity.MESSAGE_DEVICE_NAME;
-import static org.quark.dr.canapp.ScreenActivity.MESSAGE_LOG;
-import static org.quark.dr.canapp.ScreenActivity.MESSAGE_QUEUE_STATE;
-import static org.quark.dr.canapp.ScreenActivity.MESSAGE_READ;
-import static org.quark.dr.canapp.ScreenActivity.MESSAGE_STATE_CHANGE;
-import static org.quark.dr.canapp.ScreenActivity.MESSAGE_TOAST;
-import static org.quark.dr.canapp.ScreenActivity.TOAST;
-
 public class MainActivity extends AppCompatActivity {
+    public static final String DEFAULT_PREF_TAG = "default";
+    public static final int LINK_WIFI = 0;
+    public static final int LINK_BLUETOOTH = 1;
+    public static final int LINK_USB = 2;
+    public static final String PREF_DEVICE_ADDRESS = "btAdapterAddress";
+    public static final String PREF_DEVICE_USBSERIAL = "usbSerialNumber";
+    public static final String PREF_GLOBAL_SCALE = "globalScale";
+    public static final String PREF_FONT_SCALE = "fontScale";
+    public static final String PREF_ECUZIPFILE = "ecuZipFile";
+    public static final String PREF_PROJECT = "project";
+    public static final String PREF_LINK_MODE = "BT";
+    public static final String PREF_SOFTFLOW = "softFlowControl";
     final static String TAG = "EcuTweaker";
     final static int PERMISSIONS_ACCESS_EXTERNAL_STORAGE = 0;
     final static int PERMISSIONS_LOCATION = 1;
@@ -90,20 +101,6 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CONNECT_DEVICE = 1;
     private static final int REQUEST_SCREEN = 2;
     private static final int REQUEST_ENABLE_BT = 3;
-    public static final String DEFAULT_PREF_TAG = "default";
-
-    public static final int LINK_WIFI = 0;
-    public static final int LINK_BLUETOOTH = 1;
-    public static final int LINK_USB = 2;
-
-    public static final String PREF_DEVICE_ADDRESS = "btAdapterAddress";
-    public static final String PREF_DEVICE_USBSERIAL = "usbSerialNumber";
-    public static final String PREF_GLOBAL_SCALE = "globalScale";
-    public static final String PREF_FONT_SCALE = "fontScale";
-    public static final String PREF_ECUZIPFILE = "ecuZipFile";
-    public static final String PREF_PROJECT = "project";
-    public static final String PREF_LINK_MODE = "BT";
-    public static final String PREF_SOFTFLOW = "softFlowControl";
     @SuppressLint("StaticFieldLeak")
     public static TextView mLogView;
 
@@ -136,7 +133,7 @@ public class MainActivity extends AppCompatActivity {
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         if (powerManager != null) {
             wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "MyApp:MyWakeLock");
-            wakeLock.acquire(10*60*1000L /*10 minutes*/);
+            wakeLock.acquire(10 * 60 * 1000L /*10 minutes*/);
         }
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         initialize();
@@ -928,42 +925,6 @@ public class MainActivity extends AppCompatActivity {
         mEcuListView.setAdapter(adapter);
     }
 
-    public class LoadDbTask extends AsyncTask<String, Void, String> {
-        private String error;
-
-        @Override
-        protected String doInBackground(String... params) {
-            String ecuFile = params[0];
-            error = "";
-            try {
-                String appDir = getApplicationContext().getFilesDir().getAbsolutePath();
-                ecuFile = mEcuDatabase.loadDatabase(ecuFile, appDir);
-            } catch (EcuDatabase.DatabaseException e) {
-                error = e.getMessage();
-                return "";
-            }
-            return ecuFile;
-        }
-
-        @Override
-        protected void onPostExecute(String ecuFile) {
-            CharSequence title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME;
-            if (!error.isEmpty()) {
-                mLogView.append("Database exception : " + error + "\n");
-                mStatusView.setText(title);
-            } else {
-                mCurrentProject = defaultPrefs.getString(PREF_PROJECT, "");
-                mEcuDatabase.buildMaps(mCurrentProject);
-                updateEcuTypeListView(ecuFile, mCurrentProject);
-                String code = mEcuDatabase.current_project_code;
-                String name = mEcuDatabase.current_project_name;
-                title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
-                mStatusView.setText(title);
-                mLogView.append("Loaded vehicle Name: " + name + "\n");
-            }
-        }
-    }
-
     private void chooseProject() {
         if (!mEcuDatabase.isLoaded())
             return;
@@ -1110,66 +1071,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private static class messageHandler extends Handler {
-        private final MainActivity activity;
-
-        messageHandler(MainActivity ac) {
-            activity = ac;
-        }
-
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case MESSAGE_STATE_CHANGE:
-                    if (BuildConfig.DEBUG)
-                        Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
-                    switch (msg.arg1) {
-                        case STATE_CONNECTED:
-                            activity.setConnectionStatus(STATE_CONNECTED);
-                            break;
-                        case STATE_CONNECTING:
-                            activity.setConnectionStatus(STATE_CONNECTING);
-                            break;
-                        case STATE_NONE:
-                        case STATE_DISCONNECTED:
-                            activity.setConnectionStatus(STATE_DISCONNECTED);
-                            activity.stopProgressDialog();
-                            break;
-                    }
-                    break;
-                case MESSAGE_READ:
-                    byte[] m = (byte[]) msg.obj;
-                    String readMessage = new String(m, 0, msg.arg1);
-                    try {
-                        activity.handleElmResult(readMessage);
-                    } catch (Exception e) {
-                        AlertDialog.Builder dlgAlert = new AlertDialog.Builder(activity);
-                        dlgAlert.setMessage(e.getMessage());
-                        dlgAlert.setTitle("Exception caught");
-                        dlgAlert.setPositiveButton("OK", null);
-                        dlgAlert.create().show();
-                        activity.mLogView.append("Exception : " + e.getMessage() + "\n");
-                    }
-                    break;
-                case MESSAGE_DEVICE_NAME:
-                    break;
-                case MESSAGE_TOAST:
-                    Toast.makeText(activity.getApplicationContext(), msg.getData().getString(TOAST),
-                            Toast.LENGTH_SHORT).show();
-                    break;
-                case MESSAGE_LOG:
-                    activity.mLogView.append(activity.getResources().getString(R.string.BT_MANAGER_MESSAGE) + " : "
-                            + msg.getData().getString(TOAST) + "\n");
-                    break;
-                case MESSAGE_QUEUE_STATE:
-                    int queue_len = msg.arg1;
-                    if (queue_len == 0) {
-                        activity.stopProgressDialog();
-                    }
-                    break;
-            }
-        }
-    }
-
     void stopProgressDialog() {
         if (mScanProgressDialog != null) {
             mScanProgressDialog.dismiss();
@@ -1249,5 +1150,101 @@ public class MainActivity extends AppCompatActivity {
     public void onBackPressed() {
         super.onBackPressed();
         this.finishAffinity();
+    }
+
+    private static class messageHandler extends Handler {
+        private final MainActivity activity;
+
+        messageHandler(MainActivity ac) {
+            activity = ac;
+        }
+
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case MESSAGE_STATE_CHANGE:
+                    if (BuildConfig.DEBUG)
+                        Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
+                    switch (msg.arg1) {
+                        case STATE_CONNECTED:
+                            activity.setConnectionStatus(STATE_CONNECTED);
+                            break;
+                        case STATE_CONNECTING:
+                            activity.setConnectionStatus(STATE_CONNECTING);
+                            break;
+                        case STATE_NONE:
+                        case STATE_DISCONNECTED:
+                            activity.setConnectionStatus(STATE_DISCONNECTED);
+                            activity.stopProgressDialog();
+                            break;
+                    }
+                    break;
+                case MESSAGE_READ:
+                    byte[] m = (byte[]) msg.obj;
+                    String readMessage = new String(m, 0, msg.arg1);
+                    try {
+                        activity.handleElmResult(readMessage);
+                    } catch (Exception e) {
+                        AlertDialog.Builder dlgAlert = new AlertDialog.Builder(activity);
+                        dlgAlert.setMessage(e.getMessage());
+                        dlgAlert.setTitle("Exception caught");
+                        dlgAlert.setPositiveButton("OK", null);
+                        dlgAlert.create().show();
+                        activity.mLogView.append("Exception : " + e.getMessage() + "\n");
+                    }
+                    break;
+                case MESSAGE_DEVICE_NAME:
+                    break;
+                case MESSAGE_TOAST:
+                    Toast.makeText(activity.getApplicationContext(), msg.getData().getString(TOAST),
+                            Toast.LENGTH_SHORT).show();
+                    break;
+                case MESSAGE_LOG:
+                    activity.mLogView.append(activity.getResources().getString(R.string.BT_MANAGER_MESSAGE) + " : "
+                            + msg.getData().getString(TOAST) + "\n");
+                    break;
+                case MESSAGE_QUEUE_STATE:
+                    int queue_len = msg.arg1;
+                    if (queue_len == 0) {
+                        activity.stopProgressDialog();
+                    }
+                    break;
+            }
+        }
+    }
+
+    public class LoadDbTask extends AsyncTask<String, Void, String> {
+        private String error;
+
+        @Override
+        protected String doInBackground(String... params) {
+            String ecuFile = params[0];
+            error = "";
+            try {
+                String appDir = getApplicationContext().getFilesDir().getAbsolutePath();
+                ecuFile = mEcuDatabase.loadDatabase(ecuFile, appDir);
+            } catch (EcuDatabase.DatabaseException e) {
+                error = e.getMessage();
+                return "";
+            }
+            return ecuFile;
+        }
+
+        @Override
+        protected void onPostExecute(String ecuFile) {
+            CharSequence title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME;
+            if (!error.isEmpty()) {
+                mLogView.append("Database exception : " + error + "\n");
+                mStatusView.setText(title);
+            } else {
+                mCurrentProject = defaultPrefs.getString(PREF_PROJECT, "");
+                mEcuDatabase.buildMaps(mCurrentProject);
+                updateEcuTypeListView(ecuFile, mCurrentProject);
+                String code = mEcuDatabase.current_project_code;
+                String name = mEcuDatabase.current_project_name;
+                title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
+                mStatusView.setText(title);
+                mLogView.append("Loaded vehicle Name: " + name + "\n");
+            }
+        }
     }
 }

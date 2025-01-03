@@ -1,7 +1,6 @@
 package org.quark.dr.canapp;
 
 import android.content.Context;
-import androidx.annotation.NonNull;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,11 +8,13 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+
 public class CustomAdapter extends ArrayAdapter<String> {
     Context context;
     int color;
     String[] items;
-    private int textSize=20;
+    private int textSize = 20;
 
     public CustomAdapter(final Context context, final int textViewResourceId, final String[] objects) {
         super(context, textViewResourceId, objects);
@@ -53,10 +54,11 @@ public class CustomAdapter extends ArrayAdapter<String> {
         return convertView;
     }
 
-    public void setSpinnerTextSize(int size){
-        textSize= size;
+    public void setSpinnerTextSize(int size) {
+        textSize = size;
     }
-    public void setSpinnerTextColor(int color){
+
+    public void setSpinnerTextColor(int color) {
         this.color = color;
     }
 

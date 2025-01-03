@@ -1,5 +1,14 @@
 package org.quark.dr.canapp;
 
+import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTED;
+import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTING;
+import static org.quark.dr.canapp.ElmBluetooth.STATE_DISCONNECTED;
+import static org.quark.dr.canapp.ElmBluetooth.STATE_NONE;
+import static org.quark.dr.canapp.MainActivity.PREF_FONT_SCALE;
+import static org.quark.dr.canapp.MainActivity.PREF_GLOBAL_SCALE;
+import static org.quark.dr.canapp.MainActivity.PREF_SOFTFLOW;
+import static org.quark.dr.ecu.Ecu.hexStringToByteArray;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -14,17 +23,14 @@ import android.os.Message;
 import android.text.Html;
 import android.text.Spanned;
 import android.text.method.ScrollingMovementMethod;
-import android.util.Pair;
-
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.util.Log;
+import android.util.Pair;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -42,6 +48,8 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import org.quark.dr.ecu.Ecu;
 import org.quark.dr.ecu.EcuDatabase;
 import org.quark.dr.ecu.IsoTPDecode;
@@ -55,17 +63,20 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTED;
-import static org.quark.dr.canapp.ElmBluetooth.STATE_CONNECTING;
-import static org.quark.dr.canapp.ElmBluetooth.STATE_DISCONNECTED;
-import static org.quark.dr.canapp.ElmBluetooth.STATE_NONE;
-import static org.quark.dr.canapp.MainActivity.PREF_FONT_SCALE;
-import static org.quark.dr.canapp.MainActivity.PREF_GLOBAL_SCALE;
-import static org.quark.dr.canapp.MainActivity.PREF_SOFTFLOW;
-import static org.quark.dr.ecu.Ecu.hexStringToByteArray;
-
 public class ScreenActivity extends AppCompatActivity {
+    public static final int MESSAGE_STATE_CHANGE = 1;
+    public static final int MESSAGE_READ = 2;
+    public static final int MESSAGE_WRITE = 3;
+    public static final int MESSAGE_DEVICE_NAME = 4;
+    public static final int MESSAGE_TOAST = 5;
+    public static final int MESSAGE_QUEUE_STATE = 6;
+    public static final int MESSAGE_LOG = 7;
+    public static final String DEVICE_NAME = "device_name";
+    public static final String TOAST = "toast";
     private static final String TAG = "org.quark.dr.ecutweaker";
+    // Intent request codes
+    private static final int REQUEST_CONNECT_DEVICE = 1;
+    private static final int REQUEST_ENABLE_BT = 3;
     private ScrollView m_scrollView;
     private RelativeLayout m_layoutView;
     private Ecu m_ecu;
@@ -79,7 +90,6 @@ public class ScreenActivity extends AppCompatActivity {
     private String m_currentDtcRequestName, m_currentDtcRequestBytes, m_clearDTCCommand;
     private boolean m_autoReload;
     private EcuDatabase m_ecuDatabase;
-
     private HashMap<String, EditText> m_editTextViews;
     private HashMap<String, EditText> m_displayViews;
     private HashMap<String, Spinner> m_spinnerViews;
@@ -87,26 +97,19 @@ public class ScreenActivity extends AppCompatActivity {
     private HashMap<View, String> m_buttonsCommand;
     private HashMap<String, ArrayList<Layout.InputData>> m_requestsInputs;
     private Set<String> m_displaysRequestSet, m_startRequestSet;
-
     private ElmBase mChatService = null;
+    private final View.OnClickListener buttonClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            if (!m_buttonsCommand.containsKey(v))
+                return;
+            String uniqueName = m_buttonsCommand.get(v);
+            exectuteButtonCommands(uniqueName);
+        }
+    };
     private Handler mHandler = null;
-
     private int mCanTimeOut;
     private int mFontSizeOverride;
-
-    // Intent request codes
-    private static final int REQUEST_CONNECT_DEVICE = 1;
-    private static final int REQUEST_ENABLE_BT = 3;
-
-    public static final int MESSAGE_STATE_CHANGE = 1;
-    public static final int MESSAGE_READ = 2;
-    public static final int MESSAGE_WRITE = 3;
-    public static final int MESSAGE_DEVICE_NAME = 4;
-    public static final int MESSAGE_TOAST = 5;
-    public static final int MESSAGE_QUEUE_STATE = 6;
-    public static final int MESSAGE_LOG = 7;
-    public static final String DEVICE_NAME = "device_name";
-    public static final String TOAST = "toast";
     private String mConnectedDeviceName = null;
     private float mGlobalScale;
     private long mLastSDSTime;
@@ -756,16 +759,6 @@ public class ScreenActivity extends AppCompatActivity {
             }
         }
     }
-
-    private final View.OnClickListener buttonClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            if (!m_buttonsCommand.containsKey(v))
-                return;
-            String uniqueName = m_buttonsCommand.get(v);
-            exectuteButtonCommands(uniqueName);
-        }
-    };
 
     void exectuteButtonCommands(String buttonUniqueName) {
         Layout.ButtonData buttonData = m_currentScreenData.getButtonData(buttonUniqueName);

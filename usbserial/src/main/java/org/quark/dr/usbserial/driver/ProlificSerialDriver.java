@@ -53,6 +53,13 @@ public class ProlificSerialDriver implements UsbSerialDriver {
         mPort = new ProlificSerialPort(mDevice, 0);
     }
 
+    public static Map<Integer, int[]> getSupportedDevices() {
+        final Map<Integer, int[]> supportedDevices = new LinkedHashMap<Integer, int[]>();
+        supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_PROLIFIC),
+                new int[]{org.quark.dr.usbserial.drive.UsbId.PROLIFIC_PL2303,});
+        return supportedDevices;
+    }
+
     @Override
     public List<UsbSerialPort> getPorts() {
         return Collections.singletonList(mPort);
@@ -106,21 +113,16 @@ public class ProlificSerialDriver implements UsbSerialDriver {
         private static final int DEVICE_TYPE_HX = 0;
         private static final int DEVICE_TYPE_0 = 1;
         private static final int DEVICE_TYPE_1 = 2;
-
+        private final Object mReadStatusThreadLock = new Object();
+        boolean mStopReadStatusThread = false;
         private int mDeviceType = DEVICE_TYPE_HX;
-
         private UsbEndpoint mReadEndpoint;
         private UsbEndpoint mWriteEndpoint;
         private UsbEndpoint mInterruptEndpoint;
-
         private int mControlLinesValue = 0;
-
         private int mBaudRate = -1, mDataBits = -1, mStopBits = -1, mParity = -1;
-
         private int mStatus = 0;
         private volatile Thread mReadStatusThread = null;
-        private final Object mReadStatusThreadLock = new Object();
-        boolean mStopReadStatusThread = false;
         private IOException mReadStatusException = null;
 
 
@@ -549,12 +551,5 @@ public class ProlificSerialDriver implements UsbSerialDriver {
 
             return purgeReadBuffers || purgeWriteBuffers;
         }
-    }
-
-    public static Map<Integer, int[]> getSupportedDevices() {
-        final Map<Integer, int[]> supportedDevices = new LinkedHashMap<Integer, int[]>();
-        supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_PROLIFIC),
-                new int[]{org.quark.dr.usbserial.drive.UsbId.PROLIFIC_PL2303,});
-        return supportedDevices;
     }
 }

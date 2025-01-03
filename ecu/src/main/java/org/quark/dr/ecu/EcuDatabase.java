@@ -22,37 +22,30 @@ import java.util.Objects;
 import java.util.Set;
 
 public class EcuDatabase {
+    private static ProjectData.Projects Projects = null;
+    private final HashMap<Integer, ArrayList<EcuInfo>> m_ecuInfo;
+    private final HashMap<Integer, String> m_ecuAddressing;
+    private final HashMap<Integer, String> RXADDRMAP, TXADDRMAP, RXADDRMAP_EXT, TXADDRMAP_EXT;
+    private final HashMap<String, String> MODELSMAP;
     public String current_project_code;
     public String current_project_name;
     boolean m_loaded;
-    private final HashMap<Integer, ArrayList<EcuInfo>> m_ecuInfo;
-    private final HashMap<Integer, String> m_ecuAddressing;
     private Set<String> m_projectSet;
     private String m_ecuFilePath;
     private ZipFileSystem m_zipFileSystem;
 
-    private final HashMap<Integer, String> RXADDRMAP, TXADDRMAP, RXADDRMAP_EXT, TXADDRMAP_EXT;
-    private final HashMap<String, String> MODELSMAP;
-
-    private static ProjectData.Projects Projects = null;
-
-    public class EcuIdent {
-        public String supplier_code, soft_version, version, diagnostic_version;
-    }
-
-    public class EcuInfo {
-        public Set<String> projects;
-        public String href;
-        public String ecuName, protocol;
-        public int addressId;
-        public EcuIdent ecuIdents[];
-        public boolean exact_match;
-    }
-
-    public class DatabaseException extends Exception {
-        public DatabaseException(String message) {
-            super(message);
-        }
+    public EcuDatabase() {
+        m_loaded = false;
+        m_ecuInfo = new HashMap<>();
+        m_ecuAddressing = new HashMap<>();
+        MODELSMAP = new HashMap<>();
+        RXADDRMAP = new HashMap<>();
+        TXADDRMAP = new HashMap<>();
+        RXADDRMAP_EXT = new HashMap<>();
+        TXADDRMAP_EXT = new HashMap<>();
+        loadProjectsData();
+        buildMaps("ALL");
+        loadModels();
     }
 
     public ArrayList<EcuInfo> getEcuInfo(int addr) {
@@ -66,24 +59,6 @@ public class EcuDatabase {
             list.add(valueIterator.next());
         }
         return list;
-    }
-
-    public class EcuIdentifierNew {
-        public String supplier, version, soft_version, diag_version;
-        public int addr;
-
-        public EcuIdentifierNew() {
-            reInit(-1);
-        }
-
-        public void reInit(int addr) {
-            this.addr = addr;
-            supplier = version = soft_version = diag_version = "";
-        }
-
-        public boolean isFullyFilled() {
-            return !supplier.isEmpty() && !version.isEmpty() && !soft_version.isEmpty() && !diag_version.isEmpty();
-        }
     }
 
     @Nullable
@@ -170,20 +145,6 @@ public class EcuDatabase {
             }
         }
         return -1;
-    }
-
-    public EcuDatabase() {
-        m_loaded = false;
-        m_ecuInfo = new HashMap<>();
-        m_ecuAddressing = new HashMap<>();
-        MODELSMAP = new HashMap<>();
-        RXADDRMAP = new HashMap<>();
-        TXADDRMAP = new HashMap<>();
-        RXADDRMAP_EXT = new HashMap<>();
-        TXADDRMAP_EXT = new HashMap<>();
-        loadProjectsData();
-        buildMaps("ALL");
-        loadModels();
     }
 
     public String[] getProjects() {
@@ -392,7 +353,6 @@ public class EcuDatabase {
         }
     }
 
-
     public String loadDatabase(String ecuFilename, String appDir) throws DatabaseException {
         if (m_loaded) {
             Log.e("EcuDatabase", "Database already loaded");
@@ -565,5 +525,42 @@ public class EcuDatabase {
 
     public ZipFileSystem getZipFileSystem() {
         return m_zipFileSystem;
+    }
+
+    public class EcuIdent {
+        public String supplier_code, soft_version, version, diagnostic_version;
+    }
+
+    public class EcuInfo {
+        public Set<String> projects;
+        public String href;
+        public String ecuName, protocol;
+        public int addressId;
+        public EcuIdent ecuIdents[];
+        public boolean exact_match;
+    }
+
+    public class DatabaseException extends Exception {
+        public DatabaseException(String message) {
+            super(message);
+        }
+    }
+
+    public class EcuIdentifierNew {
+        public String supplier, version, soft_version, diag_version;
+        public int addr;
+
+        public EcuIdentifierNew() {
+            reInit(-1);
+        }
+
+        public void reInit(int addr) {
+            this.addr = addr;
+            supplier = version = soft_version = diag_version = "";
+        }
+
+        public boolean isFullyFilled() {
+            return !supplier.isEmpty() && !version.isEmpty() && !soft_version.isEmpty() && !diag_version.isEmpty();
+        }
     }
 }

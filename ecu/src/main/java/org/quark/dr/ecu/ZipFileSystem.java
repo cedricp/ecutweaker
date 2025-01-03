@@ -10,7 +10,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 import java.util.zip.ZipEntry;
@@ -27,14 +26,9 @@ import java.util.zip.ZipInputStream;
  */
 
 public class ZipFileSystem {
-    static class CustomZipEntry {
-        public long compressedSize, pos, uncompressedSize;
-    }
-
-    private HashMap<String, CustomZipEntry> m_directoryEntries;
     private final String m_zipFilePath;
     private final String m_indexFile;
-
+    private HashMap<String, CustomZipEntry> m_directoryEntries;
     public ZipFileSystem(String zipFilePath, String applicationDirectory) {
         m_directoryEntries = new HashMap<>();
         m_zipFilePath = zipFilePath;
@@ -166,5 +160,9 @@ public class ZipFileSystem {
 
             return stringBuilder.toString();
         }
+    }
+
+    static class CustomZipEntry {
+        public long compressedSize, pos, uncompressedSize;
     }
 }

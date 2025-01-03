@@ -51,6 +51,14 @@ public class Ch34xSerialDriver implements UsbSerialDriver {
         mPort = new Ch340SerialPort(mDevice, 0);
     }
 
+    public static Map<Integer, int[]> getSupportedDevices() {
+        final Map<Integer, int[]> supportedDevices = new LinkedHashMap<Integer, int[]>();
+        supportedDevices.put(org.quark.dr.usbserial.drive.UsbId.VENDOR_QINHENG, new int[]{
+                org.quark.dr.usbserial.drive.UsbId.QINHENG_HL340
+        });
+        return supportedDevices;
+    }
+
     @Override
     public UsbDevice getDevice() {
         return mDevice;
@@ -350,14 +358,6 @@ public class Ch34xSerialDriver implements UsbSerialDriver {
             return true;
         }
 
-    }
-
-    public static Map<Integer, int[]> getSupportedDevices() {
-        final Map<Integer, int[]> supportedDevices = new LinkedHashMap<Integer, int[]>();
-        supportedDevices.put(org.quark.dr.usbserial.drive.UsbId.VENDOR_QINHENG, new int[]{
-                org.quark.dr.usbserial.drive.UsbId.QINHENG_HL340
-        });
-        return supportedDevices;
     }
 
 }

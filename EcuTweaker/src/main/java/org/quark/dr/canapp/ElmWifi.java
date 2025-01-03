@@ -16,12 +16,11 @@ import java.net.Socket;
 
 public class ElmWifi extends ElmBase {
     private static final String TAG = "ElmWifiThread";
+    private static final int mServerPort = 35000;
     private final Context mContext;
     private Socket mSocket;
     private WifiManager.WifiLock wifiLock;
-
     private String mServerIPAddress = "192.168.0.10";
-    private static final int mServerPort = 35000;
     private String mDeviceName = "Elm327";
     private ElmWifi.ConnectedThread mConnectedThread;
     private ElmWifi.ConnectThread mConnectThread;
