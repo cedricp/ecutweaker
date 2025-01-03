@@ -28,6 +28,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.os.PowerManager;
 import android.provider.Settings;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -125,11 +126,17 @@ public class MainActivity extends AppCompatActivity {
     private boolean mActivateBluetoothAsked;
     private ProgressDialog mScanProgressDialog;
     private SharedPreferences defaultPrefs;
+    private PowerManager.WakeLock wakeLock;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        if (powerManager != null) {
+            wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "MyApp:MyWakeLock");
+            wakeLock.acquire(10*60*1000L /*10 minutes*/);
+        }
         initialize();
     }
 
@@ -804,6 +811,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("Wakelock")
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -811,6 +819,10 @@ public class MainActivity extends AppCompatActivity {
         if (mObdDevice != null) {
             mObdDevice.disconnect();
             mObdDevice.closeLogFile();
+        }
+        // Release the WakeLock when the activity is destroyed to prevent keeping the device awake for too long
+        if (wakeLock != null && wakeLock.isHeld()) {
+            wakeLock.release();
         }
     }
 
