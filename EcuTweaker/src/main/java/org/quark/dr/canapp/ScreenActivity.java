@@ -584,6 +584,10 @@ public class ScreenActivity extends AppCompatActivity {
 
                 gifName = gifName.replace("::BTN:|", "")
                         .replace("::btn:|", "")
+                        .replace("::btn:DOWN|", "")
+                        .replace("::btn:UP|", "")
+                        .replace("::btn:LEFT|", "")
+                        .replace("::btn:RIGHT|", "")
                         .replace("\\", "/");
                 String filenameu = "graphics/" + gifName + ".GIF";
                 String filenamel = "graphics/" + gifName + ".gif";
