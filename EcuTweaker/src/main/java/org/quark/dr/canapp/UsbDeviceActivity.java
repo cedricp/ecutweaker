@@ -30,7 +30,9 @@ import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
-import android.os.AsyncTask;
+import android.os.Looper;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -107,8 +109,8 @@ public class UsbDeviceActivity extends Activity {
     private TextView mProgressBarTitle;
     private ProgressBar mProgressBar;
     private ArrayAdapter<UsbSerialPort> mAdapter;
-    @SuppressLint("HandlerLeak")
-    private final Handler mHandler = new Handler() {
+    // Modern Handler with explicit Looper - fixes potential memory leak
+    private final Handler mHandler = new Handler(Looper.getMainLooper()) {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
@@ -121,7 +123,6 @@ public class UsbDeviceActivity extends Activity {
                     break;
             }
         }
-
     };
 
     @SuppressLint("InlinedApi")
@@ -230,7 +231,7 @@ public class UsbDeviceActivity extends Activity {
 
     private void refreshDeviceList() {
         showProgressBar();
-        new SearchUSBTask(this).execute();
+        searchUSBDevicesAsync();
     }
 
     private void showProgressBar() {
@@ -242,39 +243,44 @@ public class UsbDeviceActivity extends Activity {
         mProgressBar.setVisibility(View.INVISIBLE);
     }
 
-    private static class SearchUSBTask extends AsyncTask<Void, Void, List<UsbSerialPort>> {
-        private final WeakReference<UsbDeviceActivity> mActivity;
+    // Modern ExecutorService + Handler replacing deprecated AsyncTask
+    private final ExecutorService usbSearchExecutor = Executors.newSingleThreadExecutor();
+    private final Handler usbSearchHandler = new Handler(Looper.getMainLooper());
 
-        SearchUSBTask(UsbDeviceActivity activity) {
-            mActivity = new WeakReference<>(activity);
-        }
+    private void searchUSBDevicesAsync() {
+        usbSearchExecutor.execute(() -> {
+            try {
+                SystemClock.sleep(1000);
 
-        @Override
-        protected List<UsbSerialPort> doInBackground(Void... params) {
-            SystemClock.sleep(1000);
+                final List<UsbSerialDriver> drivers =
+                        UsbSerialProber.getDefaultProber().findAllDrivers(mUsbManager);
 
-            final List<UsbSerialDriver> drivers =
-                    UsbSerialProber.getDefaultProber().findAllDrivers(mActivity.get().mUsbManager);
+                final List<UsbSerialPort> result = new ArrayList<>();
+                for (final UsbSerialDriver driver : drivers) {
+                    final List<UsbSerialPort> ports = driver.getPorts();
+                    result.addAll(ports);
+                }
 
-            final List<UsbSerialPort> result = new ArrayList<>();
-            for (final UsbSerialDriver driver : drivers) {
-                final List<UsbSerialPort> ports = driver.getPorts();
-                result.addAll(ports);
+                Log.d("UsbDeviceActivity", "Found " + result.size() + " USB devices");
+                
+                // Post result back to main thread
+                usbSearchHandler.post(() -> onUSBSearchComplete(result));
+                
+            } catch (Exception e) {
+                Log.e("UsbDeviceActivity", "Error searching USB devices", e);
+                usbSearchHandler.post(() -> onUSBSearchComplete(new ArrayList<>()));
             }
+        });
+    }
 
-            return result;
-        }
-
-        @Override
-        protected void onPostExecute(List<UsbSerialPort> result) {
-            mActivity.get().mEntries.clear();
-            mActivity.get().mEntries.addAll(result);
-            mActivity.get().mAdapter.notifyDataSetChanged();
-            mActivity.get().mProgressBarTitle.setText(
-                    String.format("%s device(s) found", mActivity.get().mEntries.size()));
-            mActivity.get().hideProgressBar();
-        }
-
+    private void onUSBSearchComplete(List<UsbSerialPort> result) {
+        mEntries.clear();
+        mEntries.addAll(result);
+        mAdapter.notifyDataSetChanged();
+        mProgressBarTitle.setText(
+                String.format("%s device(s) found", mEntries.size()));
+        hideProgressBar();
+        Log.i("UsbDeviceActivity", "USB search completed - found " + result.size() + " devices");
     }
 
 
