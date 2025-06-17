@@ -12,10 +12,12 @@ import android.os.Handler;
 import android.os.Message;
 
 import androidx.core.app.ActivityCompat;
+import android.os.Build;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.UUID;
 
 public class ElmBluetooth extends ElmBase {
@@ -40,22 +42,43 @@ public class ElmBluetooth extends ElmBase {
 
     @Override
     public boolean connect(String address) {
-        if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-            return false;
+        // Android version-specific permission checking
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) { // Android 12+
+            if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                logInfo("BLUETOOTH_CONNECT permission denied on Android " + Build.VERSION.SDK_INT);
+                return false;
+            }
+        } else { // Android 11 and below
+            if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED ||
+                ActivityCompat.checkSelfPermission(mContext, Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED) {
+                logInfo("BLUETOOTH permissions denied on Android " + Build.VERSION.SDK_INT);
+                return false;
+            }
         }
+        
         setState(STATE_CONNECTING);
         BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (btAdapter == null)
+        if (btAdapter == null) {
+            logInfo("BluetoothAdapter is null");
             return false;
+        }
+
+        if (!btAdapter.isEnabled()) {
+            logInfo("Bluetooth is disabled");
+            return false;
+        }
 
         BluetoothDevice device;
         try {
             device = btAdapter.getRemoteDevice(address);
         } catch (Exception e) {
+            logInfo("Failed to get remote device: " + e.getMessage());
             return false;
         }
-        if (device == null)
+        if (device == null) {
+            logInfo("Remote device is null");
             return false;
+        }
 
         disconnect();
 
@@ -158,12 +181,51 @@ public class ElmBluetooth extends ElmBase {
             BluetoothSocket tmp = null;
 
             /*
-             * Get a BluetoothSocket for a connection with the
-             * given BluetoothDevice
+             * Comprehensive socket creation for Android 8-15 compatibility
+             * Uses multiple fallback methods to handle different device quirks
              */
+            
+            // Method 1: Standard secure socket (works on most newer devices)
             try {
                 tmp = device.createRfcommSocketToServiceRecord(SPP_UUID);
+                logInfo("Socket created using standard secure method");
             } catch (IOException e) {
+                logInfo("Standard secure method failed: " + e.getMessage());
+                
+                // Method 2: Insecure socket (better for Android 9-12, Samsung devices)
+                try {
+                    tmp = device.createInsecureRfcommSocketToServiceRecord(SPP_UUID);
+                    logInfo("Socket created using insecure method");
+                } catch (IOException e2) {
+                    logInfo("Insecure method failed: " + e2.getMessage());
+                    
+                    // Method 3: Reflection method for Samsung and other problematic devices
+                    try {
+                        Method m = device.getClass().getMethod("createRfcommSocket", int.class);
+                        tmp = (BluetoothSocket) m.invoke(device, 1);
+                        logInfo("Socket created using reflection method (channel 1)");
+                    } catch (Exception e3) {
+                        logInfo("Reflection method channel 1 failed: " + e3.getMessage());
+                        
+                        // Method 4: Alternative reflection with different channel
+                        try {
+                            Method m = device.getClass().getMethod("createRfcommSocket", int.class);  
+                            tmp = (BluetoothSocket) m.invoke(device, 2);
+                            logInfo("Socket created using reflection method (channel 2)");
+                        } catch (Exception e4) {
+                            logInfo("Reflection method channel 2 failed: " + e4.getMessage());
+                            
+                            // Method 5: Last resort - try with channel 3
+                            try {
+                                Method m = device.getClass().getMethod("createRfcommSocket", int.class);
+                                tmp = (BluetoothSocket) m.invoke(device, 3);
+                                logInfo("Socket created using reflection method (channel 3)");
+                            } catch (Exception e5) {
+                                logInfo("All socket creation methods failed. Device may not support SPP.");
+                            }
+                        }
+                    }
+                }
             }
             mmSocket = tmp;
         }
@@ -172,22 +234,51 @@ public class ElmBluetooth extends ElmBase {
             String mSocketType = "ELM-socket";
             setName("ConnectThread" + mSocketType);
 
+            // Verify socket was created
+            if (mmSocket == null) {
+                logInfo("No socket available - all creation methods failed");
+                connectionFailed();
+                return;
+            }
+
             // Always cancel discovery because it will slow down a connection
             BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
-            if (btAdapter == null)
+            if (btAdapter == null) {
+                logInfo("BluetoothAdapter is null in ConnectThread");
+                connectionFailed();
                 return;
+            }
 
-            btAdapter.cancelDiscovery();
+            try {
+                btAdapter.cancelDiscovery();
+            } catch (SecurityException e) {
+                logInfo("Permission denied canceling discovery: " + e.getMessage());
+            }
+
+            // Android version-specific connection handling
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) { // Android 11 and below
+                // Add delay for older Android versions - helps with connection stability
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
 
             // Make a connection to the BluetoothSocket
             try {
+                logInfo("Attempting connection to " + mmDevice.getAddress() + " on Android " + Build.VERSION.SDK_INT);
                 // This is a blocking call and will only return on a
                 // successful connection or an exception
                 mmSocket.connect();
+                logInfo("Connection successful!");
             } catch (IOException e) {
+                logInfo("Connection failed: " + e.getMessage());
                 try {
                     mmSocket.close();
                 } catch (IOException e2) {
+                    logInfo("Failed to close socket: " + e2.getMessage());
                 }
                 connectionFailed();
                 return;
@@ -208,14 +299,18 @@ public class ElmBluetooth extends ElmBase {
 
             interrupt();
 
-            try {
-                mmSocket.close();
-            } catch (IOException e) {
+            if (mmSocket != null) {
+                try {
+                    mmSocket.close();
+                } catch (IOException e) {
+                    logInfo("Error closing socket in cancel: " + e.getMessage());
+                }
             }
 
             try {
-                join();
+                join(5000); // Wait max 5 seconds for thread to finish
             } catch (InterruptedException e) {
+                logInfo("Thread join interrupted");
             }
         }
     }

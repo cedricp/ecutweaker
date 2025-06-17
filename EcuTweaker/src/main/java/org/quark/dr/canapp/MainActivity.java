@@ -917,9 +917,9 @@ public class MainActivity extends AppCompatActivity {
         mEcuFilePath = ecuFile;
         ArrayAdapter<String> adapter;
         ArrayList<String> adapterList = mEcuDatabase.getEcuByFunctionsAndType(project);
-        Collections.sort(adapterList);
         if (adapterList.isEmpty())
             return;
+        Collections.sort(adapterList);
         adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_list_item_1,
                 adapterList);
