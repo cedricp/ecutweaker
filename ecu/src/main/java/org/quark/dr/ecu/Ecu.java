@@ -44,13 +44,13 @@ public class Ecu {
                 sb.append(line + "\n");
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("Ecu", "Error reading input stream", e);
         }
 
         try {
             init(new JSONObject(sb.toString()));
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("Ecu", "Error initializing ECU from JSON", e);
         }
     }
 
@@ -58,7 +58,7 @@ public class Ecu {
         try {
             init(new JSONObject(json));
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("Ecu", "Error initializing ECU from JSON string", e);
         }
     }
 
@@ -321,7 +321,7 @@ public class Ecu {
                 data.put(key, ecudata);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Log.e("Ecu", "Error processing ECU data", e);
         }
 
         // Gather StartDiagnosticSession requests

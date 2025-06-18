@@ -30,7 +30,9 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.AsyncTask;
+import android.os.Looper;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -897,7 +899,7 @@ public class MainActivity extends AppCompatActivity {
             ecuFile = defaultPrefs.getString(PREF_ECUZIPFILE, "");
         }
         mStatusView.setText(getResources().getString(R.string.INDEXING_DB));
-        new LoadDbTask().execute(ecuFile);
+        loadDatabaseAsync(ecuFile);
     }
 
     void updateEcuTypeListView(String ecuFile, String project) {
@@ -915,9 +917,9 @@ public class MainActivity extends AppCompatActivity {
         mEcuFilePath = ecuFile;
         ArrayAdapter<String> adapter;
         ArrayList<String> adapterList = mEcuDatabase.getEcuByFunctionsAndType(project);
-        Collections.sort(adapterList);
         if (adapterList.isEmpty())
             return;
+        Collections.sort(adapterList);
         adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_list_item_1,
                 adapterList);
@@ -1212,39 +1214,48 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public class LoadDbTask extends AsyncTask<String, Void, String> {
-        private String error;
+    // Modern ExecutorService + Handler approach replacing deprecated AsyncTask
+    private final ExecutorService loadDbExecutor = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
-        @Override
-        protected String doInBackground(String... params) {
-            String ecuFile = params[0];
-            error = "";
+    public void loadDatabaseAsync(String ecuFile) {
+        loadDbExecutor.execute(() -> {
+            String error = "";
+            String resultEcuFile = ecuFile;
+            
             try {
                 String appDir = getApplicationContext().getFilesDir().getAbsolutePath();
-                ecuFile = mEcuDatabase.loadDatabase(ecuFile, appDir);
+                resultEcuFile = mEcuDatabase.loadDatabase(ecuFile, appDir);
+                Log.d("MainActivity", "Database loaded successfully: " + resultEcuFile);
             } catch (EcuDatabase.DatabaseException e) {
                 error = e.getMessage();
-                return "";
+                Log.e("MainActivity", "Database loading failed", e);
+                resultEcuFile = "";
             }
-            return ecuFile;
-        }
 
-        @Override
-        protected void onPostExecute(String ecuFile) {
-            CharSequence title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME;
-            if (!error.isEmpty()) {
-                mLogView.append("Database exception : " + error + "\n");
-                mStatusView.setText(title);
-            } else {
-                mCurrentProject = defaultPrefs.getString(PREF_PROJECT, "");
-                mEcuDatabase.buildMaps(mCurrentProject);
-                updateEcuTypeListView(ecuFile, mCurrentProject);
-                String code = mEcuDatabase.current_project_code;
-                String name = mEcuDatabase.current_project_name;
-                title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
-                mStatusView.setText(title);
-                mLogView.append("Loaded vehicle Name: " + name + "\n");
-            }
+            // Post result back to main thread
+            final String finalError = error;
+            final String finalEcuFile = resultEcuFile;
+            mainHandler.post(() -> onDatabaseLoadComplete(finalEcuFile, finalError));
+        });
+    }
+
+    private void onDatabaseLoadComplete(String ecuFile, String error) {
+        CharSequence title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME;
+        if (!error.isEmpty()) {
+            mLogView.append("Database exception : " + error + "\n");
+            mStatusView.setText(title);
+            Log.e("MainActivity", "Database load completed with error: " + error);
+        } else {
+            mCurrentProject = defaultPrefs.getString(PREF_PROJECT, "");
+            mEcuDatabase.buildMaps(mCurrentProject);
+            updateEcuTypeListView(ecuFile, mCurrentProject);
+            String code = mEcuDatabase.current_project_code;
+            String name = mEcuDatabase.current_project_name;
+            title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
+            mStatusView.setText(title);
+            mLogView.append("Loaded vehicle Name: " + name + "\n");
+            Log.i("MainActivity", "Database load completed successfully for: " + name);
         }
     }
 }
