@@ -27,15 +27,15 @@ allprojects {
 ext {
     debug = file("$rootDir/EcuTweaker/debug")
     release = file("$rootDir/EcuTweaker/release")
-    appversion = "2.6"
-    appversion_int = 26
+    appversion = "2.6.1"
+    appversion_int = 261
     minSdkVersion = 21
     targetSdkVersion = 35
     compileSdkVersion = 35
     ndkVersion = '26.0.10792818'
     compileOptions_encoding = 'utf-8'
-    compileOptions_sourceCompatibility = JavaVersion.VERSION_1_8
-    compileOptions_targetCompatibility = JavaVersion.VERSION_1_8
+    compileOptions_sourceCompatibility = JavaVersion.VERSION_17
+    compileOptions_targetCompatibility = JavaVersion.VERSION_17
 }
 
 tasks.register('clean', Delete) {
