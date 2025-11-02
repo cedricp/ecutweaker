@@ -441,30 +441,44 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void initBus(String protocol, boolean fastinit) {
-        if (isChatConnected()) {
-            if (protocol.equals("CAN")) {
-                // TODO : Need look if is extended for better in this.
-                String txa = mEcuDatabase.getTxAddressById(mCurrentEcuAddressId);
-                String rxa = mEcuDatabase.getRxAddressById(mCurrentEcuAddressId);
-                if (rxa == null || txa == null) {
-                    txa = mEcuDatabase.getTxExtAddressById(mCurrentEcuAddressId);
-                    rxa = mEcuDatabase.getRxExtAddressById(mCurrentEcuAddressId);
-                }
-                if (rxa == null || txa == null)
-                    return;
-                // TODO : Need look for canline and brp here send 0 and false.
-                mObdDevice.initCan(rxa, txa, 0, false);
-            } else if (protocol.equals("KWP2000")) {
-                String hexAddr = Ecu.padLeft(Integer.toHexString(mCurrentEcuAddressId),
-                        2, "0");
-                // TODO : Check slow init mode
-                mObdDevice.initKwp(hexAddr, fastinit);
-            } else if (protocol.equals("ISO8")) {
-                String hexAddr = Ecu.padLeft(Integer.toHexString(mCurrentEcuAddressId),
-                        2, "0");
-                // TODO : Check slow init mode
-                mObdDevice.initIso8(hexAddr);
+        if (!isChatConnected()) {
+            return;
+        }
+        
+        if (mEcuDatabase == null || !mEcuDatabase.isLoaded()) {
+            mLogView.append("Cannot initialize bus: ECU database not loaded\n");
+            return;
+        }
+        
+        if (mCurrentEcuAddressId < 0) {
+            mLogView.append("Cannot initialize bus: No ECU type selected\n");
+            return;
+        }
+        
+        if (protocol.equals("CAN")) {
+            // TODO : Need look if is extended for better in this.
+            String txa = mEcuDatabase.getTxAddressById(mCurrentEcuAddressId);
+            String rxa = mEcuDatabase.getRxAddressById(mCurrentEcuAddressId);
+            if (rxa == null || txa == null) {
+                txa = mEcuDatabase.getTxExtAddressById(mCurrentEcuAddressId);
+                rxa = mEcuDatabase.getRxExtAddressById(mCurrentEcuAddressId);
             }
+            if (rxa == null || txa == null) {
+                mLogView.append("Cannot initialize CAN bus: TX/RX addresses not found for ECU\n");
+                return;
+            }
+            // TODO : Need look for canline and brp here send 0 and false.
+            mObdDevice.initCan(rxa, txa, 0, false);
+        } else if (protocol.equals("KWP2000")) {
+            String hexAddr = Ecu.padLeft(Integer.toHexString(mCurrentEcuAddressId),
+                    2, "0");
+            // TODO : Check slow init mode
+            mObdDevice.initKwp(hexAddr, fastinit);
+        } else if (protocol.equals("ISO8")) {
+            String hexAddr = Ecu.padLeft(Integer.toHexString(mCurrentEcuAddressId),
+                    2, "0");
+            // TODO : Check slow init mode
+            mObdDevice.initIso8(hexAddr);
         }
     }
 
@@ -508,9 +522,16 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "No ELM connection", Toast.LENGTH_SHORT).show();
             return;
         }
+        
+        if (mEcuDatabase == null || !mEcuDatabase.isLoaded()) {
+            Toast.makeText(this, "ECU database not loaded. Please select a project first.", Toast.LENGTH_LONG).show();
+            stopProgressDialog();
+            return;
+        }
 
         if (mCurrentEcuInfoList == null || mCurrentEcuInfoList.isEmpty()) {
             Toast.makeText(this, "Select an ECU type to auto identify", Toast.LENGTH_SHORT).show();
+            stopProgressDialog();
             return;
         }
         mObdDevice.changeHandler(mHandler);
@@ -527,11 +548,20 @@ public class MainActivity extends AppCompatActivity {
 
     void scanBusKWP() {
         if (!isChatConnected()) {
+            stopProgressDialog();
+            return;
+        }
+        
+        if (mEcuDatabase == null || !mEcuDatabase.isLoaded()) {
+            Toast.makeText(this, "ECU database not loaded. Please select a project first.", Toast.LENGTH_LONG).show();
+            stopProgressDialog();
             return;
         }
 
-        if (mCurrentEcuInfoList == null || mCurrentEcuInfoList.isEmpty())
+        if (mCurrentEcuInfoList == null || mCurrentEcuInfoList.isEmpty()) {
+            stopProgressDialog();
             return;
+        }
         mObdDevice.changeHandler(mHandler);
         mObdDevice.setSessionActive(false);
         mObdDevice.initElm();
@@ -553,11 +583,20 @@ public class MainActivity extends AppCompatActivity {
 
     void scanBusNew() {
         if (!isChatConnected()) {
+            stopProgressDialog();
+            return;
+        }
+        
+        if (mEcuDatabase == null || !mEcuDatabase.isLoaded()) {
+            Toast.makeText(this, "ECU database not loaded. Please select a project first.", Toast.LENGTH_LONG).show();
+            stopProgressDialog();
             return;
         }
 
-        if (mObdDevice == null || mCurrentEcuInfoList == null || mCurrentEcuInfoList.isEmpty())
+        if (mObdDevice == null || mCurrentEcuInfoList == null || mCurrentEcuInfoList.isEmpty()) {
+            stopProgressDialog();
             return;
+        }
 
         mEcuIdentifierNew.reInit(mCurrentEcuAddressId);
         mObdDevice.changeHandler(mHandler);

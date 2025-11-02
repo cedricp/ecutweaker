@@ -138,7 +138,12 @@ public class Ecu {
     }
 
     public String getRequestData(byte[] bytes, String requestname, String dataname) {
-        EcuDataItem dataitem = getRequest(requestname).recvbyte_dataitems.get(dataname);
+        EcuRequest request = getRequest(requestname);
+        if (request == null) {
+            Log.e("Ecu", "Request not found: " + requestname);
+            return "";
+        }
+        EcuDataItem dataitem = request.recvbyte_dataitems.get(dataname);
         EcuData ecudata = getData(dataname);
         return ecudata.getDisplayValue(bytes, dataitem);
     }
@@ -166,6 +171,10 @@ public class Ecu {
     public HashMap<String, String> getRequestValues(byte[] bytes, String requestname, boolean with_units) {
         EcuRequest request = getRequest(requestname);
         HashMap<String, String> hash = new HashMap<>();
+        if (request == null) {
+            Log.e("Ecu", "Request not found: " + requestname);
+            return hash;
+        }
         Set<String> keys = request.recvbyte_dataitems.keySet();
         Iterator<String> it = keys.iterator();
         for (; it.hasNext(); ) {
@@ -186,6 +195,10 @@ public class Ecu {
     public HashMap<String, Pair<String, String>> getRequestValuesWithUnit(byte[] bytes, String requestname) {
         EcuRequest request = getRequest(requestname);
         HashMap<String, Pair<String, String>> hash = new HashMap<>();
+        if (request == null) {
+            Log.e("Ecu", "Request not found: " + requestname);
+            return hash;
+        }
         Set<String> keys = request.recvbyte_dataitems.keySet();
         Iterator<String> it = keys.iterator();
         for (; it.hasNext(); ) {
@@ -202,6 +215,10 @@ public class Ecu {
 
     public byte[] setRequestValues(String requestname, HashMap<String, Object> hash) {
         EcuRequest req = getRequest(requestname);
+        if (req == null) {
+            Log.e("Ecu", "Request not found: " + requestname + ". Cannot write data without knowing which ECU it is.");
+            throw new IllegalArgumentException("Request '" + requestname + "' not found in ECU definition. The ECU type may not be correctly identified.");
+        }
         byte[] barray = hexStringToByteArray(req.sentbytes);
         Log.i("canapp", "Sentbytes : " + req.sentbytes);
         for (Map.Entry<String, Object> entry : hash.entrySet()) {

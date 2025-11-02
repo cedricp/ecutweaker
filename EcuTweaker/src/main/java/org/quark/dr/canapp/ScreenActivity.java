@@ -789,12 +789,25 @@ public class ScreenActivity extends AppCompatActivity {
             HashMap<String, Object> inputBuilder = new HashMap<>();
 
             ArrayList<Layout.InputData> inputs = m_requestsInputs.get(sendData.second);
+            if (inputs == null) {
+                Log.e(TAG, "No inputs found for request: " + sendData.second);
+                continue;
+            }
+            
             for (Layout.InputData input : inputs) {
                 if (m_editTextViews.containsKey(input.text)) {
                     EditText editText = m_editTextViews.get(input.text);
+                    if (editText == null) {
+                        Log.e(TAG, "EditText is null for: " + input.text);
+                        continue;
+                    }
                     String currentText = editText.getText().toString();
                     if (request.sendbyte_dataitems.containsKey(input.text)) {
                         Ecu.EcuData ecuData = m_ecu.getData(input.text);
+                        if (ecuData == null) {
+                            Log.e(TAG, "ECU data is null for: " + input.text);
+                            continue;
+                        }
                         if (!ecuData.bytesascii) {
                             if (ecuData.scaled) {
                                 if (!currentText.matches("[-+]?[0-9]*\\.?[0-9]+")) {
@@ -820,6 +833,10 @@ public class ScreenActivity extends AppCompatActivity {
 
                 if (m_spinnerViews.containsKey(input.text)) {
                     Spinner spinner = m_spinnerViews.get(input.text);
+                    if (spinner == null || spinner.getSelectedItem() == null) {
+                        Log.e(TAG, "Spinner or selected item is null for: " + input.text);
+                        continue;
+                    }
                     String currentText = spinner.getSelectedItem().toString();
                     inputBuilder.put(input.text, currentText);
                 }
@@ -827,8 +844,17 @@ public class ScreenActivity extends AppCompatActivity {
             byte[] builtStream;
             try {
                 builtStream = m_ecu.setRequestValues(sendData.second, inputBuilder);
+            } catch (IllegalArgumentException e) {
+                // This is thrown when the request is not found in ECU definition
+                e.printStackTrace();
+                Log.e(TAG, "Failed to compute frame: " + e.getMessage());
+                Toast.makeText(getApplicationContext(),
+                        getResources().getString(R.string.FRAME_COMPUTE_FAILED) + ": " + e.getMessage(),
+                        Toast.LENGTH_LONG).show();
+                return;
             } catch (Exception e) {
                 e.printStackTrace();
+                Log.e(TAG, "Unexpected error computing frame: " + e.getMessage());
                 Toast.makeText(getApplicationContext(),
                         getResources().getString(R.string.FRAME_COMPUTE_FAILED),
                         Toast.LENGTH_LONG).show();
