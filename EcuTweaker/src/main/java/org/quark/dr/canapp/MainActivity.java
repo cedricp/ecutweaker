@@ -22,6 +22,7 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.DialogInterface;
@@ -31,6 +32,9 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Looper;
+
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import android.os.Build;
@@ -62,6 +66,7 @@ import androidx.core.content.ContextCompat;
 
 import org.quark.dr.ecu.Ecu;
 import org.quark.dr.ecu.EcuDatabase;
+import org.quark.dr.ecu.ProjectData;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -176,7 +181,7 @@ public class MainActivity extends AppCompatActivity {
         mCurrentEcuAddressId = -1;
         mActivateBluetoothAsked = false;
 
-        mHandler = new MainActivity.messageHandler(this);
+        mHandler = new messageHandler(this);
         mObdDevice = null;
 
         mStatusView = findViewById(R.id.statusView);
@@ -674,7 +679,7 @@ public class MainActivity extends AppCompatActivity {
                     //return;
                 }
             }
-        } catch (android.content.ActivityNotFoundException e) {
+        } catch (ActivityNotFoundException e) {
 
         }
     }
@@ -699,7 +704,7 @@ public class MainActivity extends AppCompatActivity {
             b.putInt("linkMode", mLinkMode);
             serverIntent.putExtras(b);
             startActivityForResult(serverIntent, REQUEST_SCREEN);
-        } catch (android.content.ActivityNotFoundException e) {
+        } catch (ActivityNotFoundException e) {
 
         }
     }
