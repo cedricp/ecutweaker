@@ -19,6 +19,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import org.quark.dr.canapp.BuildConfig;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -34,7 +35,6 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Looper;
 
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import android.os.Build;
@@ -195,28 +195,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String readFileAsString(String filePath) {
-        StringBuilder result = new StringBuilder("No log file found");
         File file = new File(filePath);
-        if (file.exists()) {
-            result = new StringBuilder();
-            FileInputStream fis = null;
-            try {
-                fis = new FileInputStream(file);
-                char current;
-                while (fis.available() > 0) {
-                    current = (char) fis.read();
-                    result.append(current);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                if (fis != null) {
-                    try {
-                        fis.close();
-                    } catch (IOException ignored) {
-                    }
-                }
+        if (!file.exists()) {
+            return "No log file found";
+        }
+        
+        StringBuilder result = new StringBuilder();
+        try (FileInputStream fis = new FileInputStream(file)) {
+            int currentByte = fis.read();
+            while (currentByte != -1) {
+                result.append((char) currentByte);
+                currentByte = fis.read();
             }
+        } catch (Exception e) {
+            Log.e(TAG, "Error reading file", e);
         }
         return result.toString();
     }
@@ -356,7 +348,7 @@ public class MainActivity extends AppCompatActivity {
         mUsbSerialNumber = defaultPrefs.getString(PREF_DEVICE_USBSERIAL, "");
 
         mEcuDatabase = new EcuDatabase();
-        mEcuIdentifierNew = mEcuDatabase.new EcuIdentifierNew();
+        mEcuIdentifierNew = new EcuDatabase.EcuIdentifierNew();
 
         if (!askStorageReadPermission()) {
             mLogView.append("You need external storage permission to read database\n");
@@ -1032,7 +1024,7 @@ public class MainActivity extends AppCompatActivity {
          * Clean view
          */
         ArrayList<String> ecuNames = new ArrayList<>();
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_list_item_1,
                 ecuNames);
         mSpecificEcuListView.setAdapter(adapter);
@@ -1040,20 +1032,17 @@ public class MainActivity extends AppCompatActivity {
         final String[] projects = mEcuDatabase.getModels();
 
         Arrays.sort(projects);
-        builder.setItems(projects, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                mCurrentProject = mEcuDatabase.getProjectFromModel(projects[which]);
-                SharedPreferences.Editor edit = defaultPrefs.edit();
-                edit.putString(PREF_PROJECT, mCurrentProject);
-                edit.apply();
-                updateEcuTypeListView(mEcuFilePath, mCurrentProject);
-                String code = mEcuDatabase.current_project_code;
-                String name = mEcuDatabase.current_project_name;
-                CharSequence title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
-                mStatusView.setText(title);
-                mLogView.append("Loaded vehicle Name: " + name + "\n");
-            }
+        builder.setItems(projects, (dialog, which) -> {
+            mCurrentProject = mEcuDatabase.getProjectFromModel(projects[which]);
+            SharedPreferences.Editor edit = defaultPrefs.edit();
+            edit.putString(PREF_PROJECT, mCurrentProject);
+            edit.apply();
+            updateEcuTypeListView(mEcuFilePath, mCurrentProject);
+            String code = mEcuDatabase.current_project_code;
+            String name = mEcuDatabase.current_project_name;
+            CharSequence title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
+            mStatusView.setText(title);
+            mLogView.append("Loaded vehicle Name: " + name + "\n");
         });
 
         AlertDialog dialog = builder.create();
@@ -1282,7 +1271,7 @@ public class MainActivity extends AppCompatActivity {
                         dlgAlert.setTitle("Exception caught");
                         dlgAlert.setPositiveButton("OK", null);
                         dlgAlert.create().show();
-                        activity.mLogView.append("Exception : " + e.getMessage() + "\n");
+                        mLogView.append("Exception : " + e.getMessage() + "\n");
                     }
                     break;
                 case MESSAGE_DEVICE_NAME:
@@ -1292,7 +1281,7 @@ public class MainActivity extends AppCompatActivity {
                             Toast.LENGTH_SHORT).show();
                     break;
                 case MESSAGE_LOG:
-                    activity.mLogView.append(activity.getResources().getString(R.string.BT_MANAGER_MESSAGE) + " : "
+                    mLogView.append(activity.getResources().getString(R.string.BT_MANAGER_MESSAGE) + " : "
                             + msg.getData().getString(TOAST) + "\n");
                     break;
                 case MESSAGE_QUEUE_STATE:

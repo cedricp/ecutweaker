@@ -47,6 +47,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 
 import org.quark.dr.usbserial.driver.UsbSerialDriver;
 import org.quark.dr.usbserial.driver.UsbSerialPort;
@@ -54,7 +55,6 @@ import org.quark.dr.usbserial.driver.UsbSerialProber;
 import org.quark.dr.usbserial.util.HexDump;
 
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -138,7 +138,7 @@ public class UsbDeviceActivity extends Activity {
         mProgressBar = findViewById(R.id.progressBar);
         mProgressBarTitle = findViewById(R.id.progressBarTitle);
 
-        mAdapter = new ArrayAdapter<UsbSerialPort>(this,
+        mAdapter = new ArrayAdapter<>(this,
                 R.layout.usb_device_list_item, mEntries) {
             @Override
             public View getView(int position, View convertView, @NonNull ViewGroup parent) {
@@ -213,7 +213,7 @@ public class UsbDeviceActivity extends Activity {
                 mUsbManager.requestPermission(port.getDriver().getDevice(), mPermissionIntent);
             }
         });
-        getApplicationContext().registerReceiver(mReceiver, new IntentFilter(ACTION_USB_PERMISSION), Context.RECEIVER_NOT_EXPORTED);
+        ContextCompat.registerReceiver(getApplicationContext(), mReceiver, new IntentFilter(ACTION_USB_PERMISSION), ContextCompat.RECEIVER_NOT_EXPORTED);
     }
 
     @Override

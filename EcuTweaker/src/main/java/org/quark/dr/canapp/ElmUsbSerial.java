@@ -6,14 +6,15 @@ import android.content.Intent;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Handler;
+import android.util.Log;
 
 import org.quark.dr.usbserial.driver.UsbSerialDriver;
 import org.quark.dr.usbserial.driver.UsbSerialPort;
 import org.quark.dr.usbserial.driver.UsbSerialProber;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class ElmUsbSerial extends ElmBase {
     private static final String ACTION_USB_PERMISSION = "org.quark.dr.canapp.USB_PERMISSION";
@@ -49,10 +50,8 @@ public class ElmUsbSerial extends ElmBase {
         final List<UsbSerialDriver> drivers =
                 UsbSerialProber.getDefaultProber().findAllDrivers(usbManager);
 
-        final List<UsbSerialPort> result = new ArrayList<>();
         for (final UsbSerialDriver driver : drivers) {
             final List<UsbSerialPort> ports = driver.getPorts();
-            result.addAll(ports);
             for (UsbSerialPort port : ports) {
                 if (!usbManager.hasPermission(port.getDriver().getDevice())) {
                     logInfo("No permission to access USB device " + serial);
@@ -64,7 +63,7 @@ public class ElmUsbSerial extends ElmBase {
                 }
                 try {
                     port.open(connection);
-                    if (port.getSerial().equals(mUsbSerial)) {
+                    if (Objects.equals(port.getSerial(), mUsbSerial)) {
                         msPort = port;
                         break;
                     } else {
@@ -127,9 +126,9 @@ public class ElmUsbSerial extends ElmBase {
     }
 
     @Override
-    protected String writeRaw(String raw_buffer) {
-        raw_buffer += "\r";
-        return mConnectedThread.write(raw_buffer.getBytes());
+    protected String writeRaw(String rawBuffer) {
+        String data = rawBuffer + "\r";
+        return mConnectedThread.write(data.getBytes());
     }
 
     private void connectionLost(String message) {
@@ -181,16 +180,17 @@ public class ElmUsbSerial extends ElmBase {
         public void writeToElm(byte[] buffer) {
             try {
                 if (mUsbSerialPort != null) {
-                    byte[] arrayOfBytes = buffer;
-                    mUsbSerialPort.write(arrayOfBytes, 500);
+                    mUsbSerialPort.write(buffer, 500);
                 }
-            } catch (Exception localIOException1) {
+            } catch (IOException localIOException1) {
                 connectionLost("USBWRITE IO Exception : " + localIOException1.getMessage());
                 try {
                     mUsbSerialPort.close();
                 } catch (IOException e) {
-
+                    Log.e("ElmUsbSerial", "Error closing port after write failure", e);
                 }
+            } catch (Exception e) {
+                connectionLost("USBWRITE Error : " + e.getMessage());
             }
         }
 
@@ -216,22 +216,19 @@ public class ElmUsbSerial extends ElmBase {
                     if (bytes_count > 0) {
                         boolean eof = false;
                         String res = new String(bytes, 0, bytes_count);
-                        res = res.substring(0, bytes_count);
 
-                        if (res.length() > 0) {
-                            // Only break when ELM has sent termination char
-                            if (res.charAt(res.length() - 1) == '>') {
-                                if (res.length() > 2)
-                                    res = res.substring(0, res.length() - 2);
-                                else
-                                    res = "";
-                                eof = true;
-                            }
-                            res = res.replaceAll("\r", "\n");
-                            final_res.append(res);
-                            if (eof)
-                                break;
+                        // Only break when ELM has sent termination char
+                        if (res.charAt(res.length() - 1) == '>') {
+                            if (res.length() > 2)
+                                res = res.substring(0, res.length() - 2);
+                            else
+                                res = "";
+                            eof = true;
                         }
+                        res = res.replace("\r", "\n");
+                        final_res.append(res);
+                        if (eof)
+                            break;
                     } else {
                         try {
                             Thread.sleep(5);

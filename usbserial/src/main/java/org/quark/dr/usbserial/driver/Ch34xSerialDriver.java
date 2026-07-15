@@ -52,7 +52,7 @@ public class Ch34xSerialDriver implements UsbSerialDriver {
     }
 
     public static Map<Integer, int[]> getSupportedDevices() {
-        final Map<Integer, int[]> supportedDevices = new LinkedHashMap<Integer, int[]>();
+        final Map<Integer, int[]> supportedDevices = new LinkedHashMap<>();
         supportedDevices.put(org.quark.dr.usbserial.drive.UsbId.VENDOR_QINHENG, new int[]{
                 org.quark.dr.usbserial.drive.UsbId.QINHENG_HL340
         });
@@ -212,16 +212,16 @@ public class Ch34xSerialDriver implements UsbSerialDriver {
         }
 
 
-        private int controlIn(int request, int value, int index, byte[] buffer) {
+        private int controlIn(int request, int value, byte[] buffer) {
             final int REQTYPE_HOST_TO_DEVICE = UsbConstants.USB_TYPE_VENDOR | UsbConstants.USB_DIR_IN;
             return mConnection.controlTransfer(REQTYPE_HOST_TO_DEVICE, request,
-                    value, index, buffer, buffer.length, USB_TIMEOUT_MILLIS);
+                    value, 0, buffer, buffer.length, USB_TIMEOUT_MILLIS);
         }
 
 
         private void checkState(String msg, int request, int value, int[] expected) throws IOException {
             byte[] buffer = new byte[expected.length];
-            int ret = controlIn(request, value, 0, buffer);
+            int ret = controlIn(request, value, buffer);
 
             if (ret < 0) {
                 throw new IOException("Faild send cmd [" + msg + "]");

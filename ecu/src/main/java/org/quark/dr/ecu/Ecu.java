@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
@@ -30,19 +31,19 @@ public class Ecu {
     private String protocol;
     private String funcaddr;
     private String ecu_name;
-    private String kw1, kw2, ecu_send_id, ecu_recv_id;
+    private String ecu_send_id, ecu_recv_id;
     private boolean fastinit;
+    private int m_baudrate = 500000;
+    private int m_canline = 0;
     private String m_defaultSDS;
 
     public Ecu(InputStream is) {
-        String line;
-        BufferedReader br;
         StringBuilder sb = new StringBuilder();
 
-        try {
-            br = new BufferedReader(new InputStreamReader(is));
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+            String line;
             while ((line = br.readLine()) != null) {
-                sb.append(line + "\n");
+                sb.append(line).append("\n");
             }
         } catch (Exception e) {
             Log.e("Ecu", "Error reading input stream", e);
@@ -79,8 +80,8 @@ public class Ecu {
         return -((val) & 0x8000) | (val & 0x7fff);
     }
 
-    public static byte[] hexStringToByteArray(String s) {
-        s = s.replace(" ", "");
+    public static byte[] hexStringToByteArray(String sIn) {
+        String s = sIn.replace(" ", "");
         int len = s.length();
         byte[] data = new byte[len / 2];
         for (int i = 0, j = 0; i < len; i += 2, ++j) {
@@ -101,9 +102,9 @@ public class Ecu {
     public static String padLeft(String str, int length, String padChar) {
         if (str.length() >= length)
             return str.substring(0, length);
-        String pad = "";
+        StringBuilder pad = new StringBuilder();
         for (int i = 0; i < length; i++) {
-            pad += padChar;
+            pad.append(padChar);
         }
         return pad.substring(str.length()) + str;
     }
@@ -124,10 +125,8 @@ public class Ecu {
             m_defaultSDS = sdsrequests.get(sdsname);
     }
 
-    public String hexToBinary(String Hex) {
-        BigInteger i = new BigInteger(Hex, 16);
-        String Bin = i.toString(2);
-        return Bin;
+    public String hexToBinary(String hex) {
+        return new BigInteger(hex, 16).toString(2);
     }
 
     public EcuData getData(String dataname) {
@@ -167,6 +166,14 @@ public class Ecu {
 
     public String getRxId() {
         return ecu_recv_id;
+    }
+
+    public int getBaudrate() {
+        return m_baudrate;
+    }
+
+    public int getCanline() {
+        return m_canline;
     }
 
     public Map<String, String> getRequestValues(byte[] bytes, String requestname, boolean with_units) {
@@ -300,6 +307,8 @@ public class Ecu {
             if (ecudef.has("obd")) {
                 JSONObject obd = ecudef.getJSONObject("obd");
                 protocol = obd.getString("protocol");
+                if (obd.has("baudrate")) m_baudrate = obd.getInt("baudrate");
+                if (obd.has("canline")) m_canline = obd.getInt("canline");
                 if (Objects.equals(protocol, "CAN")) {
                     ecu_send_id = obd.getString("send_id");
                     ecu_recv_id = obd.getString("recv_id");
@@ -566,7 +575,7 @@ public class Ecu {
                         throw new ClassCastException("Value must be a hex string");
                     }
                     String vv = (String) value;
-                    finalbinvalue = hexToBinary(vv.replaceAll(" ", ""));
+                    finalbinvalue = hexToBinary(vv.replace(" ", ""));
                 }
             }
 
@@ -586,21 +595,25 @@ public class Ecu {
                  * Handle little endian value (not an easy task...)
                  */
                 // Moves the bytes to to left
+                StringBuilder finalbinvalueBuilder = new StringBuilder(finalbinvalue);
+                StringBuilder bitmaskBuilder = new StringBuilder(bitmask);
                 for (int i = 0; i < startBit; ++i) {
-                    finalbinvalue += "0";
-                    bitmask += "0";
+                    finalbinvalueBuilder.append("0");
+                    bitmaskBuilder.append("0");
                 }
+                finalbinvalue = finalbinvalueBuilder.toString();
+                bitmask = bitmaskBuilder.toString();
 
                 finalbinvalue = padLeft(finalbinvalue, requiredDataBytesLen * 8, "0");
                 bitmask = padLeft(bitmask, requiredDataBytesLen * 8, "0");
-                String tmp = "";
-                String tmpmask = "";
+                StringBuilder tmp = new StringBuilder();
+                StringBuilder tmpmask = new StringBuilder();
                 for (int i = requiredDataBytesLen - 1; i >= 0; --i) {
-                    tmp += finalbinvalue.substring(i * 8, i * 8 + 8);
-                    tmpmask += bitmask.substring(i * 8, i * 8 + 8);
+                    tmp.append(finalbinvalue, i * 8, i * 8 + 8);
+                    tmpmask.append(bitmask, i * 8, i * 8 + 8);
                 }
-                finalbinvalue = tmp;
-                bitmask = tmpmask;
+                finalbinvalue = tmp.toString();
+                bitmask = tmpmask.toString();
             }
 
             char[] binaryRequest = requestasbin.toString().toCharArray();
@@ -657,24 +670,28 @@ public class Ecu {
                 throw new ArrayIndexOutOfBoundsException("Response too short");
             }
 
-            String hexToBin = "";
+            String hexToBin;
             String hex;
 
             if (little_endian) {
                 int bitlength = requiredDataBytesLen * 8;
+                StringBuilder hexToBinBuilder = new StringBuilder();
                 for (int i = 0; i < requiredDataBytesLen; ++i) {
                     byte b = resp[i + sb];
-                    hexToBin = byteToBinaryString(b, 8) + hexToBin;
+                    hexToBinBuilder.insert(0, byteToBinaryString(b, 8));
                 }
+                hexToBin = hexToBinBuilder.toString();
 
                 hexToBin = hexToBin.substring(bitlength - startBit - bitscount, bitlength - startBit);
                 BigInteger bigValue = new BigInteger(hexToBin, 2);
                 hex = bigValue.toString(16);
             } else {
+                StringBuilder hexToBinBuilder = new StringBuilder();
                 for (int i = 0; i < requiredDataBytesLen; ++i) {
                     byte b = resp[i + sb];
-                    hexToBin += byteToBinaryString(b, 8);
+                    hexToBinBuilder.append(byteToBinaryString(b, 8));
                 }
+                hexToBin = hexToBinBuilder.toString();
 
                 hexToBin = hexToBin.substring(startBit, startBit + bitscount);
                 BigInteger bigValue = new BigInteger(hexToBin, 2);
@@ -814,7 +831,7 @@ public class Ecu {
             return sendbyte_dataitems.get(item);
         }
 
-        public class SDS {
+        public static class SDS {
             public boolean nosds = true;
             public boolean plant = true;
             public boolean aftersales = true;

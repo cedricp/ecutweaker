@@ -36,7 +36,7 @@ public class IsoTPDecode {
         int cframe = 0;
         int nbytes = 0;
 
-        if (responses.size() == 0)
+        if (responses.isEmpty())
             return "ERROR : NO DATA";
 
         if (responses.size() == 1) {
@@ -65,6 +65,7 @@ public class IsoTPDecode {
                 result = "ERROR : BAD CAN FORMAT (MULTILINE)";
             }
 
+            StringBuilder resultBuilder = new StringBuilder(result);
             responses.remove(0);
             for (String fr : responses) {
                 if (!isHexadecimal(fr)) {
@@ -73,15 +74,15 @@ public class IsoTPDecode {
                 if (fr.charAt(0) == '2') {
                     int tmp_fn = Integer.parseInt(fr.substring(1, 2), 16);
                     if (tmp_fn != (cframe % 16)) {
-                        result = "ERROR : BAD CFC";
-                        break;
+                        return "ERROR : BAD CFC";
                     }
                     cframe += 1;
-                    result += fr.substring(2, (Math.min(fr.length(), 16)));
+                    resultBuilder.append(fr, 2, (Math.min(fr.length(), 16)));
                 } else {
-                    result = "ERROR : BAD CAN FORMAT";
+                    return "ERROR : BAD CAN FORMAT";
                 }
             }
+            result = resultBuilder.toString();
         }
         if (result.length() >= nbytes * 2)
             result = result.substring(0, nbytes * 2);

@@ -26,32 +26,34 @@ public class CustomAdapter extends ArrayAdapter<String> {
     @Override
     public View getDropDownView(int position, View convertView,
                                 @NonNull ViewGroup parent) {
-
-        if (convertView == null) {
+        View view = convertView;
+        if (view == null) {
             LayoutInflater inflater = LayoutInflater.from(context);
-            convertView = inflater.inflate(
+            view = inflater.inflate(
                     android.R.layout.simple_spinner_item, parent, false);
         }
 
-        TextView tv = convertView.findViewById(android.R.id.text1);
+        TextView tv = view.findViewById(android.R.id.text1);
         tv.setText(items[position]);
         //tv.setTextSize(textSize);
-        return convertView;
+        return view;
     }
 
+    @NonNull
     @Override
     public View getView(int position, View convertView, @NonNull ViewGroup parent) {
-        if (convertView == null) {
+        View view = convertView;
+        if (view == null) {
             LayoutInflater inflater = LayoutInflater.from(context);
-            convertView = inflater.inflate(
+            view = inflater.inflate(
                     android.R.layout.simple_spinner_item, parent, false);
         }
 
-        TextView tv = convertView.findViewById(android.R.id.text1);
+        TextView tv = view.findViewById(android.R.id.text1);
         tv.setText(items[position]);
         tv.setTextColor(color);
         tv.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
-        return convertView;
+        return view;
     }
 
     public void setSpinnerTextSize(int size) {

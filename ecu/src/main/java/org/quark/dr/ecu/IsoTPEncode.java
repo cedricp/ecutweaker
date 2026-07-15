@@ -42,7 +42,7 @@ public class IsoTPEncode {
             String header = "1" + String.format("%03X", cmd_len);
             raw_command.add(header.substring(0, 3) + message.substring(0, 12));
             message = message.substring(12);
-            while (message.length() > 0) {
+            while (!message.isEmpty()) {
                 header = "2" + String.format("%X", frame_number++);
                 int remaining_len = message.length();
                 raw_command.add(header + message.substring(0, (Math.min(remaining_len, 14))));

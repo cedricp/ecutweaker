@@ -26,6 +26,7 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbRequest;
+import android.os.Build;
 import android.util.Log;
 
 import java.io.IOException;
@@ -288,7 +289,14 @@ public class FtdiSerialDriver implements UsbSerialDriver {
                 request.initialize(mConnection, endpoint);
 
                 final ByteBuffer buf = ByteBuffer.wrap(dest);
-                if (!request.queue(buf, readAmt)) {
+                buf.limit(readAmt);
+                boolean queued;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    queued = request.queue(buf);
+                } else {
+                    queued = request.queue(buf, readAmt);
+                }
+                if (!queued) {
                     throw new IOException("Error queueing request.");
                 }
 

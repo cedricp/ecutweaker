@@ -23,8 +23,6 @@ import java.util.UUID;
 
 public class ElmBluetooth extends ElmBase {
     // Debugging
-    private static final String TAG = "ElmBluetoothThread";
-    private static final boolean D = false;
     private static final UUID SPP_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private final Context mContext;
     private ConnectThread mConnectThread;
@@ -152,9 +150,9 @@ public class ElmBluetooth extends ElmBase {
     }
 
     @Override
-    protected String writeRaw(String raw_buffer) {
-        raw_buffer += "\r";
-        return mConnectedThread.write(raw_buffer);
+    protected String writeRaw(String rawBuffer) {
+        String data = rawBuffer + "\r";
+        return mConnectedThread.write(data);
     }
 
     private void connectionFailed() {
@@ -211,12 +209,12 @@ public class ElmBluetooth extends ElmBase {
                         
                         // Method 4: Alternative reflection with different channel
                         try {
-                            Method m = device.getClass().getMethod("createRfcommSocket", int.class);  
+                            Method m = device.getClass().getMethod("createRfcommSocket", int.class);
                             tmp = (BluetoothSocket) m.invoke(device, 2);
                             logInfo("Socket created using reflection method (channel 2)");
                         } catch (Exception e4) {
                             logInfo("Reflection method channel 2 failed: " + e4.getMessage());
-                            
+
                             // Method 5: Last resort - try with channel 3
                             try {
                                 Method m = device.getClass().getMethod("createRfcommSocket", int.class);
@@ -396,11 +394,11 @@ public class ElmBluetooth extends ElmBase {
                         continue;
                     }
 
-                    // Convert carriage return to line feed
-                    if (reply_buffer[u] == 0x0d)
+                    byte b = reply_buffer[u];
+                    if (b == 0x0d) {
+                        // Convert carriage return to line feed
                         reply_buffer[u] = 0x0a;
-
-                    if (reply_buffer[u] == '>') { // End of communication
+                    } else if (b == '>') { // End of communication
                         return new String(reply_buffer, 0, u - 1);
                     }
                 } catch (IOException e) {

@@ -22,7 +22,6 @@ public class ElmWifi extends ElmBase {
     private static final String TAG = "ElmWifiThread";
     private static final int mServerPort = 35000;
     private final Context mContext;
-    private Socket mSocket;
     private WifiManager.WifiLock wifiLock;
     private String mServerIPAddress = "192.168.0.10";
     private String mDeviceName = "Elm327";
@@ -153,20 +152,15 @@ public class ElmWifi extends ElmBase {
     }
 
     private void createConnectedThread(Socket socket) {
-        mSocket = socket;
         mConnectedThread = new ElmWifi.ConnectedThread(socket);
         mConnectedThread.start();
         setState(STATE_CONNECTED);
     }
 
-    public boolean isConnected() {
-        return (mSocket != null) && mSocket.isConnected() && mRunningStatus;
-    }
-
     @Override
-    protected String writeRaw(String raw_buffer) {
-        raw_buffer += "\r";
-        return mConnectedThread.write(raw_buffer.getBytes());
+    protected String writeRaw(String rawBuffer) {
+        String data = rawBuffer + "\r";
+        return mConnectedThread.write(data.getBytes());
     }
 
 
@@ -212,12 +206,12 @@ public class ElmWifi extends ElmBase {
                     mOutStream.write(buffer);
                     mOutStream.flush();
                 }
-            } catch (Exception localIOException1) {
-                connectionLost(localIOException1.getMessage());
+            } catch (IOException localIOException) {
+                connectionLost(localIOException.getMessage());
                 try {
                     mmSocket.close();
                 } catch (IOException e) {
-
+                    Log.e(TAG, "Error closing socket after write failure", e);
                 }
             }
         }
@@ -324,8 +318,7 @@ public class ElmWifi extends ElmBase {
                 mConnecting = false;
                 return;
             } catch (IOException e) {
-                System.out.println(">>> Except");
-                e.printStackTrace();
+                Log.e(TAG, "Connection failed", e);
             }
             setState(STATE_DISCONNECTED);
         }

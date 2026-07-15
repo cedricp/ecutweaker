@@ -6,6 +6,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 
 import org.quark.dr.ecu.EcuDatabase;
 import org.quark.dr.ecu.IsoTPDecode;
@@ -20,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Objects;
 
 public abstract class ElmBase {
     // Constants that indicate the current connection state
@@ -224,7 +226,7 @@ public abstract class ElmBase {
                 }
             } catch (IOException e) {
                 logInfo("Log file create error : " + e.getMessage());
-                e.printStackTrace();
+                Log.e("ElmBase", "Error creating log file", e);
             }
         }
         try {
@@ -232,14 +234,14 @@ public abstract class ElmBase {
             mLogFile = new OutputStreamWriter(fileOutputStream);
         } catch (FileNotFoundException e) {
             logInfo("Log file output stream error : " + e.getMessage());
-            e.printStackTrace();
+            Log.e("ElmBase", "Log file not found", e);
         }
         try {
             mLogFile.append(getTimeStamp()).append(" Log file created\n");
             mLogFile.flush();
         } catch (Exception e) {
             logInfo("Log file write error : " + e.getMessage());
-            e.printStackTrace();
+            Log.e("ElmBase", "Error writing to log file", e);
         }
     }
 
@@ -248,7 +250,7 @@ public abstract class ElmBase {
             try {
                 mLogFile.flush();
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e("ElmBase", "Error flushing logs", e);
             }
         }
     }
@@ -259,7 +261,7 @@ public abstract class ElmBase {
             try {
                 mLogFile.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e("ElmBase", "Error closing log file", e);
             }
         }
     }
@@ -275,9 +277,10 @@ public abstract class ElmBase {
         write("AT Z");        // reset ELM
     }
 
-    public void initCan(String rxa, String txa, Integer canline, boolean brp) {
+    public void initCan(String rxa, String txa, Integer canlineIn, boolean brp) {
         logInfo("Intializing CAN protocol...");
         mProtocol = "CAN";
+        int canline = (canlineIn == null) ? -1 : canlineIn;
         // Based on https://github.com/cedricp/ddt4all/blob/master/elm.py#L1201
         if (canline == -1) {
             // TODO : Uses 1 this need review
@@ -485,8 +488,7 @@ public abstract class ElmBase {
                     result = message + ";" + result;
 
                     int result_length = result.length();
-                    byte[] tmpbuf = new byte[result_length];
-                    System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);
+                    byte[] tmpbuf = result.getBytes();
                     synchronized (this) {
                         if (mConnectionHandler != null) {
                             mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_READ,
@@ -496,7 +498,7 @@ public abstract class ElmBase {
                         }
                     }
                 } else {
-                    if (mProtocol.equals("CAN")) {
+                    if (Objects.equals(mProtocol, "CAN")) {
                         if (mCFC0)
                             sendCanCFC0(message);
                         else
@@ -525,7 +527,7 @@ public abstract class ElmBase {
             }
 
             // Keep session alive
-            if (mProtocol.equals("CAN") && mSessionActive && ((System.currentTimeMillis() - timer) > 1500) && mRxa > 0) {
+            if (Objects.equals(mProtocol, "CAN") && mSessionActive && ((System.currentTimeMillis() - timer) > 1500) && mRxa > 0) {
                 timer = System.currentTimeMillis();
                 writeRaw("013E");
             }
@@ -546,7 +548,7 @@ public abstract class ElmBase {
         for (String s : messageResult.split("\n")) {
             // Remove useless whitespaces
             String cleanedMessage = s.replace(" ", "");
-            if (cleanedMessage.equals(message)) {
+            if (Objects.equals(cleanedMessage, message)) {
                 // Echo cancellation
                 continue;
             }
@@ -567,9 +569,8 @@ public abstract class ElmBase {
         result = message + ";" + result;
 
         int result_length = result.length();
-        byte[] tmpbuf = new byte[result_length];
+        byte[] tmpbuf = result.getBytes();
         //Make copy for not to rewrite in other thread
-        System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);
         synchronized (this) {
             if (mConnectionHandler != null) {
                 mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, -1, tmpbuf).sendToTarget();
@@ -577,7 +578,8 @@ public abstract class ElmBase {
         }
     }
 
-    protected void sendCanCFC0(String message) {
+    protected void sendCanCFC0(String messageIn) {
+        String message = messageIn;
         if (!isHexadecimal(message))
             return;
 
@@ -629,7 +631,7 @@ public abstract class ElmBase {
                 String subs = s;
                 if (subs.length() > raw_cmd_len)
                     subs = s.substring(0, raw_cmd_len);
-                if (subs.equals(raw_command.get(Fc - 1)))
+                if (Objects.equals(subs, raw_command.get(Fc - 1)))
                     continue;
 
                 s = s.replace(" ", "");
@@ -667,17 +669,14 @@ public abstract class ElmBase {
                     }
                     break;
                 } else if (s.startsWith("037F") && s.startsWith("78", 6)) {
-                    if (s0.size() > 0 && s.equals(s0.get(s0.size() - 1))) {
+                    if (!s0.isEmpty() && Objects.equals(s, s0.get(s0.size() - 1))) {
                         noerrors = false;
                         errorMsg = "Cannot handle 037F78 yet !";
                         break;
                         // Heavy method here !!
-                    } else {
-                        continue;
                     }
                 } else {
                     responses.add(s);
-                    continue;
                 }
             }
 
@@ -702,7 +701,7 @@ public abstract class ElmBase {
                 }
                 tb = tc;
 
-                frsp = writeRaw(raw_command.get(Fc));
+                writeRaw(raw_command.get(Fc));
                 ++Fc;
             }
         }
@@ -712,7 +711,7 @@ public abstract class ElmBase {
             noerrors = false;
             errorMsg = "Cannot send CAN frame with software flow control";
         } else {
-            int nbytes = 0;
+            int nbytes;
             String response0 = responses.get(0);
             if (response0.charAt(0) == '0') {
                 // Single frame
@@ -731,7 +730,6 @@ public abstract class ElmBase {
                     String frsp = writeRaw("300" + sBS + "00" + sBS);
 
                     // Analyse response
-                    boolean nodataflag = false;
                     for (String s : frsp.split("\n")) {
                         // Echo cancel
                         if (s.startsWith(raw_command.get(Fc - 1))) {
@@ -739,7 +737,6 @@ public abstract class ElmBase {
                         }
 
                         if (s.contains("NO DATA")) {
-                            nodataflag = true;
                             break;
                         }
 
@@ -761,11 +758,6 @@ public abstract class ElmBase {
                                 ++cframe;
                                 result.append(s, 2, 16);
                             }
-                            continue;
-                        }
-
-                        if (nodataflag) {
-                            break;
                         }
                     }
                 }
@@ -790,14 +782,13 @@ public abstract class ElmBase {
             }
         } catch (IOException e) {
             logInfo("Log error : " + e.getMessage());
-            e.printStackTrace();
+            Log.e("ElmBase", "Error logging CAN CFC", e);
         }
 
         result.insert(0, message + ";");
         int result_length = result.length();
-        byte[] tmpbuf = new byte[result_length];
+        byte[] tmpbuf = result.toString().getBytes();
         //Make copy for not to rewrite in other thread
-        System.arraycopy(result.toString().getBytes(), 0, tmpbuf, 0, result_length);
         synchronized (this) {
             if (mConnectionHandler != null) {
                 mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, -1, tmpbuf).sendToTarget();
@@ -821,12 +812,12 @@ public abstract class ElmBase {
                 // Remove unwanted characters
                 s = s.replace("\n", "");
                 // Echo cancellation
-                if (s.equals(frame))
+                if (Objects.equals(s, frame))
                     continue;
 
                 // Remove whitespaces
                 s = s.replace(" ", "");
-                if (s.length() == 0)
+                if (s.isEmpty())
                     continue;
 
                 if (isHexadecimal(s)) {
@@ -857,14 +848,13 @@ public abstract class ElmBase {
             }
         } catch (IOException e) {
             logInfo("Log error : " + e.getMessage());
-            e.printStackTrace();
+            Log.e("ElmBase", "Error logging CAN", e);
         }
 
         result = message + ";" + result;
         int result_length = result.length();
-        byte[] tmpbuf = new byte[result_length];
+        byte[] tmpbuf = result.getBytes();
         //Make copy for not to rewrite in other thread
-        System.arraycopy(result.getBytes(), 0, tmpbuf, 0, result_length);
         synchronized (this) {
             if (mConnectionHandler != null) {
                 mConnectionHandler.obtainMessage(ScreenActivity.MESSAGE_READ, result_length, -1, tmpbuf).sendToTarget();
@@ -881,7 +871,7 @@ public abstract class ElmBase {
             try {
                 mLogFile.append("New session with ECU ").append(name).append("\n");
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e("ElmBase", "Error writing ECU name to log", e);
             }
         }
     }
