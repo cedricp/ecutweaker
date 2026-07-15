@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -57,7 +58,8 @@ public class ElmBluetooth extends ElmBase {
         }
         
         setState(STATE_CONNECTING);
-        BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+        BluetoothManager bluetoothManager = (BluetoothManager) mContext.getSystemService(Context.BLUETOOTH_SERVICE);
+        BluetoothAdapter btAdapter = bluetoothManager != null ? bluetoothManager.getAdapter() : null;
         if (btAdapter == null) {
             logInfo("BluetoothAdapter is null");
             return false;
@@ -242,7 +244,8 @@ public class ElmBluetooth extends ElmBase {
             }
 
             // Always cancel discovery because it will slow down a connection
-            BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+            BluetoothManager bluetoothManager = (BluetoothManager) mContext.getSystemService(Context.BLUETOOTH_SERVICE);
+            BluetoothAdapter btAdapter = bluetoothManager != null ? bluetoothManager.getAdapter() : null;
             if (btAdapter == null) {
                 logInfo("BluetoothAdapter is null in ConnectThread");
                 connectionFailed();

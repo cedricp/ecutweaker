@@ -19,8 +19,9 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
-import android.text.Html;
+import androidx.core.text.HtmlCompat;
 import android.text.Spanned;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -48,6 +49,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 
 import org.quark.dr.ecu.Ecu;
@@ -60,6 +62,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -127,6 +130,18 @@ public class ScreenActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_screen);
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                stopAutoReload();
+                if (mChatService != null) {
+                    mChatService.changeHandler(null);
+                }
+                finish();
+            }
+        });
+
         initialize(savedInstanceState);
     }
 
@@ -736,7 +751,7 @@ public class ScreenActivity extends AppCompatActivity {
             }
 
             if (request.sentbytes.equals(req)) {
-                HashMap<String, Pair<String, String>> mapValues;
+                Map<String, Pair<String, String>> mapValues;
                 try {
                     byte[] bytes = hexStringToByteArray(response);
                     mapValues = m_ecu.getRequestValuesWithUnit(bytes, requestname);
@@ -928,14 +943,6 @@ public class ScreenActivity extends AppCompatActivity {
         super.onStop();
     }
 
-    @Override
-    public void onBackPressed() {
-        stopAutoReload();
-        if (mChatService != null) {
-            mChatService.changeHandler(null);
-        }
-        super.onBackPressed();
-    }
 
     void setConnectionStatus(int c) {
         if (c == STATE_CONNECTED) {
@@ -1199,7 +1206,7 @@ public class ScreenActivity extends AppCompatActivity {
             }
         }
 
-        Spanned message = Html.fromHtml(dtcReport.toString());
+        Spanned message = HtmlCompat.fromHtml(dtcReport.toString(), HtmlCompat.FROM_HTML_MODE_LEGACY);
         AlertDialog alertDialog = new AlertDialog.Builder(ScreenActivity.this).create();
         alertDialog.setTitle("DTC Report");
         alertDialog.setMessage(message);
@@ -1212,6 +1219,7 @@ public class ScreenActivity extends AppCompatActivity {
         private final ScreenActivity activity;
 
         messageHandler(ScreenActivity ac) {
+            super(Looper.getMainLooper());
             activity = ac;
         }
 

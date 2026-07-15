@@ -22,6 +22,9 @@ allprojects {
         mavenCentral()
         maven { url 'https://jitpack.io' }
     }
+    tasks.withType(JavaCompile).configureEach {
+        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+    }
 }
 
 ext {
