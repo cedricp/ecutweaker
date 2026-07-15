@@ -103,13 +103,11 @@ public class Layout {
         }
     }
 
-    private static class ListComparator implements Comparator {
+    private static class ListComparator implements Comparator<Pair<Integer, ?>> {
 
         @Override
-        public int compare(Object o1, Object o2) {
-            Pair<Integer, String> O1 = (Pair<Integer, String>) o1;
-            Pair<Integer, String> O2 = (Pair<Integer, String>) o2;
-            return O2.first - O1.first;
+        public int compare(Pair<Integer, ?> o1, Pair<Integer, ?> o2) {
+            return o2.first - o1.first;
         }
     }
 

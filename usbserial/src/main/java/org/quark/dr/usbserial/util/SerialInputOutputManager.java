@@ -112,13 +112,13 @@ public class SerialInputOutputManager implements Runnable {
 
         Log.i(TAG, "Running ..");
         try {
-            while (true) {
+            do {
                 if (getState() != State.RUNNING) {
                     Log.i(TAG, "Stopping mState=" + getState());
                     break;
                 }
                 step();
-            }
+            } while (true);
         } catch (Exception e) {
             Log.w(TAG, "Run ending due to exception: " + e.getMessage(), e);
             final Listener listener = getListener();
@@ -135,13 +135,13 @@ public class SerialInputOutputManager implements Runnable {
 
     private void step() throws IOException {
         // Handle incoming data.
-        int len = mDriver.read(mReadBuffer.array(), READ_WAIT_MILLIS);
-        if (len > 0) {
-            if (DEBUG) Log.d(TAG, "Read data len=" + len);
+        int readLen = mDriver.read(mReadBuffer.array(), READ_WAIT_MILLIS);
+        if (readLen > 0) {
+            if (DEBUG) Log.d(TAG, "Read data len=" + readLen);
             final Listener listener = getListener();
             if (listener != null) {
-                final byte[] data = new byte[len];
-                mReadBuffer.get(data, 0, len);
+                final byte[] data = new byte[readLen];
+                mReadBuffer.get(data, 0, readLen);
                 listener.onNewData(data);
             }
             mReadBuffer.clear();
@@ -149,18 +149,19 @@ public class SerialInputOutputManager implements Runnable {
 
         // Handle outgoing data.
         byte[] outBuff = null;
+        int writeLen = 0;
         synchronized (mWriteBuffer) {
-            len = mWriteBuffer.position();
-            if (len > 0) {
-                outBuff = new byte[len];
+            writeLen = mWriteBuffer.position();
+            if (writeLen > 0) {
+                outBuff = new byte[writeLen];
                 mWriteBuffer.rewind();
-                mWriteBuffer.get(outBuff, 0, len);
+                mWriteBuffer.get(outBuff, 0, writeLen);
                 mWriteBuffer.clear();
             }
         }
         if (outBuff != null) {
             if (DEBUG) {
-                Log.d(TAG, "Writing data len=" + len);
+                Log.d(TAG, "Writing data len=" + writeLen);
             }
             mDriver.write(outBuff, READ_WAIT_MILLIS);
         }

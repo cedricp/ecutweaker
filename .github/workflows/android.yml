@@ -3,9 +3,11 @@ name: Generate Apks
 on:
   push:
     branches: [ "master" ]
+    tags:
+      - '*'
   pull_request:
     branches: [ "master" ]
-    
+     
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -36,3 +38,30 @@ jobs:
           path: |
             ./EcuTweaker/build/outputs/apk/debug/*.apk
             ./EcuTweaker/build/outputs/apk/release/*.apk
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download APKs
+        uses: actions/download-artifact@v4
+        with:
+          path: apks
+
+      - name: Get tag name
+        id: tag
+        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ steps.tag.outputs.TAG_NAME }}
+          tag_name: ${{ steps.tag.outputs.TAG_NAME }}
+          files: |
+            apks/debug/*.apk
+            apks/release/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

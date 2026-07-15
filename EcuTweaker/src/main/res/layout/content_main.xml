@@ -28,7 +28,8 @@
                 android:layout_weight="1"
                 android:gravity="center_vertical|center_horizontal"
                 android:text="ECU TWEAKER"
-                android:textAppearance="@style/TextAppearance.AppCompat.Small" />
+                android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                tools:ignore="HardcodedText" />
 
             <Button
                 android:id="@+id/clearLogButton"
@@ -36,7 +37,8 @@
                 android:layout_height="match_parent"
                 android:layout_weight="0"
                 android:text="@string/CLEAR_LOG"
-                android:textSize="10sp" />
+                android:textSize="10sp"
+                tools:ignore="SmallSp" />
 
             <Button
                 android:id="@+id/viewLogButton"
@@ -44,7 +46,8 @@
                 android:layout_height="match_parent"
                 android:layout_weight="0"
                 android:text="@string/LOGS"
-                android:textSize="10sp" />
+                android:textSize="10sp"
+                tools:ignore="SmallSp" />
         </LinearLayout>
 
         <TextView
@@ -53,7 +56,8 @@
             android:layout_height="80dp"
             android:textAppearance="@style/TextAppearance.AppCompat.Small"
             android:textColor="@android:color/white"
-            android:textSize="8sp" />
+            android:textSize="8sp"
+            tools:ignore="SmallSp" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -65,7 +69,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_weight="0"
-                app:srcCompat="@drawable/ic_bt_connected" />
+                app:srcCompat="@drawable/ic_bt_connected"
+                tools:ignore="ContentDescription" />
 
             <Button
                 android:id="@+id/btButton"
@@ -73,21 +78,24 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/CHOOSE_BT_DEVICE"
-                android:textSize="10sp" />
+                android:textSize="10sp"
+                tools:ignore="SmallSp" />
 
             <ImageView
                 android:id="@+id/btIcon"
                 android:layout_width="50dp"
                 android:layout_height="match_parent"
                 android:layout_weight="0"
-                app:srcCompat="@drawable/ic_link_nok" />
+                app:srcCompat="@drawable/ic_link_nok"
+                tools:ignore="ContentDescription" />
 
             <ImageButton
                 android:id="@+id/projectButton"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_weight="0"
-                app:srcCompat="@drawable/ic_bt_search" />
+                app:srcCompat="@drawable/ic_bt_search"
+                tools:ignore="ContentDescription" />
         </LinearLayout>
 
         <LinearLayout
@@ -100,7 +108,8 @@
                 android:id="@+id/ecuListView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="1">
+                android:layout_weight="1"
+                tools:ignore="NestedWeights">
 
             </ListView>
 
@@ -133,7 +142,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="40dp"
                 android:layout_weight="1"
-                android:text="@string/AUTO_IDENTIFY" />
+                android:text="@string/AUTO_IDENTIFY"
+                tools:ignore="InefficientWeight" />
 
         </LinearLayout>
 
@@ -166,7 +176,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center_vertical|center_horizontal"
-                android:text="----" />
+                android:text="----"
+                tools:ignore="HardcodedText" />
 
             <TextView
                 android:id="@+id/textViewVersion"
@@ -174,7 +185,8 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:gravity="center_vertical|center_horizontal"
-                android:text="----" />
+                android:text="----"
+                tools:ignore="HardcodedText" />
 
             <TextView
                 android:id="@+id/textViewSoft"
@@ -182,7 +194,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center_vertical|center_horizontal"
-                android:text="----" />
+                android:text="----"
+                tools:ignore="HardcodedText" />
 
         </LinearLayout>
 

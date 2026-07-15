@@ -53,12 +53,7 @@ public class EcuDatabase {
     }
 
     public ArrayList<String> getEcuByFunctions() {
-        ArrayList<String> list = new ArrayList<>();
-        Iterator<String> valueIterator = m_ecuAddressing.values().iterator();
-        while (valueIterator.hasNext()) {
-            list.add(valueIterator.next());
-        }
-        return list;
+        return new ArrayList<>(m_ecuAddressing.values());
     }
 
     @Nullable
@@ -99,6 +94,9 @@ public class EcuDatabase {
     public ArrayList<EcuInfo> identifyNewEcu(EcuIdentifierNew ecuIdentifer) {
         ArrayList<EcuInfo> ecuInfos = m_ecuInfo.get(ecuIdentifer.addr);
         ArrayList<EcuInfo> keptEcus = new ArrayList<>();
+        if (ecuInfos == null) {
+            return keptEcus;
+        }
         for (EcuInfo ecuInfo : ecuInfos) {
             for (EcuIdent ecuIdent : ecuInfo.ecuIdents) {
                 if (ecuIdent.supplier_code.equals(ecuIdentifer.supplier) &&
@@ -119,10 +117,7 @@ public class EcuDatabase {
 
     public ArrayList<String> getEcuByFunctionsAndType(String type) {
         Set<String> list = new HashSet<>();
-        Iterator<ArrayList<EcuInfo>> ecuArrayIterator = m_ecuInfo.values().iterator();
-
-        while (ecuArrayIterator.hasNext()) {
-            ArrayList<EcuInfo> ecuArray = ecuArrayIterator.next();
+        for (ArrayList<EcuInfo> ecuArray : m_ecuInfo.values()) {
             for (EcuInfo ecuInfo : ecuArray) {
                 if ((ecuInfo.projects.contains(type) || type.isEmpty())
                         && m_ecuAddressing.containsKey(ecuInfo.addressId)) {
@@ -130,17 +125,13 @@ public class EcuDatabase {
                 }
             }
         }
-        ArrayList<String> ret = new ArrayList<>();
-        for (String txt : list) {
-            ret.add(txt);
-        }
-        return ret;
+        return new ArrayList<>(list);
     }
 
     public int getAddressByFunction(String name) {
         Set<Integer> keySet = m_ecuAddressing.keySet();
         for (Integer i : keySet) {
-            if (m_ecuAddressing.get(i) == name) {
+            if (Objects.equals(m_ecuAddressing.get(i), name)) {
                 return i;
             }
         }
@@ -148,21 +139,19 @@ public class EcuDatabase {
     }
 
     public String[] getProjects() {
-        return m_projectSet.toArray(new String[m_projectSet.size()]);
+        return m_projectSet.toArray(new String[0]);
     }
 
     public String[] getModels() {
-        return MODELSMAP.values().toArray(new String[MODELSMAP.size()]);
+        return MODELSMAP.values().toArray(new String[0]);
     }
 
     public String getProjectFromModel(String model) {
-        Iterator it = MODELSMAP.entrySet().iterator();
         String result = "";
-        if (!model.toUpperCase().equals("ALL")) {
-            while (it.hasNext()) {
-                Map.Entry keyval = (Map.Entry) it.next();
-                if (((String) keyval.getValue()).toUpperCase().equals(model.toUpperCase())) {
-                    result = (String) keyval.getKey();
+        if (!model.equalsIgnoreCase("ALL")) {
+            for (Map.Entry<String, String> keyval : MODELSMAP.entrySet()) {
+                if (keyval.getValue().equalsIgnoreCase(model)) {
+                    result = keyval.getKey();
                     break;
                 }
             }
@@ -171,7 +160,8 @@ public class EcuDatabase {
         return result;
     }
 
-    public void buildMaps(String code) {
+    public void buildMaps(String codeIn) {
+        String code = codeIn;
         if (Projects == null) {
             throw new RuntimeException("projects.json not found or not loaded!");
         }
@@ -232,21 +222,17 @@ public class EcuDatabase {
     }
 
     private void filterProjects() {
-        Iterator<String> its = m_projectSet.iterator();
-        while (its.hasNext()) {
-            Set<String> modelKeySet = MODELSMAP.keySet();
-            String project = its.next();
+        Iterator<String> it = m_projectSet.iterator();
+        while (it.hasNext()) {
+            String project = it.next();
             if (!MODELSMAP.containsKey(project)) {
-                MODELSMAP.remove(project);
+                it.remove();
             }
         }
     }
 
     public void checkMissings() {
-        Iterator<String> its = m_projectSet.iterator();
-        while (its.hasNext()) {
-            Set<String> modelKeySet = MODELSMAP.keySet();
-            String project = its.next();
+        for (String project : m_projectSet) {
             if (!MODELSMAP.containsKey(project)) {
                 System.out.println("?? Missing " + project);
             }
@@ -527,26 +513,26 @@ public class EcuDatabase {
         return m_zipFileSystem;
     }
 
-    public class EcuIdent {
+    public static class EcuIdent {
         public String supplier_code, soft_version, version, diagnostic_version;
     }
 
-    public class EcuInfo {
+    public static class EcuInfo {
         public Set<String> projects;
         public String href;
         public String ecuName, protocol;
         public int addressId;
-        public EcuIdent ecuIdents[];
+        public EcuIdent[] ecuIdents;
         public boolean exact_match;
     }
 
-    public class DatabaseException extends Exception {
+    public static class DatabaseException extends Exception {
         public DatabaseException(String message) {
             super(message);
         }
     }
 
-    public class EcuIdentifierNew {
+    public static class EcuIdentifierNew {
         public String supplier, version, soft_version, diag_version;
         public int addr;
 

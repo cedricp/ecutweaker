@@ -45,9 +45,9 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.TwoLineListItem;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 
 import org.quark.dr.usbserial.driver.UsbSerialDriver;
 import org.quark.dr.usbserial.driver.UsbSerialPort;
@@ -55,7 +55,6 @@ import org.quark.dr.usbserial.driver.UsbSerialProber;
 import org.quark.dr.usbserial.util.HexDump;
 
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -139,17 +138,17 @@ public class UsbDeviceActivity extends Activity {
         mProgressBar = findViewById(R.id.progressBar);
         mProgressBarTitle = findViewById(R.id.progressBarTitle);
 
-        mAdapter = new ArrayAdapter<UsbSerialPort>(this,
-                android.R.layout.simple_expandable_list_item_2, mEntries) {
+        mAdapter = new ArrayAdapter<>(this,
+                R.layout.usb_device_list_item, mEntries) {
             @Override
             public View getView(int position, View convertView, @NonNull ViewGroup parent) {
-                final TwoLineListItem row;
+                View row;
                 if (convertView == null) {
                     final LayoutInflater inflater =
                             (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                    row = (TwoLineListItem) inflater.inflate(android.R.layout.simple_list_item_2, null);
+                    row = inflater.inflate(R.layout.usb_device_list_item, parent, false);
                 } else {
-                    row = (TwoLineListItem) convertView;
+                    row = convertView;
                 }
 
                 final UsbSerialPort port = mEntries.get(position);
@@ -159,10 +158,10 @@ public class UsbDeviceActivity extends Activity {
                 final String title = String.format("Vendor %s Product %s",
                         HexDump.toHexString((short) device.getVendorId()),
                         HexDump.toHexString((short) device.getProductId()));
-                row.getText1().setText(title);
+                ((TextView) row.findViewById(R.id.text1)).setText(title);
 
                 final String subtitle = driver.getClass().getSimpleName();
-                row.getText2().setText(subtitle);
+                ((TextView) row.findViewById(R.id.text2)).setText(subtitle);
 
                 return row;
             }
@@ -214,7 +213,7 @@ public class UsbDeviceActivity extends Activity {
                 mUsbManager.requestPermission(port.getDriver().getDevice(), mPermissionIntent);
             }
         });
-        getApplicationContext().registerReceiver(mReceiver, new IntentFilter(ACTION_USB_PERMISSION), Context.RECEIVER_NOT_EXPORTED);
+        ContextCompat.registerReceiver(getApplicationContext(), mReceiver, new IntentFilter(ACTION_USB_PERMISSION), ContextCompat.RECEIVER_NOT_EXPORTED);
     }
 
     @Override

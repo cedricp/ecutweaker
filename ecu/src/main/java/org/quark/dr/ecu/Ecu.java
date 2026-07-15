@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
@@ -19,29 +20,30 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class Ecu {
     public String global_endian;
-    private HashMap<String, EcuRequest> requests;
-    private HashMap<String, EcuData> data;
-    private HashMap<String, String> sdsrequests;
+    private Map<String, EcuRequest> requests;
+    private Map<String, EcuData> data;
+    private Map<String, String> sdsrequests;
     private String protocol;
     private String funcaddr;
     private String ecu_name;
-    private String kw1, kw2, ecu_send_id, ecu_recv_id;
+    private String ecu_send_id, ecu_recv_id;
     private boolean fastinit;
+    private int m_baudrate = 500000;
+    private int m_canline = 0;
     private String m_defaultSDS;
 
     public Ecu(InputStream is) {
-        String line;
-        BufferedReader br;
         StringBuilder sb = new StringBuilder();
 
-        try {
-            br = new BufferedReader(new InputStreamReader(is));
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+            String line;
             while ((line = br.readLine()) != null) {
-                sb.append(line + "\n");
+                sb.append(line).append("\n");
             }
         } catch (Exception e) {
             Log.e("Ecu", "Error reading input stream", e);
@@ -78,8 +80,8 @@ public class Ecu {
         return -((val) & 0x8000) | (val & 0x7fff);
     }
 
-    public static byte[] hexStringToByteArray(String s) {
-        s = s.replace(" ", "");
+    public static byte[] hexStringToByteArray(String sIn) {
+        String s = sIn.replace(" ", "");
         int len = s.length();
         byte[] data = new byte[len / 2];
         for (int i = 0, j = 0; i < len; i += 2, ++j) {
@@ -100,9 +102,9 @@ public class Ecu {
     public static String padLeft(String str, int length, String padChar) {
         if (str.length() >= length)
             return str.substring(0, length);
-        String pad = "";
+        StringBuilder pad = new StringBuilder();
         for (int i = 0; i < length; i++) {
-            pad += padChar;
+            pad.append(padChar);
         }
         return pad.substring(str.length()) + str;
     }
@@ -114,7 +116,7 @@ public class Ecu {
         return sb.toString().toUpperCase();
     }
 
-    public HashMap<String, String> getSdsrequests() {
+    public Map<String, String> getSdsrequests() {
         return sdsrequests;
     }
 
@@ -123,10 +125,8 @@ public class Ecu {
             m_defaultSDS = sdsrequests.get(sdsname);
     }
 
-    public String hexToBinary(String Hex) {
-        BigInteger i = new BigInteger(Hex, 16);
-        String Bin = i.toString(2);
-        return Bin;
+    public String hexToBinary(String hex) {
+        return new BigInteger(hex, 16).toString(2);
     }
 
     public EcuData getData(String dataname) {
@@ -168,17 +168,23 @@ public class Ecu {
         return ecu_recv_id;
     }
 
-    public HashMap<String, String> getRequestValues(byte[] bytes, String requestname, boolean with_units) {
+    public int getBaudrate() {
+        return m_baudrate;
+    }
+
+    public int getCanline() {
+        return m_canline;
+    }
+
+    public Map<String, String> getRequestValues(byte[] bytes, String requestname, boolean with_units) {
         EcuRequest request = getRequest(requestname);
-        HashMap<String, String> hash = new HashMap<>();
+        Map<String, String> hash = new HashMap<>();
         if (request == null) {
             Log.e("Ecu", "Request not found: " + requestname);
             return hash;
         }
         Set<String> keys = request.recvbyte_dataitems.keySet();
-        Iterator<String> it = keys.iterator();
-        for (; it.hasNext(); ) {
-            String key = it.next();
+        for (String key : keys) {
             EcuDataItem dataitem = request.recvbyte_dataitems.get(key);
             EcuData ecudata = getData(key);
             if (with_units) {
@@ -192,17 +198,15 @@ public class Ecu {
         return hash;
     }
 
-    public HashMap<String, Pair<String, String>> getRequestValuesWithUnit(byte[] bytes, String requestname) {
+    public Map<String, Pair<String, String>> getRequestValuesWithUnit(byte[] bytes, String requestname) {
         EcuRequest request = getRequest(requestname);
-        HashMap<String, Pair<String, String>> hash = new HashMap<>();
+        Map<String, Pair<String, String>> hash = new HashMap<>();
         if (request == null) {
             Log.e("Ecu", "Request not found: " + requestname);
             return hash;
         }
         Set<String> keys = request.recvbyte_dataitems.keySet();
-        Iterator<String> it = keys.iterator();
-        for (; it.hasNext(); ) {
-            String key = it.next();
+        for (String key : keys) {
             EcuDataItem dataitem = request.recvbyte_dataitems.get(key);
             EcuData ecudata = getData(key);
             String val = ecudata.getDisplayValue(bytes, dataitem);
@@ -213,7 +217,7 @@ public class Ecu {
         return hash;
     }
 
-    public byte[] setRequestValues(String requestname, HashMap<String, Object> hash) {
+    public byte[] setRequestValues(String requestname, Map<String, Object> hash) {
         EcuRequest req = getRequest(requestname);
         if (req == null) {
             Log.e("Ecu", "Request not found: " + requestname + ". Cannot write data without knowing which ECU it is.");
@@ -223,20 +227,23 @@ public class Ecu {
         Log.i("canapp", "Sentbytes : " + req.sentbytes);
         for (Map.Entry<String, Object> entry : hash.entrySet()) {
             EcuDataItem item = req.getSendDataItem(entry.getKey());
-            EcuData data = getData(entry.getKey());
+            EcuData ecudata = getData(entry.getKey());
 
             Log.i("canapp", "set key " + entry.getKey());
-            if (!data.items.isEmpty() && (entry.getValue() instanceof String == true)) {
+            if (!ecudata.items.isEmpty() && (entry.getValue() instanceof String)) {
                 String val = (String) entry.getValue();
-                if (data.items.containsKey(val)) {
-                    Log.i("canapp", "set key " + val + " with " + data.items.get(val));
-                    barray = data.setValue(Integer.toHexString(data.items.get(val)), barray, item);
+                if (ecudata.items.containsKey(val)) {
+                    Log.i("canapp", "set key " + val + " with " + ecudata.items.get(val));
+                    Integer itemVal = ecudata.items.get(val);
+                    if (itemVal != null) {
+                        barray = ecudata.setValue(Integer.toHexString(itemVal), barray, item);
+                    }
                     continue;
                 } else {
                     Log.i("canapp", "key not found : " + val);
                 }
             }
-            barray = data.setValue(entry.getValue(), barray, item);
+            barray = ecudata.setValue(entry.getValue(), barray, item);
         }
         return barray;
     }
@@ -258,7 +265,7 @@ public class Ecu {
         int numDtc = bytesResponse[1] & 0xFF;
 
         for (int i = 0; i < numDtc; ++i) {
-            HashMap<String, String> currentDTC;
+            Map<String, String> currentDTC;
             if (bytesResponse.length < shiftBytesCount)
                 break;
             try {
@@ -267,11 +274,9 @@ public class Ecu {
 
                 continue;
             }
-            Iterator<String> it = currentDTC.keySet().iterator();
             List<String> currentDtcList = new ArrayList<>();
-            while (it.hasNext()) {
-                String key = it.next();
-                if (key.equals("NDTC"))
+            for (String key : currentDTC.keySet()) {
+                if (Objects.equals(key, "NDTC"))
                     continue;
                 currentDtcList.add(key + ":" + currentDTC.get(key));
             }
@@ -290,7 +295,7 @@ public class Ecu {
 
     private void init(JSONObject ecudef) {
         requests = new HashMap<>();
-        HashMap<String, EcuDevice> devices = new HashMap<>();
+        Map<String, EcuDevice> devices = new HashMap<>();
         data = new HashMap<>();
         sdsrequests = new HashMap<>();
         m_defaultSDS = "10C0";
@@ -302,14 +307,13 @@ public class Ecu {
             if (ecudef.has("obd")) {
                 JSONObject obd = ecudef.getJSONObject("obd");
                 protocol = obd.getString("protocol");
-                String funcname = obd.getString("funcname");
-                if (protocol.equals("CAN")) {
+                if (obd.has("baudrate")) m_baudrate = obd.getInt("baudrate");
+                if (obd.has("canline")) m_canline = obd.getInt("canline");
+                if (Objects.equals(protocol, "CAN")) {
                     ecu_send_id = obd.getString("send_id");
                     ecu_recv_id = obd.getString("recv_id");
-                    if (obd.has("baudrate ")) ;
-
                 }
-                if (protocol.equals("KWP2000")) {
+                if (Objects.equals(protocol, "KWP2000")) {
                     fastinit = obd.getBoolean("fastinit");
                 }
                 if (obd.has("funcaddr")) funcaddr = obd.getString("funcaddr");
@@ -330,9 +334,9 @@ public class Ecu {
             }
 
             JSONObject dataobjs = ecudef.getJSONObject("data");
-            Iterator<String> keys = dataobjs.keys();
-            for (; keys.hasNext(); ) {
-                String key = keys.next();
+            Iterator<String> dataKeys = dataobjs.keys();
+            while (dataKeys.hasNext()) {
+                String key = dataKeys.next();
                 JSONObject dataobj = dataobjs.getJSONObject(key);
                 EcuData ecudata = new EcuData(dataobj, key);
                 data.put(key, ecudata);
@@ -349,28 +353,33 @@ public class Ecu {
                     && upperReqName.contains("SESSION")) {
                 // Case StartDiagnosticSession.Extended
                 EcuRequest request = requests.get(requestName);
-                if (upperReqName.contains("EXTENDED") && !request.sentbytes.isEmpty()) {
+                if (upperReqName.contains("EXTENDED") && request != null && !request.sentbytes.isEmpty()) {
                     m_defaultSDS = request.sentbytes;
                 }
-                for (String sdsDataItemName : request.sendbyte_dataitems.keySet()) {
+                if (request != null) {
+                    for (String sdsDataItemName : request.sendbyte_dataitems.keySet()) {
 
-                    EcuDataItem ecuDataItem = request.sendbyte_dataitems.get(sdsDataItemName);
-                    String upperSdsDataItemName = sdsDataItemName.toUpperCase();
+                        EcuDataItem ecuDataItem = request.sendbyte_dataitems.get(sdsDataItemName);
+                        String upperSdsDataItemName = sdsDataItemName.toUpperCase();
 
-                    if (upperSdsDataItemName.contains("SESSION") && upperSdsDataItemName.contains("NAME")) {
-                        for (String dataItemName : data.get(sdsDataItemName).items.keySet()) {
-                            HashMap sdsBuildValues = new HashMap();
-                            sdsBuildValues.put(ecuDataItem.name, dataItemName);
-                            byte[] dataStream = setRequestValues(requestName, sdsBuildValues);
-                            sdsrequests.put(dataItemName, byteArrayToHex(dataStream).toUpperCase());
-                            if (ecuDataItem.name.toUpperCase().contains("EXTENDED")) {
-                                m_defaultSDS = byteArrayToHex(dataStream).toUpperCase();
+                        if (upperSdsDataItemName.contains("SESSION") && upperSdsDataItemName.contains("NAME")) {
+                            EcuData sdsData = data.get(sdsDataItemName);
+                            if (sdsData != null) {
+                                for (String dataItemName : sdsData.items.keySet()) {
+                                    Map<String, Object> sdsBuildValues = new HashMap<>();
+                                    sdsBuildValues.put(ecuDataItem.name, dataItemName);
+                                    byte[] dataStream = setRequestValues(requestName, sdsBuildValues);
+                                    sdsrequests.put(dataItemName, byteArrayToHex(dataStream).toUpperCase());
+                                    if (ecuDataItem.name.toUpperCase().contains("EXTENDED")) {
+                                        m_defaultSDS = byteArrayToHex(dataStream).toUpperCase();
+                                    }
+                                }
                             }
                         }
                     }
-                }
-                if (request.sendbyte_dataitems.keySet().size() == 0) {
-                    sdsrequests.put(requestName, request.sentbytes);
+                    if (request.sendbyte_dataitems.isEmpty()) {
+                        sdsrequests.put(requestName, request.sentbytes);
+                    }
                 }
             }
         }
@@ -380,7 +389,7 @@ public class Ecu {
         public int dtc;
         public int dtctype;
         public String name;
-        HashMap<String, String> devicedata;
+        Map<String, String> devicedata;
 
         EcuDevice(JSONObject json) {
             devicedata = new HashMap<>();
@@ -435,8 +444,8 @@ public class Ecu {
         public float offset = 0.0f;
         public float divideby = 1.0f;
         public String format = "";
-        public HashMap<Integer, String> lists;
-        public HashMap<String, Integer> items;
+        public Map<Integer, String> lists;
+        public Map<String, Integer> items;
         public String description;
         public String unit = "";
         public String comment = "";
@@ -566,7 +575,7 @@ public class Ecu {
                         throw new ClassCastException("Value must be a hex string");
                     }
                     String vv = (String) value;
-                    finalbinvalue = hexToBinary(vv.replaceAll(" ", ""));
+                    finalbinvalue = hexToBinary(vv.replace(" ", ""));
                 }
             }
 
@@ -586,21 +595,25 @@ public class Ecu {
                  * Handle little endian value (not an easy task...)
                  */
                 // Moves the bytes to to left
+                StringBuilder finalbinvalueBuilder = new StringBuilder(finalbinvalue);
+                StringBuilder bitmaskBuilder = new StringBuilder(bitmask);
                 for (int i = 0; i < startBit; ++i) {
-                    finalbinvalue += "0";
-                    bitmask += "0";
+                    finalbinvalueBuilder.append("0");
+                    bitmaskBuilder.append("0");
                 }
+                finalbinvalue = finalbinvalueBuilder.toString();
+                bitmask = bitmaskBuilder.toString();
 
                 finalbinvalue = padLeft(finalbinvalue, requiredDataBytesLen * 8, "0");
                 bitmask = padLeft(bitmask, requiredDataBytesLen * 8, "0");
-                String tmp = "";
-                String tmpmask = "";
+                StringBuilder tmp = new StringBuilder();
+                StringBuilder tmpmask = new StringBuilder();
                 for (int i = requiredDataBytesLen - 1; i >= 0; --i) {
-                    tmp += finalbinvalue.substring(i * 8, i * 8 + 8);
-                    tmpmask += bitmask.substring(i * 8, i * 8 + 8);
+                    tmp.append(finalbinvalue, i * 8, i * 8 + 8);
+                    tmpmask.append(bitmask, i * 8, i * 8 + 8);
                 }
-                finalbinvalue = tmp;
-                bitmask = tmpmask;
+                finalbinvalue = tmp.toString();
+                bitmask = tmpmask.toString();
             }
 
             char[] binaryRequest = requestasbin.toString().toCharArray();
@@ -657,24 +670,28 @@ public class Ecu {
                 throw new ArrayIndexOutOfBoundsException("Response too short");
             }
 
-            String hexToBin = "";
+            String hexToBin;
             String hex;
 
             if (little_endian) {
                 int bitlength = requiredDataBytesLen * 8;
+                StringBuilder hexToBinBuilder = new StringBuilder();
                 for (int i = 0; i < requiredDataBytesLen; ++i) {
                     byte b = resp[i + sb];
-                    hexToBin = byteToBinaryString(b, 8) + hexToBin;
+                    hexToBinBuilder.insert(0, byteToBinaryString(b, 8));
                 }
+                hexToBin = hexToBinBuilder.toString();
 
                 hexToBin = hexToBin.substring(bitlength - startBit - bitscount, bitlength - startBit);
                 BigInteger bigValue = new BigInteger(hexToBin, 2);
                 hex = bigValue.toString(16);
             } else {
+                StringBuilder hexToBinBuilder = new StringBuilder();
                 for (int i = 0; i < requiredDataBytesLen; ++i) {
                     byte b = resp[i + sb];
-                    hexToBin += byteToBinaryString(b, 8);
+                    hexToBinBuilder.append(byteToBinaryString(b, 8));
                 }
+                hexToBin = hexToBinBuilder.toString();
 
                 hexToBin = hexToBin.substring(startBit, startBit + bitscount);
                 BigInteger bigValue = new BigInteger(hexToBin, 2);
@@ -757,8 +774,8 @@ public class Ecu {
         public String replybytes;
         public String sentbytes;
         public boolean manualsend = false;
-        public HashMap<String, EcuDataItem> recvbyte_dataitems;
-        public HashMap<String, EcuDataItem> sendbyte_dataitems;
+        public Map<String, EcuDataItem> recvbyte_dataitems;
+        public Map<String, EcuDataItem> sendbyte_dataitems;
         public String name;
         public SDS sds;
         EcuRequest(JSONObject json) {
@@ -814,7 +831,7 @@ public class Ecu {
             return sendbyte_dataitems.get(item);
         }
 
-        public class SDS {
+        public static class SDS {
             public boolean nosds = true;
             public boolean plant = true;
             public boolean aftersales = true;

@@ -54,8 +54,8 @@ public class ProlificSerialDriver implements UsbSerialDriver {
     }
 
     public static Map<Integer, int[]> getSupportedDevices() {
-        final Map<Integer, int[]> supportedDevices = new LinkedHashMap<Integer, int[]>();
-        supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_PROLIFIC),
+        final Map<Integer, int[]> supportedDevices = new LinkedHashMap<>();
+        supportedDevices.put(org.quark.dr.usbserial.drive.UsbId.VENDOR_PROLIFIC,
                 new int[]{org.quark.dr.usbserial.drive.UsbId.PROLIFIC_PL2303,});
         return supportedDevices;
     }
@@ -135,7 +135,7 @@ public class ProlificSerialDriver implements UsbSerialDriver {
             return ProlificSerialDriver.this;
         }
 
-        private final byte[] inControlTransfer(int requestType, int request,
+        private byte[] inControlTransfer(int requestType, int request,
                                                int value, int index, int length) throws IOException {
             byte[] buffer = new byte[length];
             int result = mConnection.controlTransfer(requestType, request, value,
@@ -240,12 +240,7 @@ public class ProlificSerialDriver implements UsbSerialDriver {
                             mStatus = buffer[STATUS_BYTE_IDX] & 0xff;
                         }
 
-                        mReadStatusThread = new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                readStatusThreadFunction();
-                            }
-                        });
+                        mReadStatusThread = new Thread(this::readStatusThreadFunction);
                         mReadStatusThread.setDaemon(true);
                         mReadStatusThread.start();
                     }
@@ -307,15 +302,19 @@ public class ProlificSerialDriver implements UsbSerialDriver {
                                 = mConnection.getClass().getMethod("getRawDescriptors");
                         byte[] rawDescriptors
                                 = (byte[]) getRawDescriptorsMethod.invoke(mConnection);
-                        byte maxPacketSize0 = rawDescriptors[7];
-                        if (maxPacketSize0 == 64) {
-                            mDeviceType = DEVICE_TYPE_HX;
-                        } else if ((mDevice.getDeviceClass() == 0x00)
-                                || (mDevice.getDeviceClass() == 0xff)) {
-                            mDeviceType = DEVICE_TYPE_1;
+                        if (rawDescriptors != null && rawDescriptors.length > 7) {
+                            byte maxPacketSize0 = rawDescriptors[7];
+                            if (maxPacketSize0 == 64) {
+                                mDeviceType = DEVICE_TYPE_HX;
+                            } else if ((mDevice.getDeviceClass() == 0x00)
+                                    || (mDevice.getDeviceClass() == 0xff)) {
+                                mDeviceType = DEVICE_TYPE_1;
+                            } else {
+                                Log.w(TAG, "Could not detect PL2303 subtype, "
+                                        + "Assuming that it is a HX device");
+                                mDeviceType = DEVICE_TYPE_HX;
+                            }
                         } else {
-                            Log.w(TAG, "Could not detect PL2303 subtype, "
-                                    + "Assuming that it is a HX device");
                             mDeviceType = DEVICE_TYPE_HX;
                         }
                     } catch (NoSuchMethodException e) {

@@ -268,7 +268,13 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
                 try {
                     request.initialize(mConnection, mReadEndpoint);
                     final ByteBuffer buf = ByteBuffer.wrap(dest);
-                    if (!request.queue(buf, dest.length)) {
+                    boolean queued;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        queued = request.queue(buf);
+                    } else {
+                        queued = request.queue(buf, dest.length);
+                    }
+                    if (!queued) {
                         throw new IOException("Error queueing request.");
                     }
 
