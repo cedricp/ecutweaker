@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     tools:context="org.quark.dr.canapp.ScreenActivity">
 
     <LinearLayout
@@ -21,49 +22,56 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                app:srcCompat="@drawable/ic_screen" />
+                app:srcCompat="@drawable/ic_screen"
+                tools:ignore="ContentDescription" />
 
             <ImageButton
                 android:id="@+id/reloadButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                app:srcCompat="@drawable/ic_reload" />
+                app:srcCompat="@drawable/ic_reload"
+                tools:ignore="ContentDescription" />
 
             <ImageButton
                 android:id="@+id/dtcButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                app:srcCompat="@drawable/ic_dtc_clear" />
+                app:srcCompat="@drawable/ic_dtc_clear"
+                tools:ignore="ContentDescription" />
 
             <ImageButton
                 android:id="@+id/dtcClearButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                app:srcCompat="@drawable/ic_dtc" />
+                app:srcCompat="@drawable/ic_dtc"
+                tools:ignore="ContentDescription" />
 
             <ImageView
                 android:id="@+id/iconBt"
                 android:layout_width="50dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                app:srcCompat="@drawable/ic_bt_disconnected" />
+                app:srcCompat="@drawable/ic_bt_disconnected"
+                tools:ignore="ContentDescription" />
 
             <ImageView
                 android:id="@+id/bt_comm"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                app:srcCompat="@drawable/ic_communication" />
+                app:srcCompat="@drawable/ic_communication"
+                tools:ignore="ContentDescription" />
             
             <ImageButton
                 android:id="@+id/settingsButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="0"
-                app:srcCompat="@drawable/ic_settings" />
+                app:srcCompat="@drawable/ic_settings"
+                tools:ignore="ContentDescription" />
 
         </LinearLayout>
 
@@ -87,14 +95,16 @@
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:layout_weight="0"
-                android:text="+" />
+                android:text="+"
+                tools:ignore="HardcodedText" />
 
             <Button
                 android:id="@+id/zoom_out"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:layout_weight="0"
-                android:text="-" />
+                android:text="-"
+                tools:ignore="HardcodedText" />
         </LinearLayout>
 
         <org.quark.dr.canapp.FixedHorizontalScrollView
@@ -116,7 +126,8 @@
                     android:id="@+id/mainLayout"
                     android:layout_width="200dp"
                     android:layout_height="300dp"
-                    android:focusableInTouchMode="true"></RelativeLayout>
+                    android:focusableInTouchMode="true">
+                </RelativeLayout>
             </org.quark.dr.canapp.FixedScrollView>
         </org.quark.dr.canapp.FixedHorizontalScrollView>
 
