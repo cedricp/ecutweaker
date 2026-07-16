@@ -22,16 +22,19 @@ allprojects {
         mavenCentral()
         maven { url 'https://jitpack.io' }
     }
+    tasks.withType(JavaCompile).configureEach {
+        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+    }
 }
 
 ext {
     debug = file("$rootDir/EcuTweaker/debug")
     release = file("$rootDir/EcuTweaker/release")
-    appversion = "2.6.2"
-    appversion_int = 262
+    appversion = "2.6.3"
+    appversion_int = 263
     minSdkVersion = 21
-    targetSdkVersion = 35
-    compileSdkVersion = 35
+    targetSdkVersion = 37
+    compileSdkVersion = 37
     ndkVersion = '25.2.9519653'
     compileOptions_encoding = 'utf-8'
     compileOptions_sourceCompatibility = JavaVersion.VERSION_17

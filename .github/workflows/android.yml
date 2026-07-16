@@ -8,6 +8,9 @@ on:
   pull_request:
     branches: [ "master" ]
      
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -32,12 +35,17 @@ jobs:
       - name: Assemble Release Apk
         run: ./gradlew assembleRelease
 
-      - name: Upload Apks
+      - name: Upload Debug Apk
         uses: actions/upload-artifact@v4
         with:
-          path: |
-            ./EcuTweaker/build/outputs/apk/debug/*.apk
-            ./EcuTweaker/build/outputs/apk/release/*.apk
+          name: debug-apk
+          path: ./EcuTweaker/build/outputs/apk/debug/*.apk
+
+      - name: Upload Release Apk
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: ./EcuTweaker/build/outputs/apk/release/*.apk
 
   release:
     needs: build
@@ -46,10 +54,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download APKs
+      - name: Download Debug Apk
         uses: actions/download-artifact@v4
         with:
-          path: apks
+          name: debug-apk
+          path: apks/debug
+
+      - name: Download Release Apk
+        uses: actions/download-artifact@v4
+        with:
+          name: release-apk
+          path: apks/release
 
       - name: Get tag name
         id: tag

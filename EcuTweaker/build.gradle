@@ -43,14 +43,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
             buildConfigField "String", "TYPE", '"release"'
-            // Performance optimizations
-            // zipAlignEnabled true // This method is deprecated. Invoking this method has no effect (AGP produced artifacts are already aligned
             crunchPngs true
         }
         debug {
             buildConfigField "String", "TYPE", '"debug"'
             signingConfig signingConfigs.debug
-            // Faster debug builds
             minifyEnabled false
         }
     }
