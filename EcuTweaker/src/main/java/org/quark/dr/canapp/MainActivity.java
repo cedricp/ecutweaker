@@ -85,6 +85,7 @@ import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 
+@SuppressWarnings("deprecation")
 public class MainActivity extends AppCompatActivity {
     public static final String DEFAULT_PREF_TAG = "default";
     public static final int LINK_WIFI = 0;

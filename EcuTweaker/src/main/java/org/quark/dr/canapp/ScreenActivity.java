@@ -64,6 +64,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+@SuppressWarnings("deprecation")
 public class ScreenActivity extends AppCompatActivity {
     public static final int MESSAGE_STATE_CHANGE = 1;
     public static final int MESSAGE_READ = 2;

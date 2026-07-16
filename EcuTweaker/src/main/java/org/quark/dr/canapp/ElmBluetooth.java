@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.UUID;
 
+@SuppressWarnings("deprecation")
 public class ElmBluetooth extends ElmBase {
     // Debugging
     private static final String TAG = "ElmBluetoothThread";

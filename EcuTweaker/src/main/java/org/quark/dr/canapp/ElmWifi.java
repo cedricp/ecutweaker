@@ -14,6 +14,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+@SuppressWarnings("deprecation")
 public class ElmWifi extends ElmBase {
     private static final String TAG = "ElmWifiThread";
     private static final int mServerPort = 35000;

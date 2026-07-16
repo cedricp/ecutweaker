@@ -64,6 +64,7 @@ import java.util.List;
  *
  * @author mike wakerly (opensource@hoho.com)
  */
+@SuppressWarnings("deprecation")
 public class UsbDeviceActivity extends Activity {
 
     private static final int MESSAGE_REFRESH = 101;
