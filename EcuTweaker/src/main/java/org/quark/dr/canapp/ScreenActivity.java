@@ -48,6 +48,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 
 import org.quark.dr.ecu.Ecu;
@@ -127,6 +128,21 @@ public class ScreenActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_screen);
+        
+        // Register back button callback for proper gesture navigation support
+        OnBackPressedCallback onBackPressedCallback = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                stopAutoReload();
+                if (mChatService != null) {
+                    mChatService.changeHandler(null);
+                }
+                // Navigate back - finish this activity
+                ScreenActivity.this.finish();
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
+        
         initialize(savedInstanceState);
     }
 
@@ -926,15 +942,6 @@ public class ScreenActivity extends AppCompatActivity {
         edit.putString(PREF_GLOBAL_SCALE, String.valueOf(mGlobalScale));
         edit.apply();
         super.onStop();
-    }
-
-    @Override
-    public void onBackPressed() {
-        stopAutoReload();
-        if (mChatService != null) {
-            mChatService.changeHandler(null);
-        }
-        super.onBackPressed();
     }
 
     void setConnectionStatus(int c) {
