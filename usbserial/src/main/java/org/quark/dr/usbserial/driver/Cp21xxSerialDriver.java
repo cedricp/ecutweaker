@@ -47,8 +47,8 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
     }
 
     public static Map<Integer, int[]> getSupportedDevices() {
-        final Map<Integer, int[]> supportedDevices = new LinkedHashMap<>();
-        supportedDevices.put(org.quark.dr.usbserial.drive.UsbId.VENDOR_SILABS,
+        final Map<Integer, int[]> supportedDevices = new LinkedHashMap<Integer, int[]>();
+        supportedDevices.put(Integer.valueOf(org.quark.dr.usbserial.drive.UsbId.VENDOR_SILABS),
                 new int[]{
                         org.quark.dr.usbserial.drive.UsbId.SILABS_CP2102,
                         org.quark.dr.usbserial.drive.UsbId.SILABS_CP2105,
@@ -106,6 +106,8 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
         /*
          * SILABSER_SET_MHS_REQUEST_CODE
          */
+        private static final int MCR_DTR = 0x0001;
+        private static final int MCR_RTS = 0x0002;
         private static final int MCR_ALL = 0x0003;
 
         private static final int CONTROL_WRITE_DTR = 0x0100;
@@ -271,6 +273,8 @@ public class Cp21xxSerialDriver implements UsbSerialDriver {
                     configDataBits |= 0x0700;
                     break;
                 case DATABITS_8:
+                    configDataBits |= 0x0800;
+                    break;
                 default:
                     configDataBits |= 0x0800;
                     break;

@@ -36,7 +36,7 @@ import java.util.Map;
 public class ProbeTable {
 
     private final Map<Pair<Integer, Integer>, Class<? extends UsbSerialDriver>> mProbeTable =
-            new LinkedHashMap<>();
+            new LinkedHashMap<Pair<Integer, Integer>, Class<? extends UsbSerialDriver>>();
 
     /**
      * Adds or updates a (vendor, product) pair in the table.
@@ -65,23 +65,27 @@ public class ProbeTable {
 
         try {
             method = driverClass.getMethod("getSupportedDevices");
-        } catch (SecurityException | NoSuchMethodException e) {
+        } catch (SecurityException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
 
         final Map<Integer, int[]> devices;
         try {
             devices = (Map<Integer, int[]>) method.invoke(null);
-        } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException e) {
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
             throw new RuntimeException(e);
         }
 
-        if (devices != null) {
-            for (Map.Entry<Integer, int[]> entry : devices.entrySet()) {
-                final int vendorId = entry.getKey();
-                for (int productId : entry.getValue()) {
-                    addProduct(vendorId, productId, driverClass);
-                }
+        for (Map.Entry<Integer, int[]> entry : devices.entrySet()) {
+            final int vendorId = entry.getKey().intValue();
+            for (int productId : entry.getValue()) {
+                addProduct(vendorId, productId, driverClass);
             }
         }
 

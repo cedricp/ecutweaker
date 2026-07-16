@@ -6,8 +6,7 @@ import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.Iterator;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
@@ -25,8 +24,10 @@ public class ecuUnitTest {
         Ecu ecu = new Ecu(is);
         HashMap<String, Object> hash = new HashMap<>();
         byte[] uchTest = Ecu.hexStringToByteArray("61112110010104001400000000DCE9");
-        Map<String, String> hash2 = ecu.getRequestValues(uchTest, "Trame 11 : Etats des entrées", false);
-        for (String key : hash2.keySet()) {
+        HashMap<String, String> hash2 = ecu.getRequestValues(uchTest, "Trame 11 : Etats des entrées", false);
+        Iterator<String> it = hash2.keySet().iterator();
+        for (;it.hasNext();){
+            String key = it.next();
             System.out.println("??  " + key + " = " + hash2.get(key));
             hash2.put(key, hash2.get(key));
         }
@@ -44,8 +45,10 @@ public class ecuUnitTest {
         Ecu ecu = new Ecu(is);
         HashMap<String, Object> hash = new HashMap<>();
         byte[] uchTest = Ecu.hexStringToByteArray("61A100000000940C0000840CAC30F7FFA00F43000000000A00000000");
-        Map<String, String> hash2 = ecu.getRequestValues(uchTest, "Frame 1 : parameters", false);
-        for (String key : hash2.keySet()) {
+        HashMap<String, String> hash2 = ecu.getRequestValues(uchTest, "Frame 1 : parameters", false);
+        Iterator<String> it = hash2.keySet().iterator();
+        for (;it.hasNext();){
+            String key = it.next();
             System.out.println("??  " + key + " = " + hash2.get(key));
             hash2.put(key, hash2.get(key));
         }
@@ -69,23 +72,25 @@ public class ecuUnitTest {
         BigInteger bi = new BigInteger("FF", 16);
         BigInteger bi2 = new BigInteger("11111110", 2);
 
-        assertThat(Ecu.hex8ToSigned(125), is(125));
-        assertThat(Ecu.hex8ToSigned(254), is(-2));
-        assertThat(Ecu.hex16ToSigned(63000), is(-2536));
-        assertThat(Ecu.hex16ToSigned(6000), is(6000));
-        assertThat(Ecu.padLeft("FFFF", 8, "0"), is("0000FFFF"));
-        assertThat(Ecu.hexStringToByteArray("00FF0A"), is(testbyte));
-        assertThat(Ecu.integerToBinaryString(1, 8), is ("00000001"));
-        assertThat(Ecu.integerToBinaryString(254, 8), is ("11111110"));
+        assertThat(ecu.hex8ToSigned(125), is(125));
+        assertThat(ecu.hex8ToSigned(254), is(-2));
+        assertThat(ecu.hex16ToSigned(63000), is(-2536));
+        assertThat(ecu.hex16ToSigned(6000), is(6000));
+        assertThat(ecu.padLeft("FFFF", 8, "0"), is("0000FFFF"));
+        assertThat(ecu.hexStringToByteArray("00FF0A"), is(testbyte));
+        assertThat(ecu.integerToBinaryString(1, 8), is ("00000001"));
+        assertThat(ecu.integerToBinaryString(254, 8), is ("11111110"));
 
         assertThat(bi.intValue(), is(255));
         assertThat(bi2.intValue(), is(254));
 
-        Map<String, String> hash = ecu.getRequestValues(ucttest, "ReadDataByLocalIdentifier: misc timings and values", false);
-        Map<String, Object> hash2 = new HashMap<>();
-        Map<String, Object> hash3 = new HashMap<>();
+        HashMap<String, String> hash = ecu.getRequestValues(ucttest, "ReadDataByLocalIdentifier: misc timings and values", false);
+        HashMap<String, Object> hash2 = new HashMap<>();
+        HashMap<String, Object> hash3 = new HashMap<>();
 
-        for (String key : hash.keySet()) {
+        Iterator<String> it = hash.keySet().iterator();
+        for (;it.hasNext();){
+            String key = it.next();
             System.out.println(">>>>>>> " + key + " = " + hash.get(key));
             hash2.put(key, hash.get(key));
         }
@@ -129,7 +134,7 @@ public class ecuUnitTest {
     @Test
     public void test_Ident(){
         EcuDatabase db = new EcuDatabase();
-        EcuDatabase.EcuIdentifierNew idn = new EcuDatabase.EcuIdentifierNew();
+        EcuDatabase.EcuIdentifierNew idn = db.new EcuIdentifierNew();
         idn.diag_version = "9";
         idn.version = "F00A161";
         idn.soft_version = "SW09.C.04-B031-11.2-F04-07";

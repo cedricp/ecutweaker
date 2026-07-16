@@ -45,6 +45,7 @@ import java.util.Map;
  * href="http://www.usb.org/developers/devclass_docs/usbcdc11.pdf">Universal
  * Serial Bus Class Definitions for Communication Devices, v1.1</a>
  */
+@SuppressWarnings("deprecation")
 public class CdcAcmSerialDriver implements UsbSerialDriver {
 
     private final String TAG = CdcAcmSerialDriver.class.getSimpleName();
@@ -262,20 +263,13 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
         }
 
         @Override
-        @SuppressWarnings("deprecation")
         public int read(byte[] dest, int timeoutMillis) throws IOException {
             if (mEnableAsyncReads) {
                 final UsbRequest request = new UsbRequest();
                 try {
                     request.initialize(mConnection, mReadEndpoint);
                     final ByteBuffer buf = ByteBuffer.wrap(dest);
-                    boolean queued;
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        queued = request.queue(buf);
-                    } else {
-                        queued = request.queue(buf, dest.length);
-                    }
-                    if (!queued) {
+                    if (!request.queue(buf, dest.length)) {
                         throw new IOException("Error queueing request.");
                     }
 

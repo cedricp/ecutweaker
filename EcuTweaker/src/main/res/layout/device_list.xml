@@ -46,13 +46,6 @@
         android:stackFromBottom="false"
         android:layout_weight="2"
         />
-    <ProgressBar
-        android:id="@+id/scanning_progress"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:indeterminate="true"
-        android:visibility="gone" />
     <Button android:id="@+id/button_scan"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

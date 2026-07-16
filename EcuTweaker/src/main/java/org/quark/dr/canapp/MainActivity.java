@@ -19,14 +19,12 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
-import org.quark.dr.canapp.BuildConfig;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipboardManager;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -35,6 +33,8 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Looper;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import android.os.Build;
@@ -55,13 +55,10 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
@@ -88,6 +85,7 @@ import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 
+@SuppressWarnings("deprecation")
 public class MainActivity extends AppCompatActivity {
     public static final String DEFAULT_PREF_TAG = "default";
     public static final int LINK_WIFI = 0;
@@ -133,82 +131,56 @@ public class MainActivity extends AppCompatActivity {
     private Timer mConnectionTimer;
     private int mLinkMode;
     private boolean mActivateBluetoothAsked;
-    private AlertDialog mScanProgressDialog;
+    private ProgressDialog mScanProgressDialog;
     private SharedPreferences defaultPrefs;
-
-    private final ActivityResultLauncher<Intent> btEnableLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                // When the request to enable Bluetooth returns
-            }
-    );
-
-    private final ActivityResultLauncher<Intent> connectDeviceLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
-                    Intent data = result.getData();
-                    SharedPreferences.Editor edit = defaultPrefs.edit();
-                    if (data.hasExtra(DeviceListActivity.EXTRA_DEVICE_ADDRESS)) {
-                        String address = data.getStringExtra(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
-                        edit.putString(PREF_DEVICE_ADDRESS, address);
-                        edit.apply();
-                        mBtDeviceAddress = address;
-                        startConnectionTimer();
-                    } else if (data.hasExtra(UsbDeviceActivity.EXTRA_DEVICE_SERIAL)) {
-                        String serial = data.getStringExtra(UsbDeviceActivity.EXTRA_DEVICE_SERIAL);
-                        edit.putString(PREF_DEVICE_USBSERIAL, serial);
-                        edit.apply();
-                        mUsbSerialNumber = serial;
-                        startConnectionTimer();
-                        mLogView.append("Using USB HW # " + serial + "\n");
-                    }
-                } else if (result.getResultCode() == Activity.RESULT_CANCELED && result.getData() != null) {
-                    Intent data = result.getData();
-                    if (data.hasExtra(UsbDeviceActivity.EXTRA_DEVICE_SERIAL)) {
-                        String error_code = data.getStringExtra(UsbDeviceActivity.EXTRA_DEVICE_SERIAL);
-                        mLogView.append("Using USB connection error : " + error_code + "\n");
-                    }
-                }
-            }
-    );
-
-    private final ActivityResultLauncher<Intent> screenLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> setConnectionStatus(STATE_DISCONNECTED)
-    );
+    private PowerManager.WakeLock wakeLock;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        if (powerManager != null) {
+            wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "MyApp:MyWakeLock");
+            wakeLock.acquire(10 * 60 * 1000L /*10 minutes*/);
+        }
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+        
+        // Register back button callback for proper gesture navigation support
+        OnBackPressedCallback onBackPressedCallback = new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
                 finishAffinity();
             }
-        });
-
+        };
+        getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
+        
         initialize();
     }
 
     private String readFileAsString(String filePath) {
+        StringBuilder result = new StringBuilder("No log file found");
         File file = new File(filePath);
-        if (!file.exists()) {
-            return "No log file found";
-        }
-        
-        StringBuilder result = new StringBuilder();
-        try (FileInputStream fis = new FileInputStream(file)) {
-            int currentByte = fis.read();
-            while (currentByte != -1) {
-                result.append((char) currentByte);
-                currentByte = fis.read();
+        if (file.exists()) {
+            result = new StringBuilder();
+            FileInputStream fis = null;
+            try {
+                fis = new FileInputStream(file);
+                char current;
+                while (fis.available() > 0) {
+                    current = (char) fis.read();
+                    result.append(current);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (fis != null) {
+                    try {
+                        fis.close();
+                    } catch (IOException ignored) {
+                    }
+                }
             }
-        } catch (Exception e) {
-            Log.e(TAG, "Error reading file", e);
         }
         return result.toString();
     }
@@ -348,7 +320,7 @@ public class MainActivity extends AppCompatActivity {
         mUsbSerialNumber = defaultPrefs.getString(PREF_DEVICE_USBSERIAL, "");
 
         mEcuDatabase = new EcuDatabase();
-        mEcuIdentifierNew = new EcuDatabase.EcuIdentifierNew();
+        mEcuIdentifierNew = mEcuDatabase.new EcuIdentifierNew();
 
         if (!askStorageReadPermission()) {
             mLogView.append("You need external storage permission to read database\n");
@@ -369,8 +341,7 @@ public class MainActivity extends AppCompatActivity {
             edit.putString(PREF_LINK_MODE, "BT");
             edit.apply();
 
-            BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-            BluetoothAdapter btAdapter = bluetoothManager != null ? bluetoothManager.getAdapter() : null;
+            BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
             if (!mActivateBluetoothAsked && btAdapter != null && !btAdapter.isEnabled()) {
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -385,7 +356,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 mActivateBluetoothAsked = true;
                 Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                btEnableLauncher.launch(enableIntent);
+                startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
             }
         } else if (mLinkMode == LINK_WIFI) {
             mActivateBluetoothAsked = false;
@@ -453,8 +424,7 @@ public class MainActivity extends AppCompatActivity {
 
         String filesDir = getApplicationContext().getFilesDir().getAbsolutePath();
         if (mLinkMode == LINK_BLUETOOTH) {
-            BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-            BluetoothAdapter btAdapter = bluetoothManager != null ? bluetoothManager.getAdapter() : null;
+            BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
             if (btAdapter != null && !btAdapter.isEnabled()) {
                 return;
             }
@@ -530,19 +500,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void showWaitDialog() {
-        View view = getLayoutInflater().inflate(R.layout.progress_dialog_layout, null);
-        TextView messageView = view.findViewById(R.id.progress_message);
-        messageView.setText(R.string.title_connecting);
-        
-        mScanProgressDialog = new AlertDialog.Builder(this)
-                .setTitle(R.string.scanning)
-                .setView(view)
-                .setNegativeButton(R.string.CANCEL, (dialog, which) -> {
-                    mObdDevice.clearMessages();
-                    stopProgressDialog();
-                })
-                .setCancelable(false)
-                .create();
+        mScanProgressDialog = new ProgressDialog(this);
+        mScanProgressDialog.setTitle("Scanning");
+        mScanProgressDialog.setMessage("Please wait...");
+        mScanProgressDialog.setButton(DialogInterface.BUTTON_NEGATIVE, getResources().getString(R.string.CANCEL), (dialog, which) -> {
+            // Fast recovery, clear message queue to
+            // avoid lags
+            mObdDevice.clearMessages();
+            stopProgressDialog();
+        });
         mScanProgressDialog.show();
     }
 
@@ -698,8 +664,7 @@ public class MainActivity extends AppCompatActivity {
         stopConnectionTimer();
         try {
             if (mLinkMode == LINK_BLUETOOTH) {
-                BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-                BluetoothAdapter bluetoothAdapter = bluetoothManager != null ? bluetoothManager.getAdapter() : null;
+                BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
                 // If the adapter is null, then Bluetooth is not supported
                 if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
                     return;
@@ -717,10 +682,10 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 Intent serverIntent = new Intent(this, DeviceListActivity.class);
-                connectDeviceLauncher.launch(serverIntent);
+                startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
             } else if (mLinkMode == LINK_USB) {
                 Intent serverIntent = new Intent(this, UsbDeviceActivity.class);
-                connectDeviceLauncher.launch(serverIntent);
+                startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
             } else if (mLinkMode == LINK_WIFI) {
                 if (!askLocationPermission()) {
                     //return;
@@ -750,7 +715,7 @@ public class MainActivity extends AppCompatActivity {
             b.putString("deviceAddress", mBtDeviceAddress);
             b.putInt("linkMode", mLinkMode);
             serverIntent.putExtras(b);
-            screenLauncher.launch(serverIntent);
+            startActivityForResult(serverIntent, REQUEST_SCREEN);
         } catch (ActivityNotFoundException e) {
 
         }
@@ -912,6 +877,10 @@ public class MainActivity extends AppCompatActivity {
             mObdDevice.disconnect();
             mObdDevice.closeLogFile();
         }
+        // Release the WakeLock when the activity is destroyed to prevent keeping the device awake for too long
+        if (wakeLock != null && wakeLock.isHeld()) {
+            wakeLock.release();
+        }
     }
 
     @Override
@@ -1024,7 +993,7 @@ public class MainActivity extends AppCompatActivity {
          * Clean view
          */
         ArrayList<String> ecuNames = new ArrayList<>();
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_list_item_1,
                 ecuNames);
         mSpecificEcuListView.setAdapter(adapter);
@@ -1032,17 +1001,20 @@ public class MainActivity extends AppCompatActivity {
         final String[] projects = mEcuDatabase.getModels();
 
         Arrays.sort(projects);
-        builder.setItems(projects, (dialog, which) -> {
-            mCurrentProject = mEcuDatabase.getProjectFromModel(projects[which]);
-            SharedPreferences.Editor edit = defaultPrefs.edit();
-            edit.putString(PREF_PROJECT, mCurrentProject);
-            edit.apply();
-            updateEcuTypeListView(mEcuFilePath, mCurrentProject);
-            String code = mEcuDatabase.current_project_code;
-            String name = mEcuDatabase.current_project_name;
-            CharSequence title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
-            mStatusView.setText(title);
-            mLogView.append("Loaded vehicle Name: " + name + "\n");
+        builder.setItems(projects, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                mCurrentProject = mEcuDatabase.getProjectFromModel(projects[which]);
+                SharedPreferences.Editor edit = defaultPrefs.edit();
+                edit.putString(PREF_PROJECT, mCurrentProject);
+                edit.apply();
+                updateEcuTypeListView(mEcuFilePath, mCurrentProject);
+                String code = mEcuDatabase.current_project_code;
+                String name = mEcuDatabase.current_project_name;
+                CharSequence title = "ECU-TWEAKER v" + BuildConfig.VERSION_NAME + "\nCode: " + code;
+                mStatusView.setText(title);
+                mLogView.append("Loaded vehicle Name: " + name + "\n");
+            }
         });
 
         AlertDialog dialog = builder.create();
@@ -1232,12 +1204,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     private static class messageHandler extends Handler {
         private final MainActivity activity;
 
         messageHandler(MainActivity ac) {
-            super(Looper.getMainLooper());
             activity = ac;
         }
 
@@ -1271,7 +1241,7 @@ public class MainActivity extends AppCompatActivity {
                         dlgAlert.setTitle("Exception caught");
                         dlgAlert.setPositiveButton("OK", null);
                         dlgAlert.create().show();
-                        mLogView.append("Exception : " + e.getMessage() + "\n");
+                        activity.mLogView.append("Exception : " + e.getMessage() + "\n");
                     }
                     break;
                 case MESSAGE_DEVICE_NAME:
@@ -1281,7 +1251,7 @@ public class MainActivity extends AppCompatActivity {
                             Toast.LENGTH_SHORT).show();
                     break;
                 case MESSAGE_LOG:
-                    mLogView.append(activity.getResources().getString(R.string.BT_MANAGER_MESSAGE) + " : "
+                    activity.mLogView.append(activity.getResources().getString(R.string.BT_MANAGER_MESSAGE) + " : "
                             + msg.getData().getString(TOAST) + "\n");
                     break;
                 case MESSAGE_QUEUE_STATE:

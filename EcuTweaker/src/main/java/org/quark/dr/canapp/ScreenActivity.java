@@ -11,7 +11,6 @@ import static org.quark.dr.ecu.Ecu.hexStringToByteArray;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import org.quark.dr.canapp.BuildConfig;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -20,9 +19,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
-import androidx.core.text.HtmlCompat;
+import android.text.Html;
 import android.text.Spanned;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -63,13 +61,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+@SuppressWarnings("deprecation")
 public class ScreenActivity extends AppCompatActivity {
     public static final int MESSAGE_STATE_CHANGE = 1;
     public static final int MESSAGE_READ = 2;
+    public static final int MESSAGE_WRITE = 3;
     public static final int MESSAGE_DEVICE_NAME = 4;
     public static final int MESSAGE_TOAST = 5;
     public static final int MESSAGE_QUEUE_STATE = 6;
@@ -130,25 +129,28 @@ public class ScreenActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_screen);
-
-        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+        
+        // Register back button callback for proper gesture navigation support
+        OnBackPressedCallback onBackPressedCallback = new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
                 stopAutoReload();
                 if (mChatService != null) {
                     mChatService.changeHandler(null);
                 }
-                finish();
+                // Navigate back - finish this activity
+                ScreenActivity.this.finish();
             }
-        });
-
+        };
+        getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
+        
         initialize(savedInstanceState);
     }
 
     private void initialize(Bundle savedInstanceState) {
         mCanTimeOut = 0;
-        String ecuFile;
-        String ecuHref;
+        String ecuFile = "";
+        String ecuHref = "";
         m_autoReload = false;
         SharedPreferences defaultPrefs = this.getSharedPreferences(MainActivity.DEFAULT_PREF_TAG,
                 MODE_PRIVATE);
@@ -159,21 +161,18 @@ public class ScreenActivity extends AppCompatActivity {
         mSoftFlowControl = defaultPrefs.getBoolean(PREF_SOFTFLOW, false);
 
         mLastSDSTime = 0;
-        int linkMode;
+        int linkMode = MainActivity.LINK_WIFI;
 
         Bundle b = getIntent().getExtras();
         if (b != null) {
             ecuFile = b.getString("ecuFile");
             ecuHref = b.getString("ecuRef");
+            if (b.containsKey("deviceAddress")) {
+                String m_deviceAddressPref = b.getString("deviceAddress");
+            }
             linkMode = b.getInt("linkMode", MainActivity.LINK_WIFI);
         } else if (savedInstanceState != null && savedInstanceState.containsKey("ecu_name")) {
             ecuFile = savedInstanceState.getString("ecu_name");
-            ecuHref = "";
-            linkMode = MainActivity.LINK_WIFI;
-        } else {
-            ecuFile = "";
-            ecuHref = "";
-            linkMode = MainActivity.LINK_WIFI;
         }
 
         m_reloadButton = findViewById(R.id.reloadButton);
@@ -495,7 +494,7 @@ public class ScreenActivity extends AppCompatActivity {
                 if (labelData.alignment == 2) {
                     textView.setGravity(Gravity.CENTER_HORIZONTAL);
                 } else if (labelData.alignment == 1) {
-                    textView.setGravity(Gravity.END);
+                    textView.setGravity(Gravity.RIGHT);
                 }
                 m_layoutView.addView(textView);
             }
@@ -513,7 +512,7 @@ public class ScreenActivity extends AppCompatActivity {
                 textView.setBackgroundColor(displaydata.color.get());
                 textView.setTextSize(TypedValue.COMPLEX_UNIT_PX,
                         convertFontToPixel(displaydata.font.size));
-                textView.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+                textView.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
                 m_layoutView.addView(textView);
             }
 
@@ -549,7 +548,7 @@ public class ScreenActivity extends AppCompatActivity {
                 m_layoutView.addView(textView);
             }
 
-            if (m_ecu.getData(inputdata.text).items.isEmpty()) {
+            if (m_ecu.getData(inputdata.text).items.size() == 0) {
                 EditText textEdit = new EditText(this);
                 textEdit.setX(convertToPixel(inputdata.rect.x + inputdata.width));
                 textEdit.setY(convertToPixel(inputdata.rect.y));
@@ -754,7 +753,7 @@ public class ScreenActivity extends AppCompatActivity {
             }
 
             if (request.sentbytes.equals(req)) {
-                Map<String, Pair<String, String>> mapValues;
+                HashMap<String, Pair<String, String>> mapValues;
                 try {
                     byte[] bytes = hexStringToByteArray(response);
                     mapValues = m_ecu.getRequestValuesWithUnit(bytes, requestname);
@@ -765,27 +764,17 @@ public class ScreenActivity extends AppCompatActivity {
                 }
 
                 for (String key : mapValues.keySet()) {
-                    Pair<String, String> value = mapValues.get(key);
-                    if (value == null) continue;
-                    
                     if (m_displayViews.containsKey(key)) {
-                        EditText displayView = m_displayViews.get(key);
-                        if (displayView != null) {
-                            displayView.setText(String.format("%s %s", value.first, value.second));
-                        }
+                        m_displayViews.get(key).setText(mapValues.get(key).first
+                                + " " + mapValues.get(key).second);
                     }
                     if (m_editTextViews.containsKey(key)) {
-                        EditText editView = m_editTextViews.get(key);
-                        if (editView != null) {
-                            editView.setText(value.first);
-                        }
+                        m_editTextViews.get(key).setText(mapValues.get(key).first);
                     }
                     if (m_spinnerViews.containsKey(key)) {
                         Spinner spinner = m_spinnerViews.get(key);
-                        if (spinner != null) {
-                            spinner.setSelection(((CustomAdapter) spinner.getAdapter())
-                                    .getPosition(value.first));
-                        }
+                        spinner.setSelection(((CustomAdapter) spinner.getAdapter())
+                                .getPosition(mapValues.get(key).first));
                     }
                 }
             }
@@ -956,7 +945,6 @@ public class ScreenActivity extends AppCompatActivity {
         super.onStop();
     }
 
-
     void setConnectionStatus(int c) {
         if (c == STATE_CONNECTED) {
             m_btIconStatus.setColorFilter(Color.GREEN);
@@ -975,7 +963,8 @@ public class ScreenActivity extends AppCompatActivity {
         builder.setTitle(getResources().getString(R.string.CATEGORY_CHOOSE));
 
         final String[] categories =
-                m_currentLayoutData.getCategories().toArray(new String[0]);
+                m_currentLayoutData.getCategories().toArray(
+                        new String[m_currentLayoutData.getCategories().size()]);
 
         builder.setItems(categories, (dialog, which) -> {
             String selected = categories[which];
@@ -991,7 +980,8 @@ public class ScreenActivity extends AppCompatActivity {
         builder.setTitle(getResources().getString(R.string.SCREEN_CHOOSE));
 
         final String[] screens =
-                m_currentLayoutData.getScreenNames(screenname).toArray(new String[0]);
+                m_currentLayoutData.getScreenNames(screenname).toArray(
+                        new String[m_currentLayoutData.getScreenNames(screenname).size()]);
 
         builder.setItems(screens, (dialog, which) -> {
             String selected = screens[which];
@@ -1037,8 +1027,9 @@ public class ScreenActivity extends AppCompatActivity {
                 String txa = m_ecu.getTxId();
                 String rxa = m_ecu.getRxId();
                 mChatService.setEcuName(m_ecu.getName());
+                // TODO : Need look for canline and brp here send 0 and value.
                 boolean as_brp = m_ecu.getSdsrequests().containsKey("brp") && Objects.equals(m_ecu.getSdsrequests().get("brp"), "1");
-                mChatService.initCan(rxa, txa, m_ecu.getCanline(), as_brp);
+                mChatService.initCan(rxa, txa, 0, as_brp);
             } else if (m_ecu.getProtocol().equals("KWP2000")) {
                 String fa = m_ecu.getFunctionnalAddress();
                 mChatService.initKwp(fa, m_ecu.getFastInit());
@@ -1197,9 +1188,10 @@ public class ScreenActivity extends AppCompatActivity {
 
     void decodeDTC(String response) {
         // Test data ACU4
+        // response = "57 06 90 07 41 90 08 41 90 42 52 90 08 42 90 07 42 90 7C 40".replace(" ", "");
         List<List<String>> decodedDtcs = m_ecu.decodeDTC(m_currentDtcRequestName, response);
 
-        if (decodedDtcs.isEmpty()) {
+        if (decodedDtcs.size() == 0) {
             Toast.makeText(getApplicationContext(), getResources().getString(R.string.NO_DTC_STORED),
                     Toast.LENGTH_SHORT).show();
             return;
@@ -1215,7 +1207,7 @@ public class ScreenActivity extends AppCompatActivity {
             }
         }
 
-        Spanned message = HtmlCompat.fromHtml(dtcReport.toString(), HtmlCompat.FROM_HTML_MODE_LEGACY);
+        Spanned message = Html.fromHtml(dtcReport.toString());
         AlertDialog alertDialog = new AlertDialog.Builder(ScreenActivity.this).create();
         alertDialog.setTitle("DTC Report");
         alertDialog.setMessage(message);
@@ -1228,7 +1220,6 @@ public class ScreenActivity extends AppCompatActivity {
         private final ScreenActivity activity;
 
         messageHandler(ScreenActivity ac) {
-            super(Looper.getMainLooper());
             activity = ac;
         }
 

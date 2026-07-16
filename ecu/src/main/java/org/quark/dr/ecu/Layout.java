@@ -16,16 +16,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Represents a screen layout for ECU parameter display.
- * <p>
- * This class parses layout definitions from JSON and provides access to
- * screen data including inputs, displays, labels, and buttons.
- */
+@SuppressWarnings("unchecked")
 public class Layout {
-    /** Map of screen names to their data definitions. */
     public HashMap<String, ScreenData> m_screens;
-    /** Map of category names to lists of screen names. */
     HashMap<String, ArrayList<String>> m_categories;
 
     public Layout(InputStream is) {
@@ -111,11 +104,13 @@ public class Layout {
         }
     }
 
-    private static class ListComparator implements Comparator<Pair<Integer, ?>> {
+    private static class ListComparator implements Comparator {
 
         @Override
-        public int compare(Pair<Integer, ?> o1, Pair<Integer, ?> o2) {
-            return o2.first - o1.first;
+        public int compare(Object o1, Object o2) {
+            Pair<Integer, String> O1 = (Pair<Integer, String>) o1;
+            Pair<Integer, String> O2 = (Pair<Integer, String>) o2;
+            return O2.first - O1.first;
         }
     }
 

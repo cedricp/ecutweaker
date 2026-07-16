@@ -24,8 +24,6 @@ package org.quark.dr.usbserial.driver;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 
-import androidx.annotation.NonNull;
-
 import java.io.IOException;
 
 /**
@@ -62,7 +60,6 @@ abstract class CommonUsbSerialPort implements UsbSerialPort {
         mWriteBuffer = new byte[DEFAULT_WRITE_BUFFER_SIZE];
     }
 
-    @NonNull
     @Override
     public String toString() {
         return String.format("<%s device_name=%s device_id=%s port_number=%s>",

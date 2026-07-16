@@ -21,34 +21,17 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-/**
- * Manages the ECU database containing vehicle and ECU definitions.
- * <p>
- * This class handles loading, caching, and querying ECU data from a ZIP archive.
- * It provides methods for ECU identification and address mapping.
- */
 public class EcuDatabase {
-    /** Static reference to loaded project data. */
     private static ProjectData.Projects Projects = null;
-    /** Map of ECU addresses to their information lists. */
     private final HashMap<Integer, ArrayList<EcuInfo>> m_ecuInfo;
-    /** Map of ECU addresses to their functional names. */
     private final HashMap<Integer, String> m_ecuAddressing;
-    /** Receive address mapping (standard addressing). */
     private final HashMap<Integer, String> RXADDRMAP, TXADDRMAP, RXADDRMAP_EXT, TXADDRMAP_EXT;
-    /** Map of project codes to model names. */
     private final HashMap<String, String> MODELSMAP;
-    /** Current project code (e.g., "ALL", "RENAULT"). */
     public String current_project_code;
-    /** Current project/vehicle name. */
     public String current_project_name;
-    /** Whether the database has been loaded. */
     boolean m_loaded;
-    /** Set of available project codes. */
     private Set<String> m_projectSet;
-    /** Path to the ECU ZIP database file. */
     private String m_ecuFilePath;
-    /** ZIP file system for efficient file access. */
     private ZipFileSystem m_zipFileSystem;
 
     public EcuDatabase() {
@@ -70,7 +53,12 @@ public class EcuDatabase {
     }
 
     public ArrayList<String> getEcuByFunctions() {
-        return new ArrayList<>(m_ecuAddressing.values());
+        ArrayList<String> list = new ArrayList<>();
+        Iterator<String> valueIterator = m_ecuAddressing.values().iterator();
+        while (valueIterator.hasNext()) {
+            list.add(valueIterator.next());
+        }
+        return list;
     }
 
     @Nullable
@@ -111,9 +99,6 @@ public class EcuDatabase {
     public ArrayList<EcuInfo> identifyNewEcu(EcuIdentifierNew ecuIdentifer) {
         ArrayList<EcuInfo> ecuInfos = m_ecuInfo.get(ecuIdentifer.addr);
         ArrayList<EcuInfo> keptEcus = new ArrayList<>();
-        if (ecuInfos == null) {
-            return keptEcus;
-        }
         for (EcuInfo ecuInfo : ecuInfos) {
             for (EcuIdent ecuIdent : ecuInfo.ecuIdents) {
                 if (ecuIdent.supplier_code.equals(ecuIdentifer.supplier) &&
@@ -134,7 +119,10 @@ public class EcuDatabase {
 
     public ArrayList<String> getEcuByFunctionsAndType(String type) {
         Set<String> list = new HashSet<>();
-        for (ArrayList<EcuInfo> ecuArray : m_ecuInfo.values()) {
+        Iterator<ArrayList<EcuInfo>> ecuArrayIterator = m_ecuInfo.values().iterator();
+
+        while (ecuArrayIterator.hasNext()) {
+            ArrayList<EcuInfo> ecuArray = ecuArrayIterator.next();
             for (EcuInfo ecuInfo : ecuArray) {
                 if ((ecuInfo.projects.contains(type) || type.isEmpty())
                         && m_ecuAddressing.containsKey(ecuInfo.addressId)) {
@@ -142,13 +130,17 @@ public class EcuDatabase {
                 }
             }
         }
-        return new ArrayList<>(list);
+        ArrayList<String> ret = new ArrayList<>();
+        for (String txt : list) {
+            ret.add(txt);
+        }
+        return ret;
     }
 
     public int getAddressByFunction(String name) {
         Set<Integer> keySet = m_ecuAddressing.keySet();
         for (Integer i : keySet) {
-            if (Objects.equals(m_ecuAddressing.get(i), name)) {
+            if (m_ecuAddressing.get(i) == name) {
                 return i;
             }
         }
@@ -156,19 +148,21 @@ public class EcuDatabase {
     }
 
     public String[] getProjects() {
-        return m_projectSet.toArray(new String[0]);
+        return m_projectSet.toArray(new String[m_projectSet.size()]);
     }
 
     public String[] getModels() {
-        return MODELSMAP.values().toArray(new String[0]);
+        return MODELSMAP.values().toArray(new String[MODELSMAP.size()]);
     }
 
     public String getProjectFromModel(String model) {
+        Iterator it = MODELSMAP.entrySet().iterator();
         String result = "";
-        if (!model.equalsIgnoreCase("ALL")) {
-            for (Map.Entry<String, String> keyval : MODELSMAP.entrySet()) {
-                if (keyval.getValue().equalsIgnoreCase(model)) {
-                    result = keyval.getKey();
+        if (!model.toUpperCase().equals("ALL")) {
+            while (it.hasNext()) {
+                Map.Entry keyval = (Map.Entry) it.next();
+                if (((String) keyval.getValue()).toUpperCase().equals(model.toUpperCase())) {
+                    result = (String) keyval.getKey();
                     break;
                 }
             }
@@ -177,8 +171,7 @@ public class EcuDatabase {
         return result;
     }
 
-    public void buildMaps(String codeIn) {
-        String code = codeIn;
+    public void buildMaps(String code) {
         if (Projects == null) {
             throw new RuntimeException("projects.json not found or not loaded!");
         }
@@ -239,17 +232,21 @@ public class EcuDatabase {
     }
 
     private void filterProjects() {
-        Iterator<String> it = m_projectSet.iterator();
-        while (it.hasNext()) {
-            String project = it.next();
+        Iterator<String> its = m_projectSet.iterator();
+        while (its.hasNext()) {
+            Set<String> modelKeySet = MODELSMAP.keySet();
+            String project = its.next();
             if (!MODELSMAP.containsKey(project)) {
-                it.remove();
+                MODELSMAP.remove(project);
             }
         }
     }
 
     public void checkMissings() {
-        for (String project : m_projectSet) {
+        Iterator<String> its = m_projectSet.iterator();
+        while (its.hasNext()) {
+            Set<String> modelKeySet = MODELSMAP.keySet();
+            String project = its.next();
             if (!MODELSMAP.containsKey(project)) {
                 System.out.println("?? Missing " + project);
             }
@@ -530,26 +527,26 @@ public class EcuDatabase {
         return m_zipFileSystem;
     }
 
-    public static class EcuIdent {
+    public class EcuIdent {
         public String supplier_code, soft_version, version, diagnostic_version;
     }
 
-    public static class EcuInfo {
+    public class EcuInfo {
         public Set<String> projects;
         public String href;
         public String ecuName, protocol;
         public int addressId;
-        public EcuIdent[] ecuIdents;
+        public EcuIdent ecuIdents[];
         public boolean exact_match;
     }
 
-    public static class DatabaseException extends Exception {
+    public class DatabaseException extends Exception {
         public DatabaseException(String message) {
             super(message);
         }
     }
 
-    public static class EcuIdentifierNew {
+    public class EcuIdentifierNew {
         public String supplier, version, soft_version, diag_version;
         public int addr;
 

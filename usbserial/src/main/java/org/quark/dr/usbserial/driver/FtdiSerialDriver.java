@@ -26,7 +26,6 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbRequest;
-import android.os.Build;
 import android.util.Log;
 
 import java.io.IOException;
@@ -91,6 +90,7 @@ import java.util.Map;
  * @see <a href="http://www.ftdichip.com/">FTDI Homepage</a>
  * @see <a href="http://www.intra2net.com/en/developer/libftdi">libftdi</a>
  */
+@SuppressWarnings("deprecation")
 public class FtdiSerialDriver implements UsbSerialDriver {
 
     private final UsbDevice mDevice;
@@ -275,7 +275,6 @@ public class FtdiSerialDriver implements UsbSerialDriver {
         }
 
         @Override
-        @SuppressWarnings("deprecation")
         public int read(byte[] dest, int timeoutMillis) throws IOException {
             final UsbEndpoint endpoint = mDevice.getInterface(0).getEndpoint(0);
 
@@ -290,14 +289,7 @@ public class FtdiSerialDriver implements UsbSerialDriver {
                 request.initialize(mConnection, endpoint);
 
                 final ByteBuffer buf = ByteBuffer.wrap(dest);
-                buf.limit(readAmt);
-                boolean queued;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    queued = request.queue(buf);
-                } else {
-                    queued = request.queue(buf, readAmt);
-                }
-                if (!queued) {
+                if (!request.queue(buf, readAmt)) {
                     throw new IOException("Error queueing request.");
                 }
 

@@ -24,23 +24,20 @@ package org.quark.dr.usbserial.drive;
 /**
  * Registry of USB vendor/product ID constants.
  * <p>
- * Contains USB vendor and product identifiers for supported serial devices.
- * Data sourced from linux-usb.org and device manufacturers.
+ * Culled from various sources; see
+ * <a href="http://www.linux-usb.org/usb.ids">usb.ids</a> for one listing.
  *
  * @author mike wakerly (opensource@hoho.com)
  */
 public final class UsbId {
 
-    // FTDI vendor ID and supported product IDs
     public static final int VENDOR_FTDI = 0x0403;
     public static final int FTDI_FT232R = 0x6001;
     public static final int FTDI_FT231X = 0x6015;
 
-    // Atmel vendor ID and supported product IDs
     public static final int VENDOR_ATMEL = 0x03EB;
     public static final int ATMEL_LUFA_CDC_DEMO_APP = 0x2044;
 
-    // Arduino vendor ID and supported product IDs
     public static final int VENDOR_ARDUINO = 0x2341;
     public static final int ARDUINO_UNO = 0x0001;
     public static final int ARDUINO_MEGA_2560 = 0x0010;
@@ -53,26 +50,21 @@ public final class UsbId {
     public static final int ARDUINO_LEONARDO = 0x8036;
     public static final int ARDUINO_MICRO = 0x8037;
 
-    // Van Ooijen Tech (Teensy) vendor ID
     public static final int VENDOR_VAN_OOIJEN_TECH = 0x16c0;
     public static final int VAN_OOIJEN_TECH_TEENSYDUINO_SERIAL = 0x0483;
 
-    // Leaflabs vendor ID
     public static final int VENDOR_LEAFLABS = 0x1eaf;
     public static final int LEAFLABS_MAPLE = 0x0004;
 
-    // Silicon Labs vendor ID and supported product IDs
     public static final int VENDOR_SILABS = 0x10c4;
     public static final int SILABS_CP2102 = 0xea60;
     public static final int SILABS_CP2105 = 0xea70;
     public static final int SILABS_CP2108 = 0xea71;
     public static final int SILABS_CP2110 = 0xea80;
 
-    // Prolific vendor ID and supported product IDs
     public static final int VENDOR_PROLIFIC = 0x067b;
     public static final int PROLIFIC_PL2303 = 0x2303;
 
-    // Qinheng (HL340/CH340) vendor ID
     public static final int VENDOR_QINHENG = 0x1a86;
     public static final int QINHENG_HL340 = 0x7523;
 

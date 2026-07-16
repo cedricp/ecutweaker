@@ -1,7 +1,6 @@
 package org.quark.dr.canapp;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,7 +12,7 @@ import androidx.annotation.NonNull;
 
 public class CustomAdapter extends ArrayAdapter<String> {
     Context context;
-    int color = Color.BLACK;
+    int color;
     String[] items;
     private int textSize = 20;
 
@@ -21,39 +20,38 @@ public class CustomAdapter extends ArrayAdapter<String> {
         super(context, textViewResourceId, objects);
         this.items = objects;
         this.context = context;
+
     }
 
     @Override
     public View getDropDownView(int position, View convertView,
                                 @NonNull ViewGroup parent) {
-        View view = convertView;
-        if (view == null) {
+
+        if (convertView == null) {
             LayoutInflater inflater = LayoutInflater.from(context);
-            view = inflater.inflate(
+            convertView = inflater.inflate(
                     android.R.layout.simple_spinner_item, parent, false);
         }
 
-        TextView tv = view.findViewById(android.R.id.text1);
+        TextView tv = convertView.findViewById(android.R.id.text1);
         tv.setText(items[position]);
         //tv.setTextSize(textSize);
-        return view;
+        return convertView;
     }
 
-    @NonNull
     @Override
     public View getView(int position, View convertView, @NonNull ViewGroup parent) {
-        View view = convertView;
-        if (view == null) {
+        if (convertView == null) {
             LayoutInflater inflater = LayoutInflater.from(context);
-            view = inflater.inflate(
+            convertView = inflater.inflate(
                     android.R.layout.simple_spinner_item, parent, false);
         }
 
-        TextView tv = view.findViewById(android.R.id.text1);
+        TextView tv = convertView.findViewById(android.R.id.text1);
         tv.setText(items[position]);
         tv.setTextColor(color);
         tv.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
-        return view;
+        return convertView;
     }
 
     public void setSpinnerTextSize(int size) {

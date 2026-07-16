@@ -1,12 +1,8 @@
 package org.quark.dr.canapp;
 
 import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.Network;
-import android.net.NetworkCapabilities;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -18,10 +14,12 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+@SuppressWarnings("deprecation")
 public class ElmWifi extends ElmBase {
     private static final String TAG = "ElmWifiThread";
     private static final int mServerPort = 35000;
     private final Context mContext;
+    private Socket mSocket;
     private WifiManager.WifiLock wifiLock;
     private String mServerIPAddress = "192.168.0.10";
     private String mDeviceName = "Elm327";
@@ -61,13 +59,7 @@ public class ElmWifi extends ElmBase {
         }
 
         if (wifiLock == null) {
-            int lockType;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                lockType = WifiManager.WIFI_MODE_FULL_LOW_LATENCY;
-            } else {
-                lockType = 1; // WIFI_MODE_FULL_HIGH_PERF
-            }
-            wifiLock = wifi.createWifiLock(lockType, "HighPerf wifi lock");
+            wifiLock = wifi.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "HighPerf wifi lock");
         }
 
         if (wifiLock == null) {
@@ -75,10 +67,10 @@ public class ElmWifi extends ElmBase {
         }
 
         wifiLock.acquire();
-        WifiInfo wifiInfo = getWifiInfo(wifi);
-        String name = wifiInfo != null ? wifiInfo.getSSID() : "";
+        WifiInfo wifiInfo = wifi.getConnectionInfo();
+        String name = wifiInfo.getSSID();
 
-        if (wifi.isWifiEnabled() && name != null && (name.toUpperCase().contains("OBD") ||
+        if (wifi.isWifiEnabled() && (name.toUpperCase().contains("OBD") ||
                 name.toUpperCase().contains("ELM") ||
                 name.toUpperCase().contains("ECU") ||
                 name.toUpperCase().contains("LINK"))) {
@@ -108,26 +100,6 @@ public class ElmWifi extends ElmBase {
         return connect(mServerIPAddress);
     }
 
-    @SuppressWarnings("deprecation")
-    private WifiInfo getWifiInfo(WifiManager wifiManager) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ConnectivityManager cm = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
-            if (cm != null) {
-                Network network = cm.getActiveNetwork();
-                if (network != null) {
-                    NetworkCapabilities capabilities = cm.getNetworkCapabilities(network);
-                    if (capabilities != null && capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
-                        Object transportInfo = capabilities.getTransportInfo();
-                        if (transportInfo instanceof WifiInfo) {
-                            return (WifiInfo) transportInfo;
-                        }
-                    }
-                }
-            }
-        }
-        return wifiManager.getConnectionInfo();
-    }
-
     @Override
     public void disconnect() {
         if (mConnectThread != null)
@@ -152,15 +124,20 @@ public class ElmWifi extends ElmBase {
     }
 
     private void createConnectedThread(Socket socket) {
+        mSocket = socket;
         mConnectedThread = new ElmWifi.ConnectedThread(socket);
         mConnectedThread.start();
         setState(STATE_CONNECTED);
     }
 
+    public boolean isConnected() {
+        return (mSocket != null) && mSocket.isConnected() && mRunningStatus;
+    }
+
     @Override
-    protected String writeRaw(String rawBuffer) {
-        String data = rawBuffer + "\r";
-        return mConnectedThread.write(data.getBytes());
+    protected String writeRaw(String raw_buffer) {
+        raw_buffer += "\r";
+        return mConnectedThread.write(raw_buffer.getBytes());
     }
 
 
@@ -206,12 +183,12 @@ public class ElmWifi extends ElmBase {
                     mOutStream.write(buffer);
                     mOutStream.flush();
                 }
-            } catch (IOException localIOException) {
-                connectionLost(localIOException.getMessage());
+            } catch (Exception localIOException1) {
+                connectionLost(localIOException1.getMessage());
                 try {
                     mmSocket.close();
                 } catch (IOException e) {
-                    Log.e(TAG, "Error closing socket after write failure", e);
+
                 }
             }
         }
@@ -318,7 +295,8 @@ public class ElmWifi extends ElmBase {
                 mConnecting = false;
                 return;
             } catch (IOException e) {
-                Log.e(TAG, "Connection failed", e);
+                System.out.println(">>> Except");
+                e.printStackTrace();
             }
             setState(STATE_DISCONNECTED);
         }
