@@ -253,3 +253,22 @@ This project is licensed under the GNU Lesser General Public License v2.1 - see 
 
 - Based on [usb-serial-for-android](https://github.com/mik3y/usb-serial-for-android) by Mike Wakerly
 - Inspired by [ddt4all](https://github.com/cedricp/ddt4all) project
+
+This enhanced architecture ensures optimal performance across all supported adapters while maintaining backward compatibility and providing a seamless user experience.
+
+## **🎯 Final Notes**
+
+**Happy CAN-Hacking!** 🚗💻
+
+### **🤝 Support the Project**
+To make this application more reliable and add support for new devices, hardware donations are needed. Please consider contributing:
+- **💰 Financial donations** via [PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=cedricpaille%40gmail%2ecom&lc=CY&item_name=codetronic&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
+- **🔧 Hardware donations** (OBD-II adapters, cables, ECU devices)
+- **🐛 Bug reports** and patches
+- **📖 Documentation** improvements
+- **🌍 Translation** contributions
+
+### **📞 Community & Support**
+- **Discord**: [Join our community](https://discord.gg/cBqDh9bTHP) for real-time support
+- **GitHub Issues**: Technical problems and bug reports
+- **GitHub Discussions**: Feature requests and general discussions
