@@ -90,6 +90,7 @@ import java.util.Map;
  * @see <a href="http://www.ftdichip.com/">FTDI Homepage</a>
  * @see <a href="http://www.intra2net.com/en/developer/libftdi">libftdi</a>
  */
+@SuppressWarnings("deprecation")
 public class FtdiSerialDriver implements UsbSerialDriver {
 
     private final UsbDevice mDevice;

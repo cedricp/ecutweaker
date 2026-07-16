@@ -21,6 +21,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+@SuppressWarnings("unchecked")
 public class Ecu {
     public String global_endian;
     private HashMap<String, EcuRequest> requests;

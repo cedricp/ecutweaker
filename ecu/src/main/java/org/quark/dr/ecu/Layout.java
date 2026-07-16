@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+@SuppressWarnings("unchecked")
 public class Layout {
     public HashMap<String, ScreenData> m_screens;
     HashMap<String, ArrayList<String>> m_categories;

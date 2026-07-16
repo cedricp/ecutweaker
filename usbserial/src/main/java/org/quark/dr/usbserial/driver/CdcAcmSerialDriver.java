@@ -45,6 +45,7 @@ import java.util.Map;
  * href="http://www.usb.org/developers/devclass_docs/usbcdc11.pdf">Universal
  * Serial Bus Class Definitions for Communication Devices, v1.1</a>
  */
+@SuppressWarnings("deprecation")
 public class CdcAcmSerialDriver implements UsbSerialDriver {
 
     private final String TAG = CdcAcmSerialDriver.class.getSimpleName();
