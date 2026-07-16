@@ -58,6 +58,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
@@ -143,6 +144,16 @@ public class MainActivity extends AppCompatActivity {
             wakeLock.acquire(10 * 60 * 1000L /*10 minutes*/);
         }
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        
+        // Register back button callback for proper gesture navigation support
+        OnBackPressedCallback onBackPressedCallback = new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                finishAffinity();
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
+        
         initialize();
     }
 
@@ -1190,12 +1201,6 @@ public class MainActivity extends AppCompatActivity {
                     "You need write storage permission",
                     Toast.LENGTH_SHORT).show();
         }
-    }
-
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        this.finishAffinity();
     }
 
     private static class messageHandler extends Handler {
