@@ -262,6 +262,7 @@ public class CdcAcmSerialDriver implements UsbSerialDriver {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public int read(byte[] dest, int timeoutMillis) throws IOException {
             if (mEnableAsyncReads) {
                 final UsbRequest request = new UsbRequest();

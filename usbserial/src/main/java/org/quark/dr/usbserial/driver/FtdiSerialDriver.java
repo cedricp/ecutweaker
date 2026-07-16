@@ -275,6 +275,7 @@ public class FtdiSerialDriver implements UsbSerialDriver {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public int read(byte[] dest, int timeoutMillis) throws IOException {
             final UsbEndpoint endpoint = mDevice.getInterface(0).getEndpoint(0);
 
