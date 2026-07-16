@@ -176,7 +176,7 @@ The database is a ZIP file containing:
 ### Prerequisites
 
 - Android Studio Flamingo or later
-- Android SDK 34
+- Android SDK 37
 - Java 17
 
 ### Build Commands
@@ -198,11 +198,11 @@ cd ecutweaker
 
 ### Gradle Configuration
 
-The project uses the following SDK versions (defined in `gradle.properties`):
+The project uses the following SDK versions (defined in `build.gradle`):
 
-- `compileSdkVersion`: 34
+- `compileSdkVersion`: 37
 - `minSdkVersion`: 21
-- `targetSdkVersion`: 34
+- `targetSdkVersion`: 37
 
 ## Troubleshooting
 
