@@ -75,7 +75,7 @@ ecutweaker/
 ├── EcuTweaker/           # Main application module
 │   ├── src/main/java/
 │   │   └── org/quark/dr/canapp/
-│   │       ├── MainActivity.java      # Main UI and connection handling
+│   │       ├── MainActivity.java        # Main UI and connection handling
 │   │       ├── ScreenActivity.java      # Screen display and parameter updates
 │   │       ├── ElmBase.java             # Abstract base for ELM327 communication
 │   │       ├── ElmBluetooth.java        # Bluetooth implementation
@@ -84,18 +84,22 @@ ecutweaker/
 │   │       ├── DeviceListActivity.java  # Device selection UI
 │   │       ├── UsbDeviceActivity.java   # USB device selection UI
 │   │       └── CustomAdapter.java       # Custom spinner adapter
-│   └── proguard-rules.pro
+│   ├── proguard-rules.pro
+│   ├── debug.keystore
+│   └── release.keystore
 ├── ecu/                   # ECU data model library
 │   ├── src/main/java/
 │   │   └── org/quark/dr/ecu/
-│   │       ├── Ecu.java               # ECU data model and parsing
+│   │       ├── Ecu.java                 # ECU data model and parsing
 │   │       ├── EcuDatabase.java         # Database management
 │   │       ├── IsoTPEncode.java         # ISO-TP frame encoding
 │   │       ├── IsoTPDecode.java         # ISO-TP frame decoding
 │   │       ├── ZipFileSystem.java       # Optimized ZIP file access
 │   │       ├── Layout.java              # Screen layout model
 │   │       └── ProjectData.java         # Project configuration data
-│   └── proguard-rules.pro
+│   ├── proguard-rules.pro
+│   ├── debug.keystore
+│   └── release.keystore
 ├── usbserial/             # USB serial driver library
 │   ├── src/main/java/
 │   │   └── org/quark/dr/usbserial/
@@ -108,11 +112,17 @@ ecutweaker/
 │   │       └── util/
 │   │           ├── SerialInputOutputManager.java # Async I/O manager
 │   │           └── HexDump.java         # Hex conversion utilities
-│   └── proguard-rules.pro
+│   ├── proguard-rules.pro
+│   ├── debug.keystore
+│   └── release.keystore
 ├── build.gradle           # Root Gradle configuration
 ├── settings.gradle        # Project settings
 ├── gradle.properties      # Gradle properties
-└── .github/workflows/   # CI/CD workflows
+├── gradlew                # Gradle wrapper (Unix)
+├── gradlew.bat            # Gradle wrapper (Windows)
+├── gen_keys.bat           # Key generation script
+├── license.txt            # License file
+└── .github/workflows/     # CI/CD workflows
 ```
 
 ## Configuration
@@ -253,8 +263,6 @@ This project is licensed under the GNU Lesser General Public License v2.1 - see 
 
 - Based on [usb-serial-for-android](https://github.com/mik3y/usb-serial-for-android) by Mike Wakerly
 - Inspired by [ddt4all](https://github.com/cedricp/ddt4all) project
-
-This enhanced architecture ensures optimal performance across all supported adapters while maintaining backward compatibility and providing a seamless user experience.
 
 ## **🎯 Final Notes**
 
