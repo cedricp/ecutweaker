@@ -1,6 +1,7 @@
 package org.quark.dr.canapp;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,7 +13,7 @@ import androidx.annotation.NonNull;
 
 public class CustomAdapter extends ArrayAdapter<String> {
     Context context;
-    int color;
+    int color = Color.BLACK;
     String[] items;
     private int textSize = 20;
 
@@ -20,7 +21,6 @@ public class CustomAdapter extends ArrayAdapter<String> {
         super(context, textViewResourceId, objects);
         this.items = objects;
         this.context = context;
-
     }
 
     @Override

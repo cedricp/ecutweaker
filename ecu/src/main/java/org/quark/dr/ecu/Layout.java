@@ -16,8 +16,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Represents a screen layout for ECU parameter display.
+ * <p>
+ * This class parses layout definitions from JSON and provides access to
+ * screen data including inputs, displays, labels, and buttons.
+ */
 public class Layout {
+    /** Map of screen names to their data definitions. */
     public HashMap<String, ScreenData> m_screens;
+    /** Map of category names to lists of screen names. */
     HashMap<String, ArrayList<String>> m_categories;
 
     public Layout(InputStream is) {

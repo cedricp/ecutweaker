@@ -18,26 +18,39 @@ import java.util.zip.Inflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-/*
- *
- * A simple class that fast extracts a file stored in a big (dense) zip file
- * I build an index that contains the position and zip information
- * in a hash map.
- * I can now unzip a file stored in a big zip file at the speed of light !
- * /!\ This class handles text files only
- *
+/**
+ * Optimized ZIP file system for fast extraction of individual files.
+ * <p>
+ * Creates an index of ZIP entries for O(1) file access without scanning
+ * the entire archive. This is particularly useful for large ECU database files.
+ * <p>
+ * Note: This class handles text files only. Binary files may not decode correctly.
  */
-
 public class ZipFileSystem {
+    /** Path to the ZIP archive file. */
     private final String m_zipFilePath;
+    /** Path to the index file for cached entry positions. */
     private final String m_indexFile;
+    /** Map of file names to their ZIP entry metadata. */
     private HashMap<String, CustomZipEntry> m_directoryEntries;
+
+    /**
+     * Creates a new ZipFileSystem instance.
+     *
+     * @param zipFilePath Path to the ZIP archive
+     * @param applicationDirectory Directory for storing the index file
+     */
     public ZipFileSystem(String zipFilePath, String applicationDirectory) {
         m_directoryEntries = new HashMap<>();
         m_zipFilePath = zipFilePath;
         m_indexFile = applicationDirectory + "/ecu.idx";
     }
 
+    /**
+     * Loads the index from a previously saved file.
+     *
+     * @return true if the index was loaded successfully, false otherwise
+     */
     public boolean importZipEntries() {
         try {
             JSONArray mainJson = new JSONArray(readFile(m_indexFile));
@@ -57,6 +70,9 @@ public class ZipFileSystem {
         return false;
     }
 
+    /**
+     * Saves the current index to a file for faster future loads.
+     */
     public void exportZipEntries() {
         JSONArray mainJson = new JSONArray();
         for (Map.Entry<String, CustomZipEntry> pair : m_directoryEntries.entrySet()) {
@@ -82,9 +98,11 @@ public class ZipFileSystem {
         }
     }
 
-    /*
-     * Map zip entries to fast load them
-     * This is the slowest part
+    /**
+     * Scans the ZIP file and builds an index of all entries.
+     * <p>
+     * This is the slowest operation and is only called when the index file
+     * doesn't exist or is older than the ZIP file.
      */
     public void getZipEntries() {
         m_directoryEntries = new HashMap<>();

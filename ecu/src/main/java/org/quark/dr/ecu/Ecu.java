@@ -23,18 +23,36 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Represents an ECU (Electronic Control Unit) with its configuration and data definitions.
+ * <p>
+ * This class parses ECU definitions from JSON and provides methods to encode/decode
+ * data for communication with the ECU via various protocols (CAN, KWP2000, ISO8).
+ */
 public class Ecu {
+    /** Global endianness setting for this ECU, either "Little" or "Big". */
     public String global_endian;
+    /** Map of request names to their definitions. */
     private Map<String, EcuRequest> requests;
+    /** Map of data item names to their definitions. */
     private Map<String, EcuData> data;
+    /** Map of Start Diagnostic Session request names to their byte sequences. */
     private Map<String, String> sdsrequests;
+    /** Communication protocol: "CAN", "KWP2000", or "ISO8". */
     private String protocol;
+    /** Functional address for KWP/ISO protocols. */
     private String funcaddr;
+    /** Human-readable ECU name. */
     private String ecu_name;
+    /** CAN transmit ID (hex string). */
     private String ecu_send_id, ecu_recv_id;
+    /** Whether fast initialization is used for KWP2000. */
     private boolean fastinit;
+    /** CAN bus baud rate in bits per second. */
     private int m_baudrate = 500000;
+    /** CAN line identifier (0-5 for different bus types). */
     private int m_canline = 0;
+    /** Default Start Diagnostic Session command bytes. */
     private String m_defaultSDS;
 
     public Ecu(InputStream is) {
@@ -527,11 +545,9 @@ public class Ecu {
             if (dataitem.endian.equals("Big"))
                 little_endian = false;
 
-
-            /*
-             * Not sure it's required to format little endian values...
-             * Will have to check that
-             */
+            // Note: Little endian support is currently disabled due to incomplete implementation.
+            // The original logic for little endian handling is preserved but not active.
+            // TODO: Re-enable and test little endian support when needed.
             little_endian = false;
 
             String finalbinvalue;
