@@ -21,17 +21,34 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Manages the ECU database containing vehicle and ECU definitions.
+ * <p>
+ * This class handles loading, caching, and querying ECU data from a ZIP archive.
+ * It provides methods for ECU identification and address mapping.
+ */
 public class EcuDatabase {
+    /** Static reference to loaded project data. */
     private static ProjectData.Projects Projects = null;
+    /** Map of ECU addresses to their information lists. */
     private final HashMap<Integer, ArrayList<EcuInfo>> m_ecuInfo;
+    /** Map of ECU addresses to their functional names. */
     private final HashMap<Integer, String> m_ecuAddressing;
+    /** Receive address mapping (standard addressing). */
     private final HashMap<Integer, String> RXADDRMAP, TXADDRMAP, RXADDRMAP_EXT, TXADDRMAP_EXT;
+    /** Map of project codes to model names. */
     private final HashMap<String, String> MODELSMAP;
+    /** Current project code (e.g., "ALL", "RENAULT"). */
     public String current_project_code;
+    /** Current project/vehicle name. */
     public String current_project_name;
+    /** Whether the database has been loaded. */
     boolean m_loaded;
+    /** Set of available project codes. */
     private Set<String> m_projectSet;
+    /** Path to the ECU ZIP database file. */
     private String m_ecuFilePath;
+    /** ZIP file system for efficient file access. */
     private ZipFileSystem m_zipFileSystem;
 
     public EcuDatabase() {
