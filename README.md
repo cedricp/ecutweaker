@@ -76,53 +76,58 @@ ecutweaker/
 │   ├── src/main/java/
 │   │   └── org/quark/dr/canapp/
 │   │       ├── MainActivity.java        # Main UI and connection handling
-│   │       ├── ScreenActivity.java      # Screen display and parameter updates
-│   │       ├── ElmBase.java             # Abstract base for ELM327 communication
-│   │       ├── ElmBluetooth.java        # Bluetooth implementation
-│   │       ├── ElmWifi.java             # WiFi implementation
-│   │       ├── ElmUsbSerial.java        # USB serial implementation
-│   │       ├── DeviceListActivity.java  # Device selection UI
-│   │       ├── UsbDeviceActivity.java   # USB device selection UI
-│   │       └── CustomAdapter.java       # Custom spinner adapter
+│   │       ├── ScreenActivity.java        # Screen display and parameter updates
+│   │       ├── ElmBase.java               # Abstract base for ELM327 communication
+│   │       ├── ElmBluetooth.java          # Bluetooth implementation
+│   │       ├── ElmWifi.java               # WiFi implementation
+│   │       ├── ElmUsbSerial.java          # USB serial implementation
+│   │       ├── DeviceListActivity.java      # Device selection UI
+│   │       ├── UsbDeviceActivity.java       # USB device selection UI
+│   │       ├── CustomAdapter.java         # Custom spinner adapter
+│   │       ├── FixedHorizontalScrollView.java  # Custom horizontal scroll view
+│   │       └── FixedScrollView.java         # Custom scroll view
 │   ├── proguard-rules.pro
+│   ├── consumer-rules.pro
 │   ├── debug.keystore
 │   └── release.keystore
 ├── ecu/                   # ECU data model library
 │   ├── src/main/java/
 │   │   └── org/quark/dr/ecu/
-│   │       ├── Ecu.java                 # ECU data model and parsing
-│   │       ├── EcuDatabase.java         # Database management
-│   │       ├── IsoTPEncode.java         # ISO-TP frame encoding
-│   │       ├── IsoTPDecode.java         # ISO-TP frame decoding
-│   │       ├── ZipFileSystem.java       # Optimized ZIP file access
-│   │       ├── Layout.java              # Screen layout model
-│   │       └── ProjectData.java         # Project configuration data
+│   │       ├── Ecu.java                   # ECU data model and parsing
+│   │       ├── EcuDatabase.java           # Database management
+│   │       ├── IsoTPEncode.java           # ISO-TP frame encoding
+│   │       ├── IsoTPDecode.java           # ISO-TP frame decoding
+│   │       ├── ZipFileSystem.java         # Optimized ZIP file access
+│   │       ├── Layout.java                # Screen layout model
+│   │       └── ProjectData.java           # Project configuration data
 │   ├── proguard-rules.pro
+│   ├── consumer-rules.pro
 │   ├── debug.keystore
 │   └── release.keystore
 ├── usbserial/             # USB serial driver library
 │   ├── src/main/java/
 │   │   └── org/quark/dr/usbserial/
-│   │       ├── BuildInfo.java           # Library version info
+│   │       ├── BuildInfo.java             # Library version info
 │   │       ├── driver/
-│   │       │   ├── UsbSerialDriver.java # Driver interface
-│   │       │   ├── UsbId.java           # USB vendor/product IDs
-│   │       │   ├── CdcAcmSerialDriver.java # CDC/ACM driver
-│   │       │   └── FtdiSerialDriver.java   # FTDI driver
+│   │       │   ├── UsbSerialDriver.java   # Driver interface
+│   │       │   ├── UsbId.java             # USB vendor/product IDs
+│   │       │   ├── CdcAcmSerialDriver.java  # CDC/ACM driver
+│   │       │   └── FtdiSerialDriver.java    # FTDI driver
 │   │       └── util/
-│   │           ├── SerialInputOutputManager.java # Async I/O manager
-│   │           └── HexDump.java         # Hex conversion utilities
+│   │           ├── SerialInputOutputManager.java  # Async I/O manager
+│   │           └── HexDump.java           # Hex conversion utilities
 │   ├── proguard-rules.pro
+│   ├── consumer-rules.pro
 │   ├── debug.keystore
 │   └── release.keystore
 ├── build.gradle           # Root Gradle configuration
-├── settings.gradle        # Project settings
-├── gradle.properties      # Gradle properties
-├── gradlew                # Gradle wrapper (Unix)
-├── gradlew.bat            # Gradle wrapper (Windows)
-├── gen_keys.bat           # Key generation script
-├── license.txt            # License file
-└── .github/workflows/     # CI/CD workflows
+├── settings.gradle          # Project settings
+├── gradle.properties        # Gradle properties
+├── gradlew                  # Gradle wrapper (Unix)
+├── gradlew.bat              # Gradle wrapper (Windows)
+├── gen_keys.bat             # Key generation script
+├── license.txt              # License file
+└── .github/workflows/       # CI/CD workflows
 ```
 
 ## Configuration
