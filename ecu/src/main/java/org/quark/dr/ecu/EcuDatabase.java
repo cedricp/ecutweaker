@@ -353,15 +353,42 @@ public class EcuDatabase {
         }
     }
 
+    /**
+     * Reset loaded state so a new/updated ecu.zip can be indexed again.
+     */
+    public void unloadDatabase() {
+        m_loaded = false;
+        m_ecuFilePath = null;
+        m_zipFileSystem = null;
+        m_ecuInfo.clear();
+        m_projectSet = null;
+    }
+
     public String loadDatabase(String ecuFilename, String appDir) throws DatabaseException {
-        if (m_loaded) {
+        if (m_loaded && m_ecuFilePath != null && m_ecuFilePath.equals(ecuFilename)) {
             Log.e("EcuDatabase", "Database already loaded");
             return m_ecuFilePath;
         }
-        File checkEcuFile = new File(ecuFilename);
-        if (!checkEcuFile.exists())
-            ecuFilename = "";
+        // Allow reloading a different (or replaced) database file
+        if (m_loaded) {
+            unloadDatabase();
+        }
 
+        if (ecuFilename == null) {
+            ecuFilename = "";
+        }
+        File checkEcuFile = new File(ecuFilename);
+        if (ecuFilename.isEmpty() || !checkEcuFile.exists() || !checkEcuFile.isFile()) {
+            ecuFilename = "";
+        }
+
+        // Prefer app-private copy installed via the Load Database button
+        if (ecuFilename.isEmpty() && appDir != null) {
+            File appEcu = new File(appDir, "ecu.zip");
+            if (appEcu.exists() && appEcu.isFile()) {
+                ecuFilename = appEcu.getAbsolutePath();
+            }
+        }
         if (ecuFilename.isEmpty()) {
             ecuFilename = searchEcuFile(new File(Environment.getExternalStorageDirectory().getPath()));
         }
@@ -375,7 +402,7 @@ public class EcuDatabase {
             ecuFilename = searchEcuFile(new File("/mnt"));
         }
         if (ecuFilename.isEmpty()) {
-            throw new DatabaseException("Ecu file (ecu.zip) not found");
+            throw new DatabaseException("Ecu file (ecu.zip) not found. Use 'Load Database' to import it.");
         }
 
         String bytes;
@@ -397,19 +424,33 @@ public class EcuDatabase {
          */
         if (indexFile.exists() && (indexTimeStamp > ecuTimeStamp) && m_zipFileSystem.importZipEntries()) {
             bytes = m_zipFileSystem.getZipFile("db.json");
-            if (bytes.isEmpty()) {
-                throw new DatabaseException("Database (db.json) file not found");
+            if (bytes == null || bytes.isEmpty()) {
+                // Stale/corrupt index — rebuild
+                if (!indexFile.delete()) {
+                    Log.w("EcuDatabase", "Could not delete stale ecu.idx");
+                }
+                m_zipFileSystem = new ZipFileSystem(m_ecuFilePath, appDir);
+                m_zipFileSystem.getZipEntries();
+                m_zipFileSystem.exportZipEntries();
+                bytes = m_zipFileSystem.getZipFile("db.json");
             }
         } else {
             /*
              * Else create it
              */
+            if (indexFile.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                indexFile.delete();
+            }
             m_zipFileSystem.getZipEntries();
             m_zipFileSystem.exportZipEntries();
             bytes = m_zipFileSystem.getZipFile("db.json");
-            if (bytes.isEmpty()) {
-                throw new DatabaseException("Database (db.json) file not found");
-            }
+        }
+
+        if (bytes == null || bytes.isEmpty()) {
+            throw new DatabaseException(
+                    "Database (db.json) not found inside ecu.zip. " +
+                    "Generate ecu.zip with DDT4All (JSON database export), do not zip XML folders manually.");
         }
 
         JSONObject jsonRootObject;
@@ -419,6 +460,7 @@ public class EcuDatabase {
             throw new DatabaseException("JSON conversion issue");
         }
 
+        m_ecuInfo.clear();
         m_projectSet = new HashSet<>();
         Set<Integer> addressSet = new HashSet<>();
         Iterator<String> keys = jsonRootObject.keys();

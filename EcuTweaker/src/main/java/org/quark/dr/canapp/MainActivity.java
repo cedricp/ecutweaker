@@ -110,6 +110,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CONNECT_DEVICE = 1;
     private static final int REQUEST_SCREEN = 2;
     private static final int REQUEST_ENABLE_BT = 3;
+    private static final int REQUEST_PICK_DATABASE = 4;
     @SuppressLint("StaticFieldLeak")
     public static TextView mLogView;
 
@@ -304,6 +305,9 @@ public class MainActivity extends AppCompatActivity {
 
         mChooseProjectButton.setOnClickListener(v -> chooseProject());
 
+        Button loadDbButton = findViewById(R.id.loadDbButton);
+        loadDbButton.setOnClickListener(v -> openDatabasePicker());
+
         mLinkChooser.setOnClickListener(v -> {
             if (mLinkMode == LINK_WIFI) {
                 mLinkMode = LINK_BLUETOOTH;
@@ -322,8 +326,14 @@ public class MainActivity extends AppCompatActivity {
         mEcuDatabase = new EcuDatabase();
         mEcuIdentifierNew = mEcuDatabase.new EcuIdentifierNew();
 
-        if (!askStorageReadPermission()) {
+        // Prefer already-imported app-private ecu.zip; otherwise ask storage permission
+        File appEcu = new File(getFilesDir(), "ecu.zip");
+        if (appEcu.exists() && appEcu.isFile()) {
+            mLogView.append("Found app database: " + appEcu.getAbsolutePath() + "\n");
+            parseDatabase();
+        } else if (!askStorageReadPermission()) {
             mLogView.append("You need external storage permission to read database\n");
+            mLogView.append(getString(R.string.LOAD_DATABASE_HINT) + "\n");
         }
     }
 
@@ -946,12 +956,167 @@ public class MainActivity extends AppCompatActivity {
             case REQUEST_SCREEN:
                 setConnectionStatus(STATE_DISCONNECTED);
                 break;
+            case REQUEST_PICK_DATABASE:
+                if (resultCode == Activity.RESULT_OK && data != null && data.getData() != null) {
+                    importDatabaseFromUri(data.getData());
+                }
+                break;
+        }
+    }
+
+    private void openDatabasePicker() {
+        Toast.makeText(this, getString(R.string.LOAD_DATABASE_HINT), Toast.LENGTH_LONG).show();
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{
+                "application/zip",
+                "application/x-zip-compressed",
+                "application/octet-stream"
+        });
+        try {
+            startActivityForResult(intent, REQUEST_PICK_DATABASE);
+        } catch (ActivityNotFoundException e) {
+            // Fallback without MIME filter
+            Intent fallback = new Intent(Intent.ACTION_GET_CONTENT);
+            fallback.addCategory(Intent.CATEGORY_OPENABLE);
+            fallback.setType("*/*");
+            startActivityForResult(Intent.createChooser(fallback, getString(R.string.LOAD_DATABASE)),
+                    REQUEST_PICK_DATABASE);
+        }
+    }
+
+    private void importDatabaseFromUri(Uri uri) {
+        mStatusView.setText(getResources().getString(R.string.INDEXING_DB));
+        mLogView.append("Importing database...\n");
+        loadDbExecutor.execute(() -> {
+            String error = "";
+            String destPath = "";
+            try {
+                destPath = copyUriToAppEcuZip(uri);
+                if (!zipContainsDbJson(destPath)) {
+                    //noinspection ResultOfMethodCallIgnored
+                    new File(destPath).delete();
+                    error = getString(R.string.DATABASE_INVALID);
+                } else {
+                    // Invalidate old index so the new archive is rescanned
+                    File indexFile = new File(getFilesDir(), "ecu.idx");
+                    if (indexFile.exists()) {
+                        //noinspection ResultOfMethodCallIgnored
+                        indexFile.delete();
+                    }
+                    // Also place a copy on external storage root when possible
+                    tryCopyToExternalStorageRoot(destPath);
+                }
+            } catch (Exception e) {
+                error = e.getMessage() != null ? e.getMessage() : getString(R.string.DATABASE_IMPORT_FAILED);
+                Log.e(TAG, "Database import failed", e);
+            }
+
+            final String finalError = error;
+            final String finalPath = destPath;
+            mainHandler.post(() -> {
+                if (!finalError.isEmpty()) {
+                    mLogView.append(finalError + "\n");
+                    Toast.makeText(MainActivity.this, finalError, Toast.LENGTH_LONG).show();
+                    mStatusView.setText("ECU-TWEAKER v" + BuildConfig.VERSION_NAME);
+                    return;
+                }
+                SharedPreferences.Editor edit = defaultPrefs.edit();
+                edit.putString(PREF_ECUZIPFILE, finalPath);
+                edit.apply();
+                mLogView.append(getString(R.string.DATABASE_IMPORT_OK) + "\n");
+                mLogView.append("Path: " + finalPath + "\n");
+                Toast.makeText(MainActivity.this, R.string.DATABASE_IMPORT_OK, Toast.LENGTH_SHORT).show();
+                mEcuDatabase.unloadDatabase();
+                loadDatabaseAsync(finalPath);
+            });
+        });
+    }
+
+    private String copyUriToAppEcuZip(Uri uri) throws IOException {
+        File dest = new File(getFilesDir(), "ecu.zip");
+        File tmp = new File(getFilesDir(), "ecu.zip.tmp");
+        try (InputStream in = getContentResolver().openInputStream(uri);
+             OutputStream out = new FileOutputStream(tmp)) {
+            if (in == null) {
+                throw new IOException(getString(R.string.DATABASE_IMPORT_FAILED));
+            }
+            byte[] buffer = new byte[8192];
+            int n;
+            while ((n = in.read(buffer)) > 0) {
+                out.write(buffer, 0, n);
+            }
+            out.flush();
+        }
+        if (dest.exists() && !dest.delete()) {
+            throw new IOException("Cannot replace existing ecu.zip");
+        }
+        if (!tmp.renameTo(dest)) {
+            // renameTo can fail across mounts; fall back to copy
+            try (InputStream in = new FileInputStream(tmp);
+                 OutputStream out = new FileOutputStream(dest)) {
+                byte[] buffer = new byte[8192];
+                int n;
+                while ((n = in.read(buffer)) > 0) {
+                    out.write(buffer, 0, n);
+                }
+            }
+            //noinspection ResultOfMethodCallIgnored
+            tmp.delete();
+        }
+        return dest.getAbsolutePath();
+    }
+
+    private boolean zipContainsDbJson(String zipPath) {
+        try (java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile(zipPath)) {
+            java.util.Enumeration<? extends java.util.zip.ZipEntry> entries = zipFile.entries();
+            while (entries.hasMoreElements()) {
+                java.util.zip.ZipEntry entry = entries.nextElement();
+                if (entry.isDirectory()) {
+                    continue;
+                }
+                String name = entry.getName().replace('\\', '/');
+                int slash = name.lastIndexOf('/');
+                String base = slash >= 0 ? name.substring(slash + 1) : name;
+                if (base.equalsIgnoreCase("db.json")) {
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to inspect zip", e);
+        }
+        return false;
+    }
+
+    private void tryCopyToExternalStorageRoot(String sourcePath) {
+        try {
+            File extRoot = Environment.getExternalStorageDirectory();
+            if (extRoot == null || !extRoot.exists()) {
+                return;
+            }
+            File dest = new File(extRoot, "ecu.zip");
+            try (InputStream in = new FileInputStream(sourcePath);
+                 OutputStream out = new FileOutputStream(dest)) {
+                byte[] buffer = new byte[8192];
+                int n;
+                while ((n = in.read(buffer)) > 0) {
+                    out.write(buffer, 0, n);
+                }
+            }
+            Log.i(TAG, "Also copied ecu.zip to " + dest.getAbsolutePath());
+        } catch (Exception e) {
+            // Optional convenience copy; app-private file is enough
+            Log.w(TAG, "Could not copy ecu.zip to external storage root", e);
         }
     }
 
     void parseDatabase() {
         String ecuFile = "";
-        if (defaultPrefs.contains(PREF_ECUZIPFILE)) {
+        File appEcu = new File(getFilesDir(), "ecu.zip");
+        if (appEcu.exists() && appEcu.isFile()) {
+            ecuFile = appEcu.getAbsolutePath();
+        } else if (defaultPrefs.contains(PREF_ECUZIPFILE)) {
             ecuFile = defaultPrefs.getString(PREF_ECUZIPFILE, "");
         }
         mStatusView.setText(getResources().getString(R.string.INDEXING_DB));
@@ -1275,6 +1440,8 @@ public class MainActivity extends AppCompatActivity {
             
             try {
                 String appDir = getApplicationContext().getFilesDir().getAbsolutePath();
+                // Always allow re-index after import / file replace
+                mEcuDatabase.unloadDatabase();
                 resultEcuFile = mEcuDatabase.loadDatabase(ecuFile, appDir);
                 Log.d("MainActivity", "Database loaded successfully: " + resultEcuFile);
             } catch (EcuDatabase.DatabaseException e) {
