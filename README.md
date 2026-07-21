@@ -161,20 +161,27 @@ The application requires the following permissions:
 
 **Important**: The ECU database (`ecu.zip`) is not included with the application.
 
-### Database Location
+### Recommended: Load DB button
 
-The app searches for `ecu.zip` in the following locations:
+1. Open the app and tap **Load DB** / **Laad DB**
+2. Select your DDT4All JSON database zip (any name is fine)
+3. The app copies it to app storage as `ecu.zip` and indexes it immediately
 
-1. Application's internal storage directory
-2. External storage root
-3. `/storage` directory
-4. `/mnt` directory
+### Manual Database Location
+
+The app also searches for `ecu.zip` in:
+
+1. Application private files directory (`files/ecu.zip`) — preferred
+2. External storage root (`/storage/emulated/0/ecu.zip`)
+3. `/storage` and `/mnt` (legacy search)
 
 ### Database Format
 
 The database is a ZIP file containing:
 - `db.json` - Main database with ECU definitions
 - Individual ECU JSON files referenced in `db.json`
+
+Generate this zip with **DDT4All** (JSON database export). Do not zip XML folders manually — that causes `db.json not found`.
 
 ## Building from Source
 

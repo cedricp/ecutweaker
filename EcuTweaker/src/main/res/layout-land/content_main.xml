@@ -87,6 +87,14 @@
                 app:srcCompat="@drawable/ic_bt_search"
                 tools:ignore="ContentDescription" />
 
+            <Button
+                android:id="@+id/loadDbButton"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="0"
+                android:text="@string/LOAD_DATABASE"
+                android:textSize="12sp" />
+
             <ImageView
                 android:id="@+id/btIcon"
                 android:layout_width="50dp"

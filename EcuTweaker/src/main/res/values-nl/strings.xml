@@ -59,4 +59,9 @@
     <string name="title_not_connected">Niet verbonden</string>
     <string name="title_other_devices">Andere beschikbare apparaten</string>
     <string name="title_paired_devices">Gepairde apparaten</string>
+    <string name="LOAD_DATABASE">Laad DB</string>
+    <string name="LOAD_DATABASE_HINT">Selecteer je DDT4All ecu.zip (of een zip met db.json). Het bestand wordt als ecu.zip in de app-map gezet.</string>
+    <string name="DATABASE_IMPORT_OK">Database geïmporteerd als ecu.zip</string>
+    <string name="DATABASE_IMPORT_FAILED">Importeren van database mislukt</string>
+    <string name="DATABASE_INVALID">Geselecteerd bestand bevat geen db.json. Exporteer de JSON-database via DDT4All.</string>
 </resources>

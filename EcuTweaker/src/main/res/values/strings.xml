@@ -68,4 +68,9 @@
     <string name="LOGFILE_DELETED">Log file successfully deleted</string>
     <string name="LOGFILE_DELETE_FAILED">Failed to delete log file</string>
     <string name="LONGPRESS_TO_DELETE">Long press to clear</string>
+    <string name="LOAD_DATABASE">Load DB</string>
+    <string name="LOAD_DATABASE_HINT">Select your DDT4All ecu.zip (or any zip containing db.json). It will be copied as ecu.zip into the app folder.</string>
+    <string name="DATABASE_IMPORT_OK">Database imported as ecu.zip</string>
+    <string name="DATABASE_IMPORT_FAILED">Failed to import database</string>
+    <string name="DATABASE_INVALID">Selected file has no db.json. Export JSON database with DDT4All.</string>
 </resources>
